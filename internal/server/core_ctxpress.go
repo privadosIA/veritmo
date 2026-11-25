@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
 )
 
 // ctxpressView is what GET and PUT /api/settings/ctxpress answer. It never holds the token.
@@ -264,7 +264,7 @@ func testCtxpress(ctx context.Context, base, token string, res *ctxpressTestResu
 		res.Status, res.Detail = "degraded", fmt.Sprintf("GET /health answered %d", hr.StatusCode)
 		return
 	}
-	payload, _ := json.Marshal(map[string]any{"text": ctxpressSample, "kind": "prose", "context": map[string]string{"client": "mediaorquestator", "tool": "compress_text"}})
+	payload, _ := json.Marshal(map[string]any{"text": ctxpressSample, "kind": "prose", "context": map[string]string{"client": "veritmo", "tool": "compress_text"}})
 	cr, err := do(http.MethodPost, "/v1/compress", strings.NewReader(string(payload)))
 	if err != nil {
 		res.Status, res.Detail = "unreachable", err.Error()

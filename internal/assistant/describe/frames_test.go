@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 func needFFmpeg(t *testing.T) {

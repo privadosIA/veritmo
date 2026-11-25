@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/project/quality"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/project/quality"
 )
 
 const reviewYAML = `# my project

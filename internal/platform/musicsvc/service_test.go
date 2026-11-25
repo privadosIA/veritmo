@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // fakeHost installs a "service" that is a shell script standing in for dotnet: it writes the environment it got and waits.
@@ -29,7 +29,7 @@ func fakeHost(t *testing.T) (*ServiceHost, Local) {
 		t.Fatal(err)
 	}
 	h := &ServiceHost{Dir: dir, StateDir: filepath.Join(root, "state"), BinDir: filepath.Join(root, "bin"), Dotnet: fake}
-	spec := Spec{Name: "Demo", Container: "mo-demo", Service: ServiceSpec{Dir: "demo", DLL: "demo.dll", Prefix: "DEMO", Device: true, Espeak: true},
+	spec := Spec{Name: "Demo", Container: "vt-demo", Service: ServiceSpec{Dir: "demo", DLL: "demo.dll", Prefix: "DEMO", Device: true, Espeak: true},
 		Missing: func(string) []string { return nil }}
 	return h, Local{Spec: spec, Models: filepath.Join(root, "models"), Services: h}
 }
@@ -120,7 +120,7 @@ func TestServiceStateIgnoresAnotherProcess(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Our own pid, which is not the service: a reused pid must not be taken for it (nor killed).
-	if err := os.WriteFile(h.statePath("mo-demo"), []byte(`{"pid":`+itoa(os.Getpid())+`,"port":1,"gpu":0}`), 0o644); err != nil {
+	if err := os.WriteFile(h.statePath("vt-demo"), []byte(`{"pid":`+itoa(os.Getpid())+`,"port":1,"gpu":0}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := l.Running(context.Background()); ok {

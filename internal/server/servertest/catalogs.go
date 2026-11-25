@@ -3,7 +3,7 @@ package servertest
 // catalogs.go: fixture catalogs of models for the tests of the generation family and of the server. They mirror
 // web/src/app/editor/auto-plan.spec.ts.
 
-import "mediaOrquestator/internal/server/modelcat"
+import "veritmo/internal/server/modelcat"
 
 // FixtureTEntry fills what a fixture entry leaves out: the kind "model" and the name taken from the id.
 func FixtureTEntry(e modelcat.Entry) modelcat.Entry {

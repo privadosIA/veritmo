@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/video/motion"
 )
 
 func memProjects(t *testing.T) (*projectStore, *store.Store) {

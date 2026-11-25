@@ -1,4 +1,4 @@
-# mediaOrquestator guide: concepts, terminal and a worked example
+# Veritmo guide: concepts, terminal and a worked example
 
 [← Back to the README](../README.md) · [Versión en español](TUTORIAL.es.md)
 
@@ -18,7 +18,7 @@ The screen-by-screen guide to the **dashboard** (environment, models, the editor
 
 ## 1. What this does, in one sentence
 
-You write **scenes** (a text to generate an image and, if you want, a text for someone to narrate) and mediaOrquestator produces a **narrated video**, or just the **images**, or — separately, unrelated to the video — **songs** from a style and lyrics (see Music). If you already have the image, you can use it as-is in a scene, rotate it, or start from it to generate another, and give the video background music. Everything runs on your machine, on your GPUs; nothing is sent to any service.
+You write **scenes** (a text to generate an image and, if you want, a text for someone to narrate) and Veritmo produces a **narrated video**, or just the **images**, or — separately, unrelated to the video — **songs** from a style and lyrics (see Music). If you already have the image, you can use it as-is in a scene, rotate it, or start from it to generate another, and give the video background music. Everything runs on your machine, on your GPUs; nothing is sent to any service.
 
 Internally, each scene goes through these phases, and the dashboard shows them one by one as they run:
 
@@ -56,7 +56,7 @@ Two things that save you time and are worth knowing from the start:
 | A scene with its own quality comes out at a different size from the rest | That is expected: the final video keeps the project's resolution and that scene is cropped down to it (not stretched). To change the size of the whole video, change the resolution in Defaults. |
 | In the mixer, "Listen without mixing" does not sound the same as the exported mix | It is an approximation in the browser (volume up to 2 only if the audio comes from the same origin as the page). Press **Mix** to generate the file and hear the real result. |
 | It fails in `render` and runs out of memory | Look at the run's "Resources": if VRAM reaches 100 %, lower the resolution or use another model. |
-| The run hangs or the machine runs out of RAM | Large models (sets, Wan) copy the model into RAM. `./serve.sh` already limits memory to 85% of the RAM by default (about 52G on 64 GB, no swap): if a run goes over, that process is cut instead of hanging the machine. Change it with `MEM_MAX=40G ./serve.sh`. If you start `bin/orchestrator serve` by hand: `systemd-run --user --scope -p MemoryMax=24G -p MemorySwapMax=0 bin/orchestrator serve …`. |
+| The run hangs or the machine runs out of RAM | Large models (sets, Wan) copy the model into RAM. `./serve.sh` already limits memory to 85% of the RAM by default (about 52G on 64 GB, no swap): if a run goes over, that process is cut instead of hanging the machine. Change it with `MEM_MAX=40G ./serve.sh`. If you start `bin/veritmo serve` by hand: `systemd-run --user --scope -p MemoryMax=24G -p MemorySwapMax=0 bin/veritmo serve …`. |
 | The image comes out wrong with Krea 2 / IntoRealism | Check that it is 8 steps and cfg 1: use **Use recommended settings**. |
 | A scene is entirely redone although you did not touch it | Check that **keep-tmp** is on; without it there is no cache between runs. |
 
@@ -65,18 +65,18 @@ Two things that save you time and are worth knowing from the start:
 Everything the dashboard does can be done without it, with the same `scenes.yaml`:
 
 ```bash
-bin/orchestrator --gpu 1 --keep-tmp projects/my-project/scenes.yaml
+bin/veritmo --gpu 1 --keep-tmp projects/my-project/scenes.yaml
 ```
 
-Useful flags (they go **before** the file): `--gpu 0,1`, `--keep-tmp`, `--force`, `--only <scene-id>`, `--mode images`, `--vram-warn-mb 2048`. To convert a dataset of songs: `bin/orchestrator import --mode music -o scenes.yaml songs.json` (flags, here too, before the file).
+Useful flags (they go **before** the file): `--gpu 0,1`, `--keep-tmp`, `--force`, `--only <scene-id>`, `--mode images`, `--vram-warn-mb 2048`. To convert a dataset of songs: `bin/veritmo import --mode music -o scenes.yaml songs.json` (flags, here too, before the file).
 
 To use the dashboard from another machine, protect access with `ORCHESTRATOR_TOKEN` and open an SSH tunnel (`ssh -L 4666:127.0.0.1:4666 user@server`). The details and every `scenes.yaml` field are in [SCENES_YAML.md](SCENES_YAML.md); the endpoints, in [`docs/http-api.md`](http-api.md).
 
 To have the AI help write prompts from the terminal:
 
 ```bash
-bin/orchestrator assist image "a café in the morning"
-bin/orchestrator assist motion "she turns a page"
+bin/veritmo assist image "a café in the morning"
+bin/veritmo assist motion "she turns a page"
 ```
 
 (It needs Ollama running; it works on CPU so as not to take VRAM from the render.)
@@ -84,10 +84,10 @@ bin/orchestrator assist motion "she turns a page"
 To get the prompt of a picture or a clip you already have, and to use another provider for a run:
 
 ```bash
-bin/orchestrator describe photo.png                # prints the prompt that would draw it
-bin/orchestrator describe --split clip.mp4         # one line per shot: [start-end] prompt, then its MOTION:
-bin/orchestrator describe --provider cloud photo.png
-bin/orchestrator assist --provider lan image "a café in the morning"
+bin/veritmo describe photo.png                # prints the prompt that would draw it
+bin/veritmo describe --split clip.mp4         # one line per shot: [start-end] prompt, then its MOTION:
+bin/veritmo describe --provider cloud photo.png
+bin/veritmo assist --provider lan image "a café in the morning"
 ```
 
 `describe` needs a vision model in Ollama (`ollama pull gemma4:26b`). `--provider` takes the id of a provider registered in **Settings**; a remote one must have been accepted there first (the terminal cannot accept it), and the commands otherwise follow the routing chosen in the **Tasks** card.
@@ -298,14 +298,14 @@ scenes:
 
 Do not launch the 15 shots to find out. Test the difficult ones first, **picture first and movement later**:
 
-1. **The picture**, in images mode, about 17 s: `orchestrator --mode images --only s06_stand_up scenes.yaml`. Look at it before animating: the first try at the stand-up shot (*"low angle, about to stand up"*) came out as a bent-over rear view, so the prompt became a frontal shot sitting on the edge of the bench and `negative_prompt` got *bent over, from behind, rear view close-up*. The skating shot also went from a rear view to **a wide shot in profile**.
-2. **The movement**, about 85 s: `orchestrator --keep-tmp --gpu 1 --only s06_stand_up scenes.yaml`. Then look at frames of the clip. The first test used 49 frames (3 s) and the clip was looked at frame by frame (seconds 0 to 2.8).
+1. **The picture**, in images mode, about 17 s: `veritmo --mode images --only s06_stand_up scenes.yaml`. Look at it before animating: the first try at the stand-up shot (*"low angle, about to stand up"*) came out as a bent-over rear view, so the prompt became a frontal shot sitting on the edge of the bench and `negative_prompt` got *bent over, from behind, rear view close-up*. The skating shot also went from a rear view to **a wide shot in profile**.
+2. **The movement**, about 85 s: `veritmo --keep-tmp --gpu 1 --only s06_stand_up scenes.yaml`. Then look at frames of the clip. The first test used 49 frames (3 s) and the clip was looked at frame by frame (seconds 0 to 2.8).
 
    The first second and a half was right (she leans forward and pushes off with her hands); after that the legs flail and she tumbles over the bench. The same happened to the skating shot: it rolls away well and then the bodies bend. So the shots were cut to **33 frames (2 s)**, and the stand-up one to 1.5 s.
 
    With 33 frames both stay coherent: they stand up (a bit abruptly: the movement is compressed into 1.5 s) and they glide away while the camera follows them. The cut to the next shot hides the rest.
 3. **Fix what does not work** by changing the `prompt` (picture) or only the `motion_prompt` (movement: the picture is not drawn again). The cache also tells you what it will redo.
-4. **Then everything**: `orchestrator --keep-tmp --gpu 1 scenes.yaml` (or *Create* in the editor). With the 5B each shot takes about 100 s (17 s the picture, 85 s the movement): the 15 shots, about 25 minutes. On a 30 GB machine launch it with a memory cap, as the Animation section says.
+4. **Then everything**: `veritmo --keep-tmp --gpu 1 scenes.yaml` (or *Create* in the editor). With the 5B each shot takes about 100 s (17 s the picture, 85 s the movement): the 15 shots, about 25 minutes. On a 30 GB machine launch it with a memory cap, as the Animation section says.
 
 > **`--only` and the cache**: until a bug was fixed, `--only` also wrote the cache entries of the scenes it left out, so a later run could believe they were already made and fail when joining the video (*Error opening input … scene_….mp4*). It is fixed now; if you ever see that error in a project in which you ran scenes one at a time, delete the project's `tmp/manifest.json` and run it again.
 
@@ -319,7 +319,7 @@ Do not launch the 15 shots to find out. Test the difficult ones first, **picture
 
 ### Review the clips from the dashboard
 
-When the video is done, open **Projects → Review the clips** (or *Review the clips* in the finished run). *Analyze* measures colour and sharpness of every clip and, if you pick an Ollama vision model, looks for deformed faces and bodies (each face is located, enlarged and judged apart, so small faces in wide shots count). Each **finding** shows the frame that was flagged, what was seen and **how it will be fixed**: cut the clip, remake it with another seed, change the motion prompt (the assistant can propose a calmer one) or the picture prompt. You can change the fix, ignore a finding and run one, the marked ones or all as tasks through the run queue; each finding follows its run. If you saw something the analysis did not, write it under *Add what you have seen* with the scene and the second. Old reviews are deleted like runs. The same is available in the terminal with `orchestrator check`.
+When the video is done, open **Projects → Review the clips** (or *Review the clips* in the finished run). *Analyze* measures colour and sharpness of every clip and, if you pick an Ollama vision model, looks for deformed faces and bodies (each face is located, enlarged and judged apart, so small faces in wide shots count). Each **finding** shows the frame that was flagged, what was seen and **how it will be fixed**: cut the clip, remake it with another seed, change the motion prompt (the assistant can propose a calmer one) or the picture prompt. You can change the fix, ignore a finding and run one, the marked ones or all as tasks through the run queue; each finding follows its run. If you saw something the analysis did not, write it under *Add what you have seen* with the scene and the second. Old reviews are deleted like runs. The same is available in the terminal with `veritmo check`.
 
 ![The Review page](tutorial/en/38-revision.png)
 

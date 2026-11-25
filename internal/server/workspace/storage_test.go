@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 type storageAnswer struct {

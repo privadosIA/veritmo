@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 func TestDtwPresetOfTheNameOfTheModel(t *testing.T) {

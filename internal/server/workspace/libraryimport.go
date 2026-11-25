@@ -13,8 +13,8 @@ import (
 	"sort"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
 )
 
 // RegisterLibraryImporter adds to a registry the importer of the song library kept in the projects folder projectsDir (server.DataRegistry calls

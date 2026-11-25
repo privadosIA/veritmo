@@ -5,7 +5,7 @@ package edition
 import (
 	"testing"
 
-	"mediaOrquestator/internal/platform/providers"
+	"veritmo/internal/platform/providers"
 )
 
 func TestDenyModel(t *testing.T) {

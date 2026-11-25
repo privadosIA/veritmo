@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
 )
 
 // A scene that owns the verse: the words come from window.__scene.lines, each at its time. It follows the rules a scene is checked

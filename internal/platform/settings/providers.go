@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/platform/edition"
+	"veritmo/internal/platform/edition"
 )
 
 // Provider types.

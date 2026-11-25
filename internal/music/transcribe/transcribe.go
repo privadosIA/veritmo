@@ -19,7 +19,7 @@ import (
 	"strings"
 	"unicode"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // Segment is one line whisper heard, in seconds.

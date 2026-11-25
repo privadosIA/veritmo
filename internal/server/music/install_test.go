@@ -9,8 +9,8 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/settings"
 )
 
 // installFixture is a server whose docker is a fake and whose install runs fake programs: it records what was run, in order, and lets a test
@@ -152,7 +152,7 @@ func TestInstall_ConfirmRunsThePartsInOrderAndTheJobIsFollowed(t *testing.T) {
 	if j.State != installDone || j.Error != "" || j.Parts[0].State != installDone || j.Parts[1].State != installDone || j.FinishedAt == nil {
 		t.Fatalf("job: %+v", j)
 	}
-	want := "docker build -t mediaorquestator/diffrhythm2:1 docker/diffrhythm2\nweights diffrhythm2 docker"
+	want := "docker build -t veritmo/diffrhythm2:1 docker/diffrhythm2\nweights diffrhythm2 docker"
 	if got := f.commands(); got != want {
 		t.Errorf("the image is built first, then the weights:\n%s", got)
 	}

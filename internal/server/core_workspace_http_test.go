@@ -49,8 +49,8 @@ func TestMetrics_NeedsTheTokenLikeTheRestOfTheAPI(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("with the token: %d", rec.Code)
 	}
-	if v, err := strconv.ParseFloat(strings.TrimSpace(lineValue(rec.Body.String(), "mediaorquestator_uptime_seconds")), 64); err != nil || v < 0 {
-		t.Errorf("uptime: %q", lineValue(rec.Body.String(), "mediaorquestator_uptime_seconds"))
+	if v, err := strconv.ParseFloat(strings.TrimSpace(lineValue(rec.Body.String(), "veritmo_uptime_seconds")), 64); err != nil || v < 0 {
+		t.Errorf("uptime: %q", lineValue(rec.Body.String(), "veritmo_uptime_seconds"))
 	}
 }
 

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 // The label an entry gives (Adult: yes|no) reaches the scenes.yaml the import writes, in video and in music.

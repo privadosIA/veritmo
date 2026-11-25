@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // assistRequest is the body of POST /api/assist.

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/server/models"
-	"mediaOrquestator/internal/server/servertest"
+	"veritmo/internal/server/models"
+	"veritmo/internal/server/servertest"
 )
 
 type Download = models.Download

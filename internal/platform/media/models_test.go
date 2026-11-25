@@ -1,11 +1,11 @@
 package media
 
 import (
-	"mediaOrquestator/internal/platform/fsutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"veritmo/internal/platform/fsutil"
 )
 
 func repoWithModels(t *testing.T) string {
@@ -99,8 +99,8 @@ func TestCheckModelsStates(t *testing.T) {
 
 func TestResolveModelsDirPrecedence(t *testing.T) {
 	cfg := t.TempDir()
-	os.MkdirAll(filepath.Join(cfg, "mediaorquestator"), 0o755)
-	os.WriteFile(filepath.Join(cfg, "mediaorquestator", ModelsSettingFile), []byte("/from/file\nignored\n"), 0o644)
+	os.MkdirAll(filepath.Join(cfg, "veritmo"), 0o755)
+	os.WriteFile(filepath.Join(cfg, "veritmo", ModelsSettingFile), []byte("/from/file\nignored\n"), 0o644)
 	env := func(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
 	for _, c := range []struct {
 		flag string

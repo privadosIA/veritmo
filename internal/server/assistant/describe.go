@@ -13,11 +13,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/describe"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/describe"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 const (

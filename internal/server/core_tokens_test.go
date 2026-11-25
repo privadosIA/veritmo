@@ -2,13 +2,13 @@ package server
 
 import (
 	"encoding/json"
-	"mediaOrquestator/internal/server/models"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"veritmo/internal/server/models"
 )
 
 // tokenRig is a download server whose key files live in a throwaway HOME, with

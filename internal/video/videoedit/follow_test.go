@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/video/videovision"
 )
 
 func TestBoxCentres_AlongTheAxisTheWindowMovesOn(t *testing.T) {

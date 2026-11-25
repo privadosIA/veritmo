@@ -1,13 +1,13 @@
 package motionref
 
 import (
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/store"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/store"
 )
 
 func TestStoreKeepsEditsListsAndDeletes(t *testing.T) {

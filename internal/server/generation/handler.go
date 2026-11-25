@@ -5,18 +5,18 @@ package generation
 
 import (
 	"context"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/videoedit"
 	"net/http"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/videoedit"
 
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/server/assistant"
-	"mediaOrquestator/internal/server/modelcat"
-	"mediaOrquestator/internal/server/models"
-	"mediaOrquestator/internal/server/workspace"
 	"sync"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/server/assistant"
+	"veritmo/internal/server/modelcat"
+	"veritmo/internal/server/models"
+	"veritmo/internal/server/workspace"
 )
 
 // Host is what the family needs from the server beyond the families below it.

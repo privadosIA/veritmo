@@ -10,8 +10,8 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/settings"
 )
 
 // fakeOpenAI answers the chat completions a describe job makes, by the system prompt.

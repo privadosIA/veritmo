@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // The states of a motion: only a ready one can be used.

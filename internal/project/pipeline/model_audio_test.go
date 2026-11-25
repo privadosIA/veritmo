@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/project/config"
 )
 
 func ltxAudioProject(t *testing.T, modelAudio bool) *config.Config {

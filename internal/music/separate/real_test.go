@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // With demucs installed (scripts/get-demucs.sh --build) separates 8 seconds of a synthetic stereo wav and checks that the vocal

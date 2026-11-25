@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"sort"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
 )
 
 // What the local engine is made of.
 const (
 	// Container is the name the service is known by (its state and log files carry it).
-	Container = "mo-heartmula"
+	Container = "vt-heartmula"
 	// WeightsDir is where the weights live, relative to the project root.
 	WeightsDir = "models/music/heartmula"
 	// MinFreeMB is the free GPU memory a song needs: the language model peaks at about 8.4 GB and the decoder at
@@ -27,7 +27,7 @@ var spec = musicsvc.Spec{
 	Name: "HeartMuLa", Version: Version, Container: Container, WeightsDir: WeightsDir,
 	MinFreeMB: MinFreeMB, Missing: Missing, Sends: "lyrics and tags",
 	Service: musicsvc.ServiceSpec{Dir: "heartmula", DLL: "HeartMuLa.Net.Server.dll", Prefix: "HEARTMULA", Cards: true},
-	Docker:  musicsvc.DockerSpec{Image: "mediaorquestator/heartmula:1", Port: 8787},
+	Docker:  musicsvc.DockerSpec{Image: "veritmo/heartmula:1", Port: 8787},
 	// measured on 2026-11-19: the image is 14.2 GB; the weights are about 21 GB (docker/heartmula/README.md); the .NET service shares its native libraries by hard links, so its own size is not known
 	Sizes: musicsvc.Sizes{Image: 14_200_000_000, Weights: 21_000_000_000},
 }

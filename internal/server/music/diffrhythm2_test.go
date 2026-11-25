@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"mediaOrquestator/internal/music/diffrhythm2"
+	"veritmo/internal/music/diffrhythm2"
 )
 
 // writeDR2Weights writes a complete weights folder of the DiffRhythm2 engine: the downloaded checkpoint and the

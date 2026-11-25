@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 // ProjectExists reports whether id names a project of the database.

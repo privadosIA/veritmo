@@ -3,7 +3,7 @@
 // (stable-diffusion.cpp image render) -> ffmpeg (per-scene clip + final
 // concat), or render -> export in images mode.
 //
-// It is the wiring formerly private to cmd/orchestrator, extracted so the
+// It is the wiring formerly private to cmd/veritmo, extracted so the
 // HTTP server can run the pipeline in-process against a project directory
 // (Options.Dir) while the CLI keeps its exact pre-extraction behavior by
 // passing an empty Dir (process cwd). Fatal conditions emit the same
@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"mediaOrquestator/internal/platform/media"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,22 +28,23 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"veritmo/internal/platform/media"
 
-	"mediaOrquestator/internal/music/music"
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/probe"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/export"
-	"mediaOrquestator/internal/speech/tts"
-	"mediaOrquestator/internal/video/animate"
-	"mediaOrquestator/internal/video/assemble"
-	"mediaOrquestator/internal/video/motion"
-	"mediaOrquestator/internal/video/render"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/music/music"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/probe"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/export"
+	"veritmo/internal/speech/tts"
+	"veritmo/internal/video/animate"
+	"veritmo/internal/video/assemble"
+	"veritmo/internal/video/motion"
+	"veritmo/internal/video/render"
+	"veritmo/internal/video/videoedit"
 )
 
 // Options configures one pipeline run. The zero value reproduces a bare
@@ -74,6 +74,8 @@ type Options struct {
 	// MusicServices says where the .NET services of the music generators are: the same host the server shows in
 	// Environment, so a run finds the service that is running there. Nil has none.
 	MusicServices *musicsvc.ServiceHost
+	// Models3D is the 3D service and the library a models3d-mode run makes its models with; nil fails such a run, saying so.
+	Models3D *Models3DServices
 	// Force bypasses the cache for every phase of every scene.
 	Force bool
 	// Only restricts (re)processing to a single scene by ID.
@@ -102,8 +104,8 @@ func ApplyModeOverride(cfg *config.Config, mode config.OutputMode) error {
 	if mode == "" {
 		return nil
 	}
-	if mode != config.ModeVideo && mode != config.ModeImages && mode != config.ModeMusic && mode != config.ModeVideoEdit {
-		return fmt.Errorf("--mode must be %q, %q, %q or %q, got %q", config.ModeVideo, config.ModeImages, config.ModeMusic, config.ModeVideoEdit, mode)
+	if mode != config.ModeVideo && mode != config.ModeImages && mode != config.ModeMusic && mode != config.ModeVideoEdit && mode != config.ModeModels3D {
+		return fmt.Errorf("--mode must be %q, %q, %q, %q or %q, got %q", config.ModeVideo, config.ModeImages, config.ModeMusic, config.ModeVideoEdit, config.ModeModels3D, mode)
 	}
 	cfg.Output.Mode = mode
 	return nil
@@ -115,6 +117,10 @@ func ApplyModeOverride(cfg *config.Config, mode config.OutputMode) error {
 func PhasePlan(mode config.OutputMode) (scenePhases []string, concat bool) {
 	if mode == config.ModeImages {
 		return []string{"render", "export"}, false
+	}
+	if mode == config.ModeModels3D {
+		// the picture (an entry with its own image has none) and the model
+		return []string{"render", "model3d"}, false
 	}
 	if mode == config.ModeVideoEdit {
 		return []string{"edit"}, false
@@ -135,6 +141,9 @@ func RequiredBinaries(mode config.OutputMode, contactSheet bool) []string {
 	}
 	if mode == config.ModeVideoEdit {
 		return []string{export.FFmpegBinary, "ffprobe"}
+	}
+	if mode == config.ModeModels3D {
+		return []string{render.Binary} // RequiredBinariesFor leaves it out when every entry brings its own picture
 	}
 	if mode == config.ModeImages {
 		bins := []string{render.Binary}
@@ -167,11 +176,24 @@ func needsRender(cfg *config.Config) bool {
 	return len(cfg.Scenes) == 0
 }
 
+// modelsNeedPictures reports whether a models3d run draws any picture: an entry with a prompt that the run will make.
+func modelsNeedPictures(cfg *config.Config, only string) bool {
+	for _, e := range cfg.Models {
+		if e.Image == "" && (only == "" || e.ID == only) {
+			return true
+		}
+	}
+	return false
+}
+
 // RequiredBinariesFor is RequiredBinaries for a loaded config: in music mode
 // it adds ace-lm only when a track that will run uses the language model
 // (all tracks, or just the one selected with --only).
 func RequiredBinariesFor(cfg *config.Config, only string) []string {
 	bins := RequiredBinaries(cfg.Output.Mode, cfg.Output.ContactSheet)
+	if cfg.Output.Mode == config.ModeModels3D && !modelsNeedPictures(cfg, only) {
+		return nil
+	}
 	if cfg.Output.Mode == config.ModeVideo && !needsRender(cfg) {
 		bins = slices.DeleteFunc(bins, func(b string) bool { return b == render.Binary })
 	}
@@ -270,6 +292,14 @@ func CheckOnlyScene(cfg *config.Config, onlyID string) error {
 			return fmt.Errorf("track or mix %q not found in config", onlyID)
 		}
 		return fmt.Errorf("track %q not found in config", onlyID)
+	}
+	if cfg.Output.Mode == config.ModeModels3D {
+		for _, e := range cfg.Models {
+			if e.ID == onlyID {
+				return nil
+			}
+		}
+		return fmt.Errorf("model %q not found in config", onlyID)
 	}
 	for _, s := range cfg.Scenes {
 		if s.ID == onlyID {
@@ -371,6 +401,11 @@ func Run(ctx context.Context, cfg *config.Config, opts Options, emitter *events.
 		finalArtifact, err = runVideoEdit(ctx, cfg, opts.VideoEdit, emitter, opts.Dir, gpus)
 	case config.ModeMusic:
 		finalArtifact, err = runMusic(ctx, cfg, emitter, execRunner, manifest, onlyFilter, opts.Force, renderEnv, rng, opts.Dir, gpus, budget, opts.NoContainerStart, opts.MusicServices)
+	case config.ModeModels3D:
+		if len(gpus) > 1 {
+			renderEnv = append(renderEnv, "CUDA_VISIBLE_DEVICES="+gpus[0]) // one picture at a time: the first card
+		}
+		finalArtifact, err = runModels3D(ctx, cfg, emitter, execRunner, manifest, onlyFilter, opts.Force, renderEnv, opts.Dir, opts.Models3D)
 	case config.ModeImages:
 		finalArtifact, err = runImages(ctx, cfg, emitter, execRunner, manifest, onlyFilter, opts.Force, renderEnv, rng, opts.Dir, gpus, budget)
 	default:

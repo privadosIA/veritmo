@@ -12,11 +12,13 @@
 #   bash scripts/install.sh --no-models         # skip the model and voice downloads
 #   bash scripts/install.sh --services TIER     # the music services to build: none, recognition, generator or all
 #                                               # (default: asks; --yes takes the one that fits this machine)
+#   bash scripts/install.sh --3d TIER           # the 3D services (one picture to a 3D model): none, triposr or all (+ Stable Fast 3D)
+#                                               # (default: asks; --yes takes the one that fits the card: all from 8 GB, else none)
 #
 # Components: git cmake cc make curl ffmpeg go cuda sd piper voice acestep
-# dotnet services ytdlp gsap hflibs upscalers browser blender model orchestrator hfblocks node hfruntime ollama (groups: system, models).
+# dotnet services ytdlp gsap hflibs upscalers browser blender model veritmo hfblocks node hfruntime ollama (groups: system, models).
 # Safe to re-run: every check looks at the real thing. Commands and their output
-# are appended to ~/.cache/mediaorquestator/install.log. See docs/INSTALL.md.
+# are appended to ~/.cache/veritmo/install.log. See docs/INSTALL.md.
 
 set -uo pipefail
 
@@ -30,6 +32,7 @@ NO_MODELS=0
 CPU_SD=0
 ONLY=""
 SERVICES_TIER=""   # none | recognition | generator | all; empty: ask, or the recommended one
+SERVICES_3D=""     # none | triposr | all; empty: ask, or the recommended one
 
 usage() { sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
@@ -44,6 +47,10 @@ while (( $# )); do
             il_tier_services "$SERVICES_TIER" >/dev/null 2>&1 || { echo "install: --services is none, recognition, generator or all" >&2; exit 2; } ;;
         --services=*) SERVICES_TIER="${1#--services=}"
             il_tier_services "$SERVICES_TIER" >/dev/null 2>&1 || { echo "install: --services is none, recognition, generator or all" >&2; exit 2; } ;;
+        --3d) shift; SERVICES_3D="${1:-}"
+            il_tier3d_services "$SERVICES_3D" >/dev/null 2>&1 || { echo "install: --3d is none, triposr or all" >&2; exit 2; } ;;
+        --3d=*) SERVICES_3D="${1#--3d=}"
+            il_tier3d_services "$SERVICES_3D" >/dev/null 2>&1 || { echo "install: --3d is none, triposr or all" >&2; exit 2; } ;;
         --only) shift; ONLY="${1:-}"; [[ -n "$ONLY" ]] || { echo "install: --only needs a list" >&2; exit 2; } ;;
         --only=*) ONLY="${1#--only=}" ;;
         -h|--help) usage; exit 0 ;;
@@ -109,8 +116,8 @@ il_dep_ok() { # id: every prerequisite is ok now; sets IL_BLOCKED_BY
         acestep) deps="git cmake cc make cuda" ;;
         services) deps="dotnet" ;;
         piper|ytdlp|gsap|hflibs|upscalers|model) deps="curl" ;;
-        orchestrator) deps="go" ;;
-        hfblocks) deps="git curl orchestrator" ;;
+        veritmo) deps="go" ;;
+        hfblocks) deps="git curl veritmo" ;;
         hfruntime) deps="git curl node" ;;
     esac
     IL_BLOCKED_BY=""
@@ -215,7 +222,7 @@ il_cmds() {
         piper|voice) echo "bash scripts/get-piper.sh" ;;
         acestep) echo "bash scripts/build-acestep.sh" ;;
         services)
-            local only; only="$(il_tier_services "$(il_services_tier)")"
+            local only; only="$(il_services_list)"
             [[ -n "$only" ]] || return 0
             if [[ -n "${CPU_BUILD:-}" ]]; then echo "bash scripts/get-services.sh --cpu --only $only"; else echo "bash scripts/get-services.sh --only $only"; fi ;;
         ytdlp) echo "bash scripts/get-ytdlp.sh" ;;
@@ -225,12 +232,12 @@ il_cmds() {
         hfruntime) echo "bash scripts/get-hyperframes-runtime.sh" ;;
         upscalers) echo "bash scripts/get-upscalers.sh" ;;
         model) echo "bash scripts/get-models.sh" ;;
-        orchestrator)
+        veritmo)
             # The private edition has its own files; the public tree does not, so the tag follows them.
             if [[ -f "$IL_ROOT/internal/platform/edition/edition_private.go" ]]; then
-                echo "mkdir -p bin && go build -tags private -o bin/orchestrator ./cmd/orchestrator"
+                echo "mkdir -p bin && go build -tags private -o bin/veritmo ./cmd/veritmo"
             else
-                echo "mkdir -p bin && go build -o bin/orchestrator ./cmd/orchestrator"
+                echo "mkdir -p bin && go build -o bin/veritmo ./cmd/veritmo"
             fi ;;
         ollama)
             if [[ "$IL_PM" == pacman ]]; then il_pm_cmd ollama; return 0; fi
@@ -270,16 +277,28 @@ il_ask() {
 # il_pick_services_tier: the tier of the music services. Chosen with --services; otherwise asked (Enter takes the one that fits
 # this machine) and, with --yes, in a dry run or with no terminal, the recommended one stays in force.
 il_pick_services_tier() {
-    [[ -n "$SERVICES_TIER" ]] && return 0
     (( ASSUME_YES )) || [[ "$MODE" == dry-run ]] || (( ! INTERACTIVE )) && return 0
-    local rec ans; rec="$(il_recommended_tier)"
-    echo "  - $(il_title services): which ones? none | recognition (LAION-CLAP, video-vision) | generator (+ DiffRhythm2) | all (+ HeartMuLa). Recommended here: $rec"
+    local rec ans
+    if [[ -z "$SERVICES_TIER" ]]; then
+        rec="$(il_recommended_tier)"
+        echo "  - $(il_title services): which ones? none | recognition (LAION-CLAP, video-vision) | generator (+ DiffRhythm2) | all (+ HeartMuLa). Recommended here: $rec"
+        while true; do
+            printf '    tier [%s]: ' "$rec"
+            read -r ans || ans=""
+            ans="${ans:-$rec}"
+            if il_tier_services "$ans" >/dev/null 2>&1; then SERVICES_TIER="$ans"; break; fi
+            echo "    none, recognition, generator or all"
+        done
+    fi
+    [[ -n "$SERVICES_3D" ]] && return 0
+    rec="$(il_recommended_3d)"
+    echo "  - 3D services (one picture to a 3D model): none | triposr | all (+ Stable Fast 3D: its weights need the licence accepted on Hugging Face). Recommended here: $rec"
     while true; do
-        printf '    tier [%s]: ' "$rec"
+        printf '    3D [%s]: ' "$rec"
         read -r ans || ans=""
         ans="${ans:-$rec}"
-        if il_tier_services "$ans" >/dev/null 2>&1; then SERVICES_TIER="$ans"; return 0; fi
-        echo "    none, recognition, generator or all"
+        if il_tier3d_services "$ans" >/dev/null 2>&1; then SERVICES_3D="$ans"; return 0; fi
+        echo "    none, triposr or all"
     done
 }
 
@@ -327,7 +346,7 @@ for id in "${IL_COMPONENTS[@]}"; do
 
     if [[ "$id" == services ]]; then
         il_pick_services_tier
-        if [[ "$(il_services_tier)" == none ]]; then echo "  - $(il_title services): skipped (tier none)"; continue; fi
+        if [[ -z "$(il_services_list)" ]]; then echo "  - $(il_title services): skipped (tier none)"; continue; fi
         il_check services
         if [[ "$IL_STATE" == ok ]]; then OKNOW[services]=1; echo "  - $(il_title services): every service of the tier $(il_services_tier) is built"; continue; fi
         state="$IL_STATE"; note="$IL_NOTE"

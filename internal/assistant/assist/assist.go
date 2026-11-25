@@ -11,18 +11,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mediaOrquestator/internal/platform/httpclient"
 	"net"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
 	"time"
+	"veritmo/internal/platform/httpclient"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/platform/settings"
 )
 
 // Task selects what to write.
@@ -38,6 +38,9 @@ const (
 	TaskMusic Task = "music"
 	// TaskTags writes the style tags of a song for the HeartMuLa generator (a few short words separated by commas).
 	TaskTags Task = "tags"
+	// TaskModel3D writes the prompt of one 3D model: an English description of a single object alone, from a request in any language. It is not offered
+	// through ParseTask: the request planner (kind model3d) is its only caller.
+	TaskModel3D Task = "model3d"
 	// TaskLyrics puts the transcription of a song into sections and proposes its style and tags, without
 	// inventing text. Its input has several parts, so it goes through LyricsFromTranscript, not Run.
 	TaskLyrics Task = "lyrics-from-transcript"
@@ -106,12 +109,13 @@ var tasks = map[Task]taskSpec{
 	TaskImprove: improveTask(),
 	TaskKind:    kindTask(),
 	TaskEdit:    editTask(),
+	TaskModel3D: model3DTask(),
 }
 
 // ParseTask validates a task name.
 func ParseTask(s string) (Task, error) {
 	t := Task(s)
-	if _, ok := tasks[t]; !ok && t != TaskMusic && t != TaskLyrics || t == TaskKind || t == TaskListen || t == TaskEdit {
+	if _, ok := tasks[t]; !ok && t != TaskMusic && t != TaskLyrics || t == TaskKind || t == TaskListen || t == TaskEdit || t == TaskModel3D {
 		return "", fmt.Errorf("%w: unknown task %q (use %q, %q, %q, %q, %q or %q)", ErrInvalidInput, s, TaskImage, TaskMotion, TaskMusic, TaskTags, TaskLyrics, TaskImprove)
 	}
 	return t, nil

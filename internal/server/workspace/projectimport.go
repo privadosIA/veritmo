@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 // RegisterProjectsImporter adds to a registry the importer of the projects kept in the folder projectsDir (server.DataRegistry calls it).

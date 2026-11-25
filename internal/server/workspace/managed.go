@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // Reserved prefixes of the projects the server creates for the generation API.
@@ -29,11 +29,13 @@ const (
 	ManagedRecord = "generation.json"
 	// PiecePrefix is the prefix of the projects of the music-motion pieces.
 	PiecePrefix = "api-mm-"
+	// ModelGenPrefix is the prefix of the projects of the 3D model generation API.
+	ModelGenPrefix = "api-m3d-"
 )
 
 // IsManagedProject says whether a project belongs to the generation API: it is not a user's project.
 func IsManagedProject(id string) bool {
-	return strings.HasPrefix(id, GenPrefix) || strings.HasPrefix(id, EditPrefix) || strings.HasPrefix(id, VideoPrefix) || strings.HasPrefix(id, PiecePrefix)
+	return strings.HasPrefix(id, GenPrefix) || strings.HasPrefix(id, EditPrefix) || strings.HasPrefix(id, VideoPrefix) || strings.HasPrefix(id, PiecePrefix) || strings.HasPrefix(id, ModelGenPrefix)
 }
 
 // ModeAnimation is the mode the runs and the statistics report for the runs of the music-motion pieces (their projects
@@ -53,6 +55,8 @@ const (
 	KindImageEdit ManagedKind = "image_edit"
 	// KindVideoEdit is a project made by the video-edit API.
 	KindVideoEdit ManagedKind = "video_edit"
+	// KindModelGeneration is a project made by the 3D model generation API (a model from a prompt or a picture).
+	KindModelGeneration ManagedKind = "model_generation"
 )
 
 // ManagedInfo is generation.json: what the server remembers of a generation or an edit besides its scenes.yaml.

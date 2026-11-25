@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // wavBytes makes a mono 16-bit wav of the samples.

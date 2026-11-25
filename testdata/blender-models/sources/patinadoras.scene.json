@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "world": { "color": "bg" },
+  "camera": {
+    "lens": 35,
+    "keys": [
+      { "beat": 0, "location": [0, -10, 3.2], "target": [0, 0, 1] },
+      { "beat": 10, "location": [3.5, -8, 2.2], "target": [0, 0, 1], "ease": "inout" }
+    ]
+  },
+  "lights": [
+    { "type": "area", "location": [3, -5, 6], "target": [0, 0, 0.5], "power": 900, "size": 4 },
+    { "type": "sun", "rotation": [50, 0, 30], "power": 2.5 }
+  ],
+  "materials": {
+    "ground": { "color": "bg", "roughness": 0.25 },
+    "title": { "color": "accent", "roughness": 0.35 }
+  },
+  "objects": [
+    { "id": "rink", "type": "backdrop", "size": 40, "curve": 4, "material": "ground" },
+    {
+      "id": "title", "type": "text", "text": "Patinadoras", "size": 1.4, "extrude": 0.15, "bevel": 0.02,
+      "align": "center", "font": "display", "material": "title",
+      "keys": [
+        { "beat": 0, "location": [0, 4.5, -2], "rotation": [90, 0, 0] },
+        { "beat": 1.5, "location": [0, 4.5, 0.2], "ease": "back" }
+      ]
+    },
+    {
+      "id": "ana", "type": "model", "file": "character-female-a.glb", "size": 1.7,
+      "animation": { "clip": "sprint" },
+      "keys": [
+        { "beat": 0, "location": [-5, -0.5, 0], "rotation": [0, 0, 90] },
+        { "beat": 10, "location": [5, -0.5, 0], "ease": "linear" }
+      ]
+    },
+    {
+      "id": "bea", "type": "model", "file": "character-female-c.glb", "size": 1.7,
+      "animation": { "clip": "sprint", "offset": 0.2 },
+      "keys": [
+        { "beat": 0, "location": [-5.8, 1.2, 0], "rotation": [0, 0, 90] },
+        { "beat": 10, "location": [4.2, 1.2, 0], "ease": "linear" }
+      ]
+    },
+    {
+      "id": "cris", "type": "model", "file": "character-female-a.glb", "size": 1.7,
+      "animation": { "clip": "walk", "speed": 1.5 },
+      "keys": [
+        { "beat": 0, "location": [5, -2.4, 0], "rotation": [0, 0, -90] },
+        { "beat": 10, "location": [-5, -2.4, 0], "ease": "linear" }
+      ]
+    },
+    {
+      "id": "dani", "type": "model", "file": "character-female-c.glb", "size": 1.7,
+      "animation": { "clip": "jump", "loop": false, "offset": 2 },
+      "keys": [
+        { "beat": 0, "location": [0, 1.5, 0], "rotation": [0, 0, 0] }
+      ]
+    }
+  ]
+}

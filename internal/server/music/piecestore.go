@@ -12,8 +12,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/store"
 )
 
 // pieceRow is a piece as the database keeps it: what a list filters or sorts by as columns, and the whole of piece.json as the document the

@@ -17,9 +17,9 @@ import (
 	"strings"
 	"sync"
 
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/models"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/models"
 )
 
 const (

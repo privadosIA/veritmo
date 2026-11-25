@@ -10,9 +10,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/videoedit"
 )
 
 // VideoEditScene is the identifier the single phase of a video-edit run goes by in the events.

@@ -5,7 +5,7 @@ package models
 import (
 	"net/http"
 
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/server/api"
 )
 
 // GET /api/civitai/resolve: the public edition has no Civitai lookup.

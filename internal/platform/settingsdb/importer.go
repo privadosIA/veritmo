@@ -11,8 +11,8 @@ import (
 	"sort"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/store"
 )
 
 // Importer reads settings.json.

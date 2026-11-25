@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 // clipRefs maps each video of sources/ to the scenes of cfg that use it as their clip.

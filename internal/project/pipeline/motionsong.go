@@ -17,10 +17,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
 )
 
 // songMapMargin is how much of the song past the end of a scene its map keeps: a narrated scene lasts what its narration

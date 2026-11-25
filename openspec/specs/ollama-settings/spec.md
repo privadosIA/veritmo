@@ -27,7 +27,7 @@ A single resolver SHALL give the address of Ollama to every consumer (the prompt
 
 ### Requirement: The setting is stored privately and validated
 
-The saved address SHALL live in `settings.json` next to the server's token (`~/.config/mediaorquestator/`, honouring `XDG_CONFIG_HOME`), in a directory of mode 0700 and a file of mode 0600, written atomically. An address SHALL be accepted only when its scheme is `http` or `https` (or absent, meaning `http`), it has a host, no user or password, and no path (other than `/`), query or fragment, and it is at most 200 characters; anything else SHALL be rejected with a message that says which rule failed, and nothing SHALL be saved. A saved value SHALL be stored normalized (with scheme). Removing the setting SHALL delete the key so the resolver falls back to `OLLAMA_HOST`.
+The saved address SHALL live in `settings.json` next to the server's token (`~/.config/veritmo/`, honouring `XDG_CONFIG_HOME`), in a directory of mode 0700 and a file of mode 0600, written atomically. An address SHALL be accepted only when its scheme is `http` or `https` (or absent, meaning `http`), it has a host, no user or password, and no path (other than `/`), query or fragment, and it is at most 200 characters; anything else SHALL be rejected with a message that says which rule failed, and nothing SHALL be saved. A saved value SHALL be stored normalized (with scheme). Removing the setting SHALL delete the key so the resolver falls back to `OLLAMA_HOST`.
 
 #### Scenario: a valid address is saved
 - **WHEN** the address `192.168.1.50:11434` is saved

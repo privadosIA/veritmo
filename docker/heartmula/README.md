@@ -2,7 +2,7 @@
 
 [HeartMuLa](https://github.com/HeartMuLa/heartlib) writes complete songs (voice and accompaniment) from lyrics and a few
 style tags, with far better results than ACE-Step, at about 1.1 times real time (a 2-minute song takes about 2 minutes) and
-about 10 GB of GPU memory. It is Python and PyTorch, so it lives here, in a container, and the orchestrator talks to it over
+about 10 GB of GPU memory. It is Python and PyTorch, so it lives here, in a container, and the veritmo talks to it over
 HTTP. It is optional, and it is the Docker (Python) alternative to the .NET service that `scripts/get-services.sh` builds: the music project offers HeartMuLa when a local service or an external one (this container is one: the server reaches it by its address) is available.
 
 ## What is here
@@ -28,9 +28,9 @@ The weights (about 21 GB) are **not** in the image. Download them into `models/m
 
 ## Build and run by hand
 
-    docker build -t mediaorquestator/heartmula:1 docker/heartmula
+    docker build -t veritmo/heartmula:1 docker/heartmula
     docker run --rm --gpus device=1 -p 127.0.0.1:8787:8787 \
-        -v "$PWD/models/music/heartmula:/ckpt:ro" mediaorquestator/heartmula:1
+        -v "$PWD/models/music/heartmula:/ckpt:ro" veritmo/heartmula:1
 
 Needs Docker with the NVIDIA container toolkit (`docker run --gpus` must work). The weights, by hand:
 

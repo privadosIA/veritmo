@@ -8,15 +8,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"mediaOrquestator/internal/server/modelcat"
 	"net/http"
 	"os"
 	"path/filepath"
+	"veritmo/internal/server/modelcat"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/server/api"
 )
 
 // Time that is not the models': narration, the clip of each scene, joining (the table of the dashboard's planner).

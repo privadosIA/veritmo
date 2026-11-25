@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 // fixture resolves a repo testdata file (tests chdir into a temp root, so

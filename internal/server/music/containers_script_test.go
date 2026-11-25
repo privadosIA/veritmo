@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"testing"
 
-	"mediaOrquestator/internal/music/diffrhythm2"
-	"mediaOrquestator/internal/music/heartmula"
+	"veritmo/internal/music/diffrhythm2"
+	"veritmo/internal/music/heartmula"
 )
 
 // scripts/music-containers.sh and the server run the same containers: the same images, ports, name and flags. The server's side is the Docker
@@ -43,11 +43,11 @@ func TestContainersScriptAgreesWithTheServer(t *testing.T) {
 		if ports[name] != strconv.Itoa(spec.port) {
 			t.Errorf("%s: the script listens on %q, the server on %d", name, ports[name], spec.port)
 		}
-		if spec.container != "mo-"+name {
-			t.Errorf("%s: the script names the container mo-%s, the server %q", name, name, spec.container)
+		if spec.container != "vt-"+name {
+			t.Errorf("%s: the script names the container vt-%s, the server %q", name, name, spec.container)
 		}
 	}
-	for _, flag := range []string{`--restart no`, `"127.0.0.1:${PORT[$engine]}:${PORT[$engine]}"`, `:/ckpt:ro`, `--gpus "device=${gpu}"`, `--name "mo-${engine}"`} {
+	for _, flag := range []string{`--restart no`, `"127.0.0.1:${PORT[$engine]}:${PORT[$engine]}"`, `:/ckpt:ro`, `--gpus "device=${gpu}"`, `--name "vt-${engine}"`} {
 		if !regexp.MustCompile(regexp.QuoteMeta(flag)).MatchString(script) {
 			t.Errorf("the script no longer runs the container with %s, which the server does", flag)
 		}

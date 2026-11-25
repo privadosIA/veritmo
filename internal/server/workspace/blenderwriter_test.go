@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/video/blender"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/video/blender"
+	"veritmo/internal/video/motion"
 )
 
 const describedYAML = `project: demo
@@ -369,5 +369,31 @@ func TestDescriptions_ThePreviewNeedsBlenderAndSaysHowToGetIt(t *testing.T) {
 	// the writer does not need it
 	if code, body := writeDescription(t, s, map[string]any{"name": "y.scene.json", "idea": "a title", "seconds": 5}); code != http.StatusOK {
 		t.Fatalf("writing without Blender: %d %s (asked %d)", code, body, len(w.users))
+	}
+}
+
+func TestDescribeSceneFor_TheEnvironmentComesFromTheProjectOrFromTheDefaults(t *testing.T) {
+	s, _, _ := writerServer(t, validBeats)
+	var got blender.WriteRequest
+	s.Overrides.BlenderWrite = func(_ context.Context, _ blender.Writer, req blender.WriteRequest) (blender.WriteResult, error) {
+		got = req
+		return blender.WriteResult{Raw: []byte("{}"), Attempts: 1}, nil
+	}
+	// with no project: no tempo, no design, a 16:9 frame at 30 fps
+	if _, err := s.DescribeSceneFor(context.Background(), nil, "", "a ball", 4); err != nil {
+		t.Fatal(err)
+	}
+	if got.Env.BPM != 0 || got.Width != 1280 || got.Height != 720 || got.FPS != 30 || got.Idea != "a ball" || got.Seconds != 4 || len(got.Families) != 0 {
+		t.Errorf("defaults: %+v", got)
+	}
+	// with the project of the tests: its tempo and its frame
+	if _, err := s.DescribeSceneFor(context.Background(), nil, "demo", "a ball", 4); err != nil {
+		t.Fatal(err)
+	}
+	if got.Env.BPM != 120 || got.Width != 1280 || got.FPS != 30 || got.Families["display"] == "" {
+		t.Errorf("project: %+v", got)
+	}
+	if _, err := s.DescribeSceneFor(context.Background(), nil, "nope", "a ball", 4); !IsNoProject(err) {
+		t.Errorf("an unknown project must be ErrNoProject: %v", err)
 	}
 }

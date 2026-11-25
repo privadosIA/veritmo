@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
 )
 
 // libraryListSpec says what the lists of characters and backgrounds can be sorted and searched by; they are filtered in memory (the ones of the

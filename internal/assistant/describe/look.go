@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/assistant/assist"
+	"veritmo/internal/assistant/assist"
 )
 
 // lookSystem asks for the look of a video (what a motion designer needs), not a prompt for a picture generator.

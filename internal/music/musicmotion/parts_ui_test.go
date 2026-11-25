@@ -3,7 +3,7 @@ package musicmotion
 import (
 	"testing"
 
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/video/motion"
 )
 
 // uiScene is a scene of one of the interface parts with the parameters given (the rest are the defaults), 120 bpm (a

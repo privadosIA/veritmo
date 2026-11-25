@@ -267,3 +267,20 @@ func TestWriteDescription_ASyntaxErrorIsShownWhereItIs(t *testing.T) {
 		t.Errorf("the model is shown where the syntax is wrong:\n%s", w.user[1])
 	}
 }
+
+func TestPrompt_TheEndOfTheSceneIsNeverRoundedUp(t *testing.T) {
+	// 3.68 s at 115.38 bpm is 7.0765 beats: "7.077" would be 0.2 ms after the end of the scene and would be refused
+	env := writeEnv(115.38, false)
+	r := request("a ball", env)
+	r.Seconds = 3.68
+	if p := writerUserPrompt(r); !strings.Contains(p, "ends at beat 7.076") || strings.Contains(p, "7.077") {
+		t.Errorf("the end of the scene in beats:\n%s", p)
+	}
+	ex := ExampleFor(115.38, 3.68)
+	if _, err := Parse([]byte(ex), 3.68, env); err != nil {
+		t.Errorf("the example of the prompt must pass the checks of the scene it is made for: %v\n%s", err, ex)
+	}
+	if got := floorFloat(10); got != "10" {
+		t.Errorf("10 beats are written 10, not %q", got)
+	}
+}

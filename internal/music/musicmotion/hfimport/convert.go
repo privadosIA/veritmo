@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 // Prefix is what every imported part's name starts with.

@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/sched"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/sched"
 )
 
 // ModelInfo is one chat model installed in Ollama.

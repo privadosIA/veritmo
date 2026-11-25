@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // separateSetup points the weights at a temp folder (with a file when asked) and fakes the programs: ffmpeg writes its last

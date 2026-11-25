@@ -8,7 +8,7 @@ import (
 	"math"
 	"sort"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
 )
 
 // minWordHit is how much of a piece a word hit that was pushed back to its end keeps, in seconds.

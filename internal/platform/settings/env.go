@@ -10,15 +10,20 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"veritmo/internal/platform/legacyname"
 )
 
 // Env is the value of an environment variable, or, when it is empty, the content of the file named by NAME_FILE (trimmed). A file that cannot be read is an
 // error that names the file and never the value.
 func Env(name string) (string, error) {
-	if v := strings.TrimSpace(os.Getenv(name)); v != "" {
+	get := os.Getenv
+	if strings.HasPrefix(name, "VERITMO_") { // the variables of this program also answer to their former MO_ name
+		get = func(n string) string { return legacyname.Getenv(strings.TrimPrefix(n, "VERITMO_")) }
+	}
+	if v := strings.TrimSpace(get(name)); v != "" {
 		return v, nil
 	}
-	path := strings.TrimSpace(os.Getenv(name + "_FILE"))
+	path := strings.TrimSpace(get(name + "_FILE"))
 	if path == "" {
 		return "", nil
 	}
@@ -36,34 +41,34 @@ const (
 	FromDefault = "default"
 )
 
-// databaseFromEnv is the database the MO_DB_* variables describe: nothing (the SQLite file) when MO_DB_DRIVER is empty, an error when it is set and the
+// databaseFromEnv is the database the VERITMO_DB_* variables describe: nothing (the SQLite file) when VERITMO_DB_DRIVER is empty, an error when it is set and the
 // rest does not describe a database (a container that asked for a MySQL must not quietly use a file).
 func databaseFromEnv() (Database, error) {
-	driver := strings.TrimSpace(os.Getenv("MO_DB_DRIVER"))
+	driver := strings.TrimSpace(legacyname.Getenv("DB_DRIVER"))
 	if driver == "" || strings.EqualFold(driver, DBSQLite) {
 		return Database{}, nil
 	}
-	d := Database{Driver: driver, Host: os.Getenv("MO_DB_HOST"), Name: os.Getenv("MO_DB_NAME"), User: os.Getenv("MO_DB_USER")}
-	if p := strings.TrimSpace(os.Getenv("MO_DB_PORT")); p != "" {
+	d := Database{Driver: driver, Host: legacyname.Getenv("DB_HOST"), Name: legacyname.Getenv("DB_NAME"), User: legacyname.Getenv("DB_USER")}
+	if p := strings.TrimSpace(legacyname.Getenv("DB_PORT")); p != "" {
 		n, err := strconv.Atoi(p)
 		if err != nil {
-			return Database{}, fmt.Errorf("MO_DB_PORT is not a number")
+			return Database{}, fmt.Errorf("VERITMO_DB_PORT is not a number")
 		}
 		d.Port = n
 	}
-	pw, err := Env("MO_DB_PASSWORD")
+	pw, err := Env("VERITMO_DB_PASSWORD")
 	if err != nil {
 		return Database{}, err
 	}
 	d, err = d.Validate()
 	if err != nil {
-		return Database{}, fmt.Errorf("MO_DB_*: %w", err)
+		return Database{}, fmt.Errorf("VERITMO_DB_*: %w", err)
 	}
 	d.Password = pw
 	return d, nil
 }
 
-// CheckEnvDatabase says whether the MO_DB_* variables are valid when they are set and nothing is saved: the commands that open the database call it first
+// CheckEnvDatabase says whether the VERITMO_DB_* variables are valid when they are set and nothing is saved: the commands that open the database call it first
 // and stop on an error, so that a typo is not a silent SQLite file.
 func CheckEnvDatabase() error {
 	if b, _ := loadBootstrap(); b.Database != (Database{}) {

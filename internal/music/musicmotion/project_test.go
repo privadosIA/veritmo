@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
 )
 
 func needTools(t *testing.T) {

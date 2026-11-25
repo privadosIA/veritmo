@@ -2,11 +2,11 @@ package server
 
 import (
 	"encoding/json"
-	"mediaOrquestator/internal/server/generation"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
+	"veritmo/internal/server/generation"
 )
 
 // scenesClient is the `client` of the scenes.yaml of a managed project.

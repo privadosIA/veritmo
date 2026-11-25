@@ -7,7 +7,7 @@ import (
 	_ "embed"
 	"encoding/json"
 
-	"mediaOrquestator/internal/server/modelcat"
+	"veritmo/internal/server/modelcat"
 )
 
 //go:embed catalog.json
@@ -32,3 +32,6 @@ var catalog = func() []catalogEntry {
 	}
 	return c
 }()
+
+// Catalog is the model catalog this program embeds, for what runs without a server (the command line).
+func Catalog() []modelcat.Entry { return append([]modelcat.Entry(nil), catalog...) }

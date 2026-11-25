@@ -7,7 +7,7 @@ The server shows or hides adult projects according to a mode that is fixed when 
 
 ### Requirement: The server starts censored, or strict, and keeps that mode
 
-`orchestrator serve` SHALL start in the `censored` mode unless it is given `--strict`, which starts the `strict` mode. The mode SHALL be fixed for the life of the process: no request, setting, environment variable or file SHALL change it while the server runs, and no request header or query SHALL ask for another. `scripts/serve.sh` SHALL start the server in the `censored` mode and in the `strict` mode when `STRICT=1`.
+`veritmo serve` SHALL start in the `censored` mode unless it is given `--strict`, which starts the `strict` mode. The mode SHALL be fixed for the life of the process: no request, setting, environment variable or file SHALL change it while the server runs, and no request header or query SHALL ask for another. `scripts/serve.sh` SHALL start the server in the `censored` mode and in the `strict` mode when `STRICT=1`.
 
 #### Scenario: the default
 - **WHEN** the server starts with no flag

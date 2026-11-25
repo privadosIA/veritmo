@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // Spec describes one generator: what its service is called, where its weights live and what it needs.
@@ -26,6 +26,8 @@ type Spec struct {
 	MinFreeMB int64
 	// Missing returns the weight files the service reads that are not in the weights folder (nothing when it is complete).
 	Missing func(dir string) []string
+	// ServiceMissing is the same for what only the .NET service reads, on top of Missing (nil: the service reads what the container does).
+	ServiceMissing func(dir string) []string
 	// Sends says what the user lets go to a service on another machine ("lyrics and tags").
 	Sends string
 	// Service describes the .NET service of the generator.
@@ -34,6 +36,18 @@ type Spec struct {
 	Docker DockerSpec
 	// Sizes is what each way of running it takes on disk (approximate).
 	Sizes Sizes
+}
+
+// MissingFor returns the weight files that are not in dir for a backend: what Missing says, plus ServiceMissing for the .NET service.
+func (sp Spec) MissingFor(backend, dir string) []string {
+	var out []string
+	if sp.Missing != nil {
+		out = sp.Missing(dir)
+	}
+	if backend != BackendDocker && sp.ServiceMissing != nil {
+		out = append(out, sp.ServiceMissing(dir)...)
+	}
+	return out
 }
 
 // Local is the engine as a service on this machine.

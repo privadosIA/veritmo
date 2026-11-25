@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/assemble"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/assemble"
+	"veritmo/internal/video/motion"
 )
 
 type execFFmpeg struct{ dir string }

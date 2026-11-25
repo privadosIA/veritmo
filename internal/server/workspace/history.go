@@ -15,8 +15,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
 )
 
 // RunState is where a run is in its life. It is written in the API and in the history as its text.

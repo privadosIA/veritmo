@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/servertest"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/servertest"
 )
 
 var (

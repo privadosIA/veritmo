@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/describe"
+	"veritmo/internal/assistant/describe"
 )
 
 // fakeAsker plays the vision model: answers is what it says to each question in turn (the last one repeats), minorAt is the

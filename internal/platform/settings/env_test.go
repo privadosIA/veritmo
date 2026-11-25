@@ -7,23 +7,23 @@ import (
 	"testing"
 )
 
-// mysqlEnv sets the MO_DB_* variables of a MySQL for the length of the test.
+// mysqlEnv sets the VERITMO_DB_* variables of a MySQL for the length of the test.
 func mysqlEnv(t *testing.T) {
 	t.Helper()
-	t.Setenv("MO_DB_DRIVER", "mysql")
-	t.Setenv("MO_DB_HOST", "db.internal")
-	t.Setenv("MO_DB_PORT", "")
-	t.Setenv("MO_DB_NAME", "mediaorquestator")
-	t.Setenv("MO_DB_USER", "mo")
-	t.Setenv("MO_DB_PASSWORD", "secret-from-env")
-	t.Setenv("MO_DB_PASSWORD_FILE", "")
+	t.Setenv("VERITMO_DB_DRIVER", "mysql")
+	t.Setenv("VERITMO_DB_HOST", "db.internal")
+	t.Setenv("VERITMO_DB_PORT", "")
+	t.Setenv("VERITMO_DB_NAME", "veritmo")
+	t.Setenv("VERITMO_DB_USER", "mo")
+	t.Setenv("VERITMO_DB_PASSWORD", "secret-from-env")
+	t.Setenv("VERITMO_DB_PASSWORD_FILE", "")
 }
 
 func TestDatabase_TheEnvironmentIsTheDefaultWhenNothingIsSaved(t *testing.T) {
 	isolate(t)
 	mysqlEnv(t)
 	d := GetDatabase()
-	if d.Driver != DBMySQL || d.Host != "db.internal" || d.Port != 3306 || d.Name != "mediaorquestator" || d.User != "mo" || d.Password != "secret-from-env" {
+	if d.Driver != DBMySQL || d.Host != "db.internal" || d.Port != 3306 || d.Name != "veritmo" || d.User != "mo" || d.Password != "secret-from-env" {
 		t.Fatalf("%+v", d)
 	}
 	if DatabaseSource() != FromEnv || SavedDatabase() != (Database{}) || CheckEnvDatabase() != nil {
@@ -62,13 +62,13 @@ func TestDatabase_WhatIsSavedWinsOverTheEnvironment(t *testing.T) {
 
 func TestDatabase_NoEnvironmentIsTheSQLiteFile(t *testing.T) {
 	isolate(t)
-	for _, k := range []string{"MO_DB_DRIVER", "MO_DB_HOST", "MO_DB_PORT", "MO_DB_NAME", "MO_DB_USER", "MO_DB_PASSWORD", "MO_DB_PASSWORD_FILE"} {
+	for _, k := range []string{"VERITMO_DB_DRIVER", "VERITMO_DB_HOST", "VERITMO_DB_PORT", "VERITMO_DB_NAME", "VERITMO_DB_USER", "VERITMO_DB_PASSWORD", "VERITMO_DB_PASSWORD_FILE"} {
 		t.Setenv(k, "")
 	}
 	if GetDatabase() != (Database{}) || DatabaseSource() != FromDefault || CheckEnvDatabase() != nil {
 		t.Fatal("no variable is the SQLite file")
 	}
-	t.Setenv("MO_DB_DRIVER", "sqlite")
+	t.Setenv("VERITMO_DB_DRIVER", "sqlite")
 	if GetDatabase() != (Database{}) {
 		t.Fatal("sqlite in the environment is the file")
 	}
@@ -77,16 +77,16 @@ func TestDatabase_NoEnvironmentIsTheSQLiteFile(t *testing.T) {
 func TestDatabase_ADescriptionThatIsNotValidIsAnErrorNotASilentFile(t *testing.T) {
 	isolate(t)
 	mysqlEnv(t)
-	t.Setenv("MO_DB_HOST", "")
+	t.Setenv("VERITMO_DB_HOST", "")
 	err := CheckEnvDatabase()
-	if err == nil || !strings.Contains(err.Error(), "MO_DB_") {
+	if err == nil || !strings.Contains(err.Error(), "VERITMO_DB_") {
 		t.Fatalf("%v", err)
 	}
 	if strings.Contains(err.Error(), "secret-from-env") {
 		t.Fatal("the error shows the password")
 	}
-	t.Setenv("MO_DB_HOST", "db")
-	t.Setenv("MO_DB_PORT", "abc")
+	t.Setenv("VERITMO_DB_HOST", "db")
+	t.Setenv("VERITMO_DB_PORT", "abc")
 	if CheckEnvDatabase() == nil {
 		t.Fatal("a port that is not a number is accepted")
 	}
@@ -102,24 +102,24 @@ func TestDatabase_ADescriptionThatIsNotValidIsAnErrorNotASilentFile(t *testing.T
 func TestDatabase_ThePasswordCanBeAFile(t *testing.T) {
 	isolate(t)
 	mysqlEnv(t)
-	t.Setenv("MO_DB_PASSWORD", "")
+	t.Setenv("VERITMO_DB_PASSWORD", "")
 	file := filepath.Join(t.TempDir(), "pw")
 	if err := os.WriteFile(file, []byte("secret-from-file\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("MO_DB_PASSWORD_FILE", file)
+	t.Setenv("VERITMO_DB_PASSWORD_FILE", file)
 	if GetDatabase().Password != "secret-from-file" {
 		t.Fatal("the password of the file is not used")
 	}
 	// the variable wins over the file; a file that cannot be read names the file and never a value
-	t.Setenv("MO_DB_PASSWORD", "from-variable")
+	t.Setenv("VERITMO_DB_PASSWORD", "from-variable")
 	if GetDatabase().Password != "from-variable" {
 		t.Fatal("the variable wins")
 	}
-	t.Setenv("MO_DB_PASSWORD", "")
-	t.Setenv("MO_DB_PASSWORD_FILE", filepath.Join(t.TempDir(), "missing"))
+	t.Setenv("VERITMO_DB_PASSWORD", "")
+	t.Setenv("VERITMO_DB_PASSWORD_FILE", filepath.Join(t.TempDir(), "missing"))
 	err := CheckEnvDatabase()
-	if err == nil || !strings.Contains(err.Error(), "MO_DB_PASSWORD_FILE") || strings.Contains(err.Error(), "secret") {
+	if err == nil || !strings.Contains(err.Error(), "VERITMO_DB_PASSWORD_FILE") || strings.Contains(err.Error(), "secret") {
 		t.Fatalf("%v", err)
 	}
 }
@@ -279,5 +279,28 @@ func TestEnv_EverySecretOfTheStackCanBeAFile(t *testing.T) {
 	}
 	if Ctxpress().Token != "cx-file-secret" {
 		t.Error("ctxpress token file")
+	}
+}
+
+// A deploy that still sets the MO_DB_* variables keeps its database (change rename-to-veritmo); when both names are set the new one wins.
+func TestDatabase_TheFormerMOVariablesAreStillRead(t *testing.T) {
+	isolate(t)
+	for _, k := range []string{"DRIVER", "HOST", "PORT", "NAME", "USER", "PASSWORD", "PASSWORD_FILE"} {
+		t.Setenv("VERITMO_DB_"+k, "")
+	}
+	t.Setenv("MO_DB_DRIVER", "mysql")
+	t.Setenv("MO_DB_HOST", "old.internal")
+	t.Setenv("MO_DB_NAME", "old-name")
+	t.Setenv("MO_DB_USER", "old-user")
+	t.Setenv("MO_DB_PASSWORD", "old-secret")
+	d := GetDatabase()
+	if d.Driver != DBMySQL || d.Host != "old.internal" || d.Name != "old-name" || d.User != "old-user" || d.Password != "old-secret" {
+		t.Fatalf("old names only: %+v", d)
+	}
+	t.Setenv("VERITMO_DB_NAME", "new-name")
+	t.Setenv("VERITMO_DB_PASSWORD", "new-secret")
+	d = GetDatabase()
+	if d.Name != "new-name" || d.Password != "new-secret" || d.Host != "old.internal" {
+		t.Fatalf("both set, the new one wins: %+v", d)
 	}
 }

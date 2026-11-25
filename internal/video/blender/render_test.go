@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // fakeRender makes the fake Blender write n frames into the folder it was told and report a device.
@@ -30,7 +30,7 @@ func fakeRender(t *testing.T, n int, device string) *runner.FakeRunner {
 		for i := 1; i <= n; i++ {
 			os.WriteFile(filepath.Join(dir, fmt.Sprintf("f_%06d.png", i)), []byte("png"), 0o644)
 		}
-		return runner.ScriptedResult{Stdout: []byte("Blender\nMO_DEVICE " + device + "\nMO_RANGE 1 " + fmt.Sprint(n) + "\n")}
+		return runner.ScriptedResult{Stdout: []byte("Blender\nVERITMO_DEVICE " + device + "\nVERITMO_RANGE 1 " + fmt.Sprint(n) + "\n")}
 	})
 	return fr
 }
@@ -110,7 +110,7 @@ func TestRender_EmptiesTheFramesFolderFirst(t *testing.T) {
 
 func TestRender_ShowsTheScriptsOwnError(t *testing.T) {
 	fr := runner.NewFakeRunner()
-	fr.Script(runner.ScriptedResult{Err: fmt.Errorf("exit status 1 (stderr: noise\nMO_ERROR inject: there is no text object, material or object property named 'Nope' in the file\n)")})
+	fr.Script(runner.ScriptedResult{Err: fmt.Errorf("exit status 1 (stderr: noise\nVERITMO_ERROR inject: there is no text object, material or object property named 'Nope' in the file\n)")})
 	// the fake returns the error as a whole: explain() works on the captured stderr, so check the fallback keeps it
 	_, err := Render(context.Background(), fr, "blender", Params{File: "a.blend", Dir: t.TempDir(), Out: "f", Width: 8, Height: 8, Count: 1}, nil)
 	if err == nil || !strings.Contains(err.Error(), "Nope") {
@@ -119,7 +119,7 @@ func TestRender_ShowsTheScriptsOwnError(t *testing.T) {
 }
 
 func TestExplainPrefersTheScriptsLine(t *testing.T) {
-	err := explain(fmt.Errorf("exit status 1"), "x\nMO_ERROR device: gpu was asked for\ny")
+	err := explain(fmt.Errorf("exit status 1"), "x\nVERITMO_ERROR device: gpu was asked for\ny")
 	if err.Error() != "device: gpu was asked for" {
 		t.Errorf("err = %v", err)
 	}
@@ -127,7 +127,7 @@ func TestExplainPrefersTheScriptsLine(t *testing.T) {
 
 func TestRender_NoFramesIsAnError(t *testing.T) {
 	fr := runner.NewFakeRunner()
-	fr.Script(runner.ScriptedResult{Stdout: []byte("MO_DEVICE CPU\n")})
+	fr.Script(runner.ScriptedResult{Stdout: []byte("VERITMO_DEVICE CPU\n")})
 	if _, err := Render(context.Background(), fr, "blender", Params{File: "a.blend", Dir: t.TempDir(), Out: "f", Width: 8, Height: 8, Count: 1}, nil); err == nil || !strings.Contains(err.Error(), "no frames") {
 		t.Errorf("err = %v", err)
 	}
@@ -316,7 +316,8 @@ func TestScript_TheBackdropIsAPlainMeshWithNoModifier(t *testing.T) {
 			t.Errorf("the builder is missing %q", want)
 		}
 	}
-	if strings.Contains(b, "modifiers") {
+	// the only modifiers of the builder are the F-curve modifiers that repeat a clip (fc.modifiers), never one of an object
+	if strings.Contains(b, "ob.modifiers") || strings.Contains(b, "modifier_add") || strings.Contains(b, "target.modifiers") {
 		t.Error("a backdrop has no modifier, so the .blend opens the same anywhere")
 	}
 }

@@ -8,7 +8,7 @@ import (
 // TestMain keeps the suite independent of the developer's own keys (see the one of package server) and lets the
 // test binary act as the fake service that installServices starts.
 func TestMain(m *testing.M) {
-	if mode := os.Getenv("MO_FAKE_SERVICE"); mode != "" { // started as a service by installServices
+	if mode := os.Getenv("VERITMO_FAKE_SERVICE"); mode != "" { // started as a service by installServices
 		runFakeService(mode)
 	}
 	home, err := os.MkdirTemp("", "music-test-home-")

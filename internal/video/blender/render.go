@@ -10,24 +10,24 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // EnvVar is the environment variable the script reads its settings from, as JSON. The values to inject travel only
 // here: they are never part of the script's text, so no text can break out of it.
-const EnvVar = "MO_BLENDER"
+const EnvVar = "VERITMO_BLENDER"
 
 // DescriptionFile is the name, inside the frames folder, of the resolved description the script reads.
 const DescriptionFile = "scene.json"
 
 // script is the whole of what runs inside Blender (passed inline, no file is written). It opens nothing itself: the
 // file is the one on the command line, with auto-execution of its scripts disabled.
-const script = `import bpy, os, sys, json, math
+const script = `import bpy, os, sys, json, math, mathutils
 
-cfg = json.loads(os.environ['MO_BLENDER'])
+cfg = json.loads(os.environ['VERITMO_BLENDER'])
 
 def die(msg):
-    print('MO_ERROR ' + msg, file=sys.stderr)
+    print('VERITMO_ERROR ' + msg, file=sys.stderr)
     sys.exit(1)
 
 scene = bpy.context.scene
@@ -241,6 +241,73 @@ def build_scene(path):
         if mat is not None and mplan:
             apply_eases(mat.node_tree, mplan)
 
+    def clip_matches(name, clip):
+        # a file imported twice gets its actions renamed clip.001, clip.002...
+        return name == clip or (name.startswith(clip + '.') and name[len(clip) + 1:].isdigit())
+
+    def import_model(o, size):
+        # A model of the sources (a .glb): imported by Blender's glTF importer, which runs no script, scaled so that its
+        # height is size, and put under an object named by its id that carries the keys. The clip is retimed in the action
+        # that came with the import, which this model owns because every model is imported by itself.
+        path = cfg.get('model_files', {}).get(o['file']) or os.path.join(cfg['sources'], o['file'])
+        before_objs = set(bpy.data.objects)
+        before_acts = set(bpy.data.actions)
+        try:
+            bpy.ops.import_scene.gltf(filepath=path)
+        except Exception as e:
+            die('model ' + o['id'] + ' (' + o['file'] + '): the import failed: ' + str(e).strip().splitlines()[-1])
+        new_objs = [x for x in bpy.data.objects if x not in before_objs]
+        new_acts = [a for a in bpy.data.actions if a not in before_acts]
+        for x in list(new_objs):
+            if x.type in ('CAMERA', 'LIGHT'):  # the scene's camera and lights are the description's, not the file's
+                bpy.data.objects.remove(x, do_unlink=True)
+                new_objs.remove(x)
+        outer = link(bpy.data.objects.new(o['id'], None))
+        inner = link(bpy.data.objects.new(o['id'] + '.size', None))
+        inner.parent = outer
+        for x in new_objs:
+            if x.parent is None:
+                x.parent = inner
+        bpy.context.view_layer.update()
+        # only what the render shows: the importer adds helper objects (an Icosphere used as a bone shape) in a hidden collection
+        meshes = [x for x in new_objs if x.type == 'MESH' and x.visible_get() and not x.hide_render]
+        pts = [x.matrix_world @ mathutils.Vector(c) for x in meshes for c in x.bound_box]
+        fit = o.get('fit', 'height')
+        # size is the height (the extent along Z) or the largest of the three extents of the model
+        ext = [max(p[i] for p in pts) - min(p[i] for p in pts) for i in range(3)] if pts else [0.0, 0.0, 0.0]
+        dim = ext[2] if fit == 'height' else max(ext)
+        if dim < 1e-6:
+            die('model ' + o['id'] + ' (' + o['file'] + '): it has no ' + ('height' if fit == 'height' else 'size') + ' to scale')
+        k = size / dim
+        inner.scale = (k, k, k)
+        a = o.get('animation')
+        if a:
+            acts = [x for x in new_acts if clip_matches(x.name, a['clip'])]
+            if not acts:
+                die('model ' + o['id'] + ' (' + o['file'] + '): the clip ' + repr(a['clip']) + ' was not found after the import')
+            for act in acts:
+                for slot in act.slots:
+                    target = bpy.data.objects.get(slot.identifier[2:])
+                    if target is None:
+                        continue
+                    target.animation_data_create()
+                    target.animation_data.action = act
+                    target.animation_data.action_slot = slot
+                    for layer in act.layers:
+                        for strip in layer.strips:
+                            cb = strip.channelbag(slot)
+                            if cb is None:
+                                continue
+                            for fc in cb.fcurves:
+                                shift = 1.0 + a['offset'] * fps  # scene second 0 is frame 1
+                                for kp in fc.keyframe_points:
+                                    for pt in (kp.co, kp.handle_left, kp.handle_right):
+                                        pt.x = pt.x / a['speed'] + shift
+                                fc.update()
+                                if a['loop']:
+                                    fc.modifiers.new('CYCLES')
+        return outer, meshes
+
     for o in spec.get('objects') or []:
         size = float(o['size'])
         keys = o.get('keys') or []
@@ -262,6 +329,8 @@ def build_scene(path):
             ob = link(bpy.data.objects.new(o['id'], cu))
         elif o['type'] == 'backdrop':
             ob = link(bpy.data.objects.new(o['id'], backdrop_mesh(o['id'], size, float(o['curve']))))
+        elif o['type'] == 'model':
+            ob, parts = import_model(o, size)
         else:
             ADD_MESH[o['type']](size)
             ob = bpy.context.view_layer.objects.active
@@ -274,7 +343,12 @@ def build_scene(path):
             if any('emission' in k for k in keys):
                 mat = mat.copy()  # its emission is this object's own, not shared with the others using the material
                 mat.name = o['id'] + '.' + o['material']
-            ob.data.materials.append(mat)
+            if o['type'] == 'model':
+                for part in parts:
+                    part.data.materials.clear()
+                    part.data.materials.append(mat)
+            else:
+                ob.data.materials.append(mat)
         key_object(ob, keys, mat)
 
     for i, l in enumerate(spec.get('lights') or []):
@@ -325,7 +399,7 @@ def build_scene(path):
         # of the file: they are set below, in this session only.
         bpy.ops.file.pack_all()
         bpy.ops.wm.save_as_mainfile(filepath=out, copy=True, compress=True)
-    print('MO_BUILT', out or '')
+    print('VERITMO_BUILT', out or '')
 
 if cfg.get('build'):
     try:
@@ -386,8 +460,8 @@ if used is None:
         die('device: gpu was asked for but Cycles sees no usable GPU (is a card given to the run, and is CUDA working?)')
     scene.cycles.device = 'CPU'
     used = 'CPU'
-print('MO_DEVICE', used)
-print('MO_RANGE', first, last)
+print('VERITMO_DEVICE', used)
+print('VERITMO_RANGE', first, last)
 
 r.filepath = os.path.join(cfg['out'], 'f_######')
 r.use_file_extension = True
@@ -420,8 +494,19 @@ type Params struct {
 	Fonts    map[string]string
 	BlendOut string
 	FPS      int
+	// ModelFiles is where each model file of the description is imported from (by its name in the sources): Render fills it
+	// with copies placed next to the pictures they need. A model that is not in it is imported from Sources.
+	ModelFiles map[string]string
 	// Frame, with Spec, renders only that frame (1-based) of the Count of the scene: what a preview needs. 0 renders them all.
 	Frame int
+}
+
+// sourcesDir is the sources folder as an absolute path ("" when the scene has none).
+func (p Params) sourcesDir() string {
+	if p.Sources != "" && !filepath.IsAbs(p.Sources) {
+		return filepath.Join(p.Dir, p.Sources)
+	}
+	return p.Sources
 }
 
 // Result says what the render did.
@@ -459,6 +544,9 @@ func (p Params) Settings(out string) ([]byte, error) {
 		}
 		// The description travels as a path: it can be larger than one environment string.
 		m["build"], m["sources"], m["blend_out"], m["fps"], m["fonts"] = build, sources, blend, p.FPS, fonts
+		if len(p.ModelFiles) > 0 {
+			m["model_files"] = p.ModelFiles
+		}
 		if p.Frame > 0 {
 			m["frame"] = p.Frame
 		}
@@ -510,6 +598,13 @@ func Render(ctx context.Context, r runner.CommandRunner, bin string, p Params, e
 			return Result{}, err
 		}
 	}
+	if p.Spec != nil {
+		staged, err := StageModels(p.Spec, p.sourcesDir(), filepath.Join(out, ModelsDir))
+		if err != nil {
+			return Result{}, err
+		}
+		p.ModelFiles = staged
+	}
 	settings, err := p.Settings(out)
 	if err != nil {
 		return Result{}, err
@@ -547,7 +642,7 @@ func Render(ctx context.Context, r runner.CommandRunner, bin string, p Params, e
 // explain puts the script's own error line first, when it left one.
 func explain(err error, stderr string) error {
 	for _, line := range strings.Split(stderr, "\n") {
-		if msg, ok := strings.CutPrefix(strings.TrimSpace(line), "MO_ERROR "); ok {
+		if msg, ok := strings.CutPrefix(strings.TrimSpace(line), "VERITMO_ERROR "); ok {
 			return fmt.Errorf("%s", msg)
 		}
 	}
@@ -567,9 +662,9 @@ func parseResult(out string) Result {
 	for _, line := range strings.Split(out, "\n") {
 		f := strings.Fields(line)
 		switch {
-		case len(f) == 2 && f[0] == "MO_DEVICE":
+		case len(f) == 2 && f[0] == "VERITMO_DEVICE":
 			res.Device = f[1]
-		case len(f) == 3 && f[0] == "MO_RANGE":
+		case len(f) == 3 && f[0] == "VERITMO_RANGE":
 			res.First, _ = strconv.Atoi(f[1])
 			res.Last, _ = strconv.Atoi(f[2])
 		}

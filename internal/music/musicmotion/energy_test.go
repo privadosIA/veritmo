@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
 )
 
 // loudChorusMap is longMap with a loudness curve: the chorus is loud, the rest quiet.

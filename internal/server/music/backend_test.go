@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/settings"
 )
 
 // dockerFake is a docker for the server's music tests: it answers the commands the container backend uses and remembers them.
@@ -139,7 +139,7 @@ func TestBackend_PrepareStopsTheOldOne(t *testing.T) {
 	if err := s.mHandler.PrepareBackend(ctx, "heartmula", "dotnet"); err != nil {
 		t.Fatal(err)
 	}
-	if !d.saw("rm -f mo-heartmula") {
+	if !d.saw("rm -f vt-heartmula") {
 		t.Errorf("the container is removed when the backend changes: %v", d.calls)
 	}
 	// saving the backend that is already in use stops nothing
@@ -174,7 +174,7 @@ func TestBackend_StartRunsTheContainerAndRemovesOneThatDoesNotGetReady(t *testin
 		t.Fatalf("start: %d %s", rec.Code, rec.Body)
 	}
 	waitUntil(t, func() bool { a := getEngines(t, s); return a.Container != nil && a.Container.Error != "" })
-	if !d.saw("run -d --name mo-heartmula --restart no --gpus device=1 -p 127.0.0.1:8787:8787") {
+	if !d.saw("run -d --name vt-heartmula --restart no --gpus device=1 -p 127.0.0.1:8787:8787") {
 		t.Errorf("docker run: %v", d.calls)
 	}
 	d.mu.Lock()

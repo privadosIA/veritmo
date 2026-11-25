@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/motionref"
+	"veritmo/internal/music/motionref"
 )
 
 // shotsAsker is the vision model of the tests: it notes the state the reference was in at each question.

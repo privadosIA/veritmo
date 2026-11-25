@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/project/importer"
+	"veritmo/internal/project/importer"
 )
 
 const exportYAML = `project: demo

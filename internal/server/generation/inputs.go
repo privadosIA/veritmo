@@ -4,7 +4,7 @@ package generation
 // options say which inputs each one accepts"): a first and a last picture, and references. What an option takes is a
 // property of its engine and bundle; how many references fit is a property of the card.
 
-import "mediaOrquestator/internal/project/config"
+import "veritmo/internal/project/config"
 
 // inputLimit is how many files of a kind an option takes and, for videos and audios, how long each may be.
 type inputLimit struct {
@@ -21,6 +21,8 @@ type generationInputs struct {
 	ReferenceImages *inputLimit `json:"reference_images,omitempty"`
 	ReferenceVideos *inputLimit `json:"reference_videos,omitempty"`
 	ReferenceAudios *inputLimit `json:"reference_audios,omitempty"`
+	// Scene says the option takes the description of a 3D scene in the request (`blender.description`), and no picture.
+	Scene bool `json:"scene,omitempty"`
 }
 
 // referenceResolution is the resolution a clip made with references is planned at, on every card: the one the limits

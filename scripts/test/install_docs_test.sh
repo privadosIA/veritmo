@@ -2,14 +2,19 @@
 # The installer and docs/INSTALL.md agree: every component's anchor is a heading of the guide,
 # and every component is in the guide's component table.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
-source "$TEST_REPO/scripts/lib/install-lib.sh"
-
 sandbox
+# after the sandbox: the library moves the cache directory of the former name when it is loaded, and that must be the sandbox's HOME, not the real one
+source "$TEST_REPO/scripts/lib/install-lib.sh"
 mkdir -p "$T_DIR/tree"
 cp -r "$TEST_REPO/docs" "$T_DIR/tree/docs"
 cp "$TEST_REPO/README.md" "$T_DIR/tree/README.old"
 # docs link to files at the repository root (../THIRD_PARTY.md), so the copy needs them too
 cp "$TEST_REPO/THIRD_PARTY.md" "$T_DIR/tree/THIRD_PARTY.md"
+# and to a few files deeper in the tree (the workflow that migrates, the API description)
+for f in .gitea/workflows/migrar.yml internal/server/openapi.yaml; do
+    [[ -f "$TEST_REPO/$f" ]] || continue
+    mkdir -p "$T_DIR/tree/$(dirname "$f")"; cp "$TEST_REPO/$f" "$T_DIR/tree/$f"
+done
 {
     echo "# probe"
     for id in "${IL_COMPONENTS[@]}"; do

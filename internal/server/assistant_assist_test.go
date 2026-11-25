@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/server/api"
 )
 
 // assistServer is a server whose assistant is a counting fake.

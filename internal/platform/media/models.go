@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"mediaOrquestator/internal/platform/fsutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+	"veritmo/internal/platform/fsutil"
+	"veritmo/internal/platform/legacyname"
 )
 
 // ModelsSettingFile is the user file that names the models directory when neither the flag nor MODELS_DIR does.
 const ModelsSettingFile = "models-dir"
 
 // ResolveModelsDir gives the models directory: the flag, else MODELS_DIR, else the first line of
-// <config dir>/mediaorquestator/models-dir. "" means none (models/ stays where it is); MODELS_DIR=off ignores the file.
+// <config dir>/veritmo/models-dir. "" means none (models/ stays where it is); MODELS_DIR=off ignores the file.
 func ResolveModelsDir(flagValue string, getenv func(string) string, configDir string) string {
 	if v := strings.TrimSpace(flagValue); v != "" {
 		return v
@@ -33,7 +34,7 @@ func ResolveModelsDir(flagValue string, getenv func(string) string, configDir st
 	if configDir == "" {
 		return ""
 	}
-	b, err := os.ReadFile(filepath.Join(configDir, "mediaorquestator", ModelsSettingFile))
+	b, err := os.ReadFile(filepath.Join(legacyname.Dir(configDir), ModelsSettingFile))
 	if err != nil {
 		return ""
 	}
@@ -79,16 +80,16 @@ func CheckModels(root, dir string) ModelsState {
 	fi, err := os.Lstat(link)
 	switch {
 	case err != nil:
-		st.Reason = "models/ does not exist: run `orchestrator models migrate`"
+		st.Reason = "models/ does not exist: run `veritmo models migrate`"
 	case fi.Mode()&os.ModeSymlink == 0:
-		st.Reason = "models/ is still a real folder: run `orchestrator models migrate`"
+		st.Reason = "models/ is still a real folder: run `veritmo models migrate`"
 	default:
 		a, e1 := filepath.EvalSymlinks(link)
 		b, e2 := filepath.EvalSymlinks(dir)
 		if e1 == nil && e2 == nil && a == b {
 			st.Linked = true
 		} else {
-			st.Reason = "models/ leads somewhere other than the models directory: run `orchestrator models migrate`"
+			st.Reason = "models/ leads somewhere other than the models directory: run `veritmo models migrate`"
 		}
 	}
 	return st

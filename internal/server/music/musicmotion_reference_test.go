@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
 )
 
 const sheetParagraph = "Cuts: 9, 14, 6/min by thirds; first cut at 2.1 s; median shot 2.1 s; test sheet."

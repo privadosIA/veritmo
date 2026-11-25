@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/server/api"
 )
 
 // DoJSON sends a request with body (nil for none) encoded as JSON and returns the recorded answer.

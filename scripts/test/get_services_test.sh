@@ -11,6 +11,8 @@ setup() {
              dotnet/diffrhythm2/src/DiffRhythm2.Cli/DiffRhythm2.Cli.csproj \
              dotnet/lion-clap/src/LionClap.Service/LionClap.Service.csproj \
              dotnet/video-vision/src/VideoVision.Service/VideoVision.Service.csproj \
+             dotnet/triposr/src/TripoSR.Service/TripoSR.Service.csproj \
+             dotnet/stable-fast-3d/src/StableFast3D.Service/StableFast3D.Service.csproj \
              dotnet/heartmula/src/HeartMuLa.Net.Server/HeartMuLa.Net.Server.csproj; do
         fake_repo_file "$p" "<Project/>"
     done

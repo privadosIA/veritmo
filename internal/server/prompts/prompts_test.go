@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	pstore "mediaOrquestator/internal/platform/store"
-	store "mediaOrquestator/internal/prompts"
+	pstore "veritmo/internal/platform/store"
+	store "veritmo/internal/prompts"
 )
 
 // fakeHost is a server over a database in memory: db is its store of presets, and a second handle on the same database (store.NewDB(st)) plays the
@@ -349,5 +349,54 @@ func TestPrompts_TheBestMatchComesFirstAndTagsAreMatchedWhole(t *testing.T) {
 	}
 	if a := list(t, m, "?tags=ca"); a.Total != 0 {
 		t.Fatalf("%+v", a.Items)
+	}
+}
+
+func TestPrompts_TheKindModel3DIsOneMoreKind(t *testing.T) {
+	m := mux(New(newHost(t)))
+	rec := call(t, m, http.MethodPost, "/api/prompts", map[string]any{"kind": "model3d", "title": "Skate", "prompt": "a glossy pink roller skate, studio render", "tags": []string{"props"}})
+	var p Preset
+	_ = json.Unmarshal(rec.Body.Bytes(), &p)
+	if rec.Code != http.StatusCreated || p.Kind != "model3d" || !p.Own {
+		t.Fatalf("%d %s", rec.Code, rec.Body)
+	}
+	if a := list(t, m, "?kind=model3d&q=skate"); a.Total != 1 || a.Items[0].ID != p.ID {
+		t.Errorf("search: %+v", a)
+	}
+	if a := list(t, m, "?kind=model3d&tags=props"); a.Total != 1 {
+		t.Errorf("by tag: %+v", a)
+	}
+	if a := list(t, m, "?kind=image"); a.Total != 0 {
+		t.Errorf("not in another kind: %+v", a)
+	}
+	// update and delete like the others; the kind cannot change
+	if rec := call(t, m, http.MethodPut, "/api/prompts/"+p.ID, map[string]any{"prompt": "a glossy pink roller skate on its own"}); rec.Code != http.StatusOK {
+		t.Errorf("update: %d %s", rec.Code, rec.Body)
+	}
+	if rec := call(t, m, http.MethodPut, "/api/prompts/"+p.ID, map[string]any{"kind": "image", "prompt": "x"}); rec.Code != http.StatusBadRequest {
+		t.Errorf("the kind of a preset cannot be changed: %d", rec.Code)
+	}
+	// a bundle with items of the kind is added; the same bundle again is already there
+	b := bundle(map[string]any{"kind": "model3d", "title": "Chair", "prompt": "a wooden chair", "source": "mine", "source_id": "1", "licence": "CC0"},
+		map[string]any{"kind": "model3d", "title": "Lamp", "prompt": "a brass desk lamp", "source": "mine", "source_id": "2", "licence": "CC0"})
+	rec = call(t, m, http.MethodPost, "/api/prompts/import", b)
+	var a struct{ Added, Already int }
+	_ = json.Unmarshal(rec.Body.Bytes(), &a)
+	if rec.Code != http.StatusOK || a.Added != 2 {
+		t.Fatalf("%d %s", rec.Code, rec.Body)
+	}
+	if rec := call(t, m, http.MethodPost, "/api/prompts/import", b); !strings.Contains(rec.Body.String(), `"already":2`) {
+		t.Errorf("again: %s", rec.Body)
+	}
+	if got := list(t, m, "?kind=model3d"); got.Total != 3 {
+		t.Errorf("the kind has its three: %+v", got)
+	}
+	if rec := call(t, m, http.MethodDelete, "/api/prompts/"+p.ID, nil); rec.Code != http.StatusNoContent {
+		t.Errorf("delete: %d", rec.Code)
+	}
+	// a kind that is none lists the accepted ones, now with this one
+	rec = call(t, m, http.MethodGet, "/api/prompts?kind=audio", nil)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "model3d") {
+		t.Errorf("an unknown kind: %d %s", rec.Code, rec.Body)
 	}
 }

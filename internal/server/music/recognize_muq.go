@@ -12,9 +12,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/clap"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/clap"
+	"veritmo/internal/server/api"
 )
 
 const (

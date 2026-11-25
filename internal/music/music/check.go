@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/platform/probe"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/probe"
+	"veritmo/internal/platform/runner"
 )
 
 // Thresholds of the automatic checks of a finished song.

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/video/motion"
 )
 
 // sceneProject is a video project with the scenes given (a block of YAML, indented as the scenes are) and the extra lines

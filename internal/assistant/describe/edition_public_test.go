@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"mediaOrquestator/internal/platform/edition"
+	"veritmo/internal/platform/edition"
 )
 
 // What the editions change: the public one has no "more detail" descriptor and

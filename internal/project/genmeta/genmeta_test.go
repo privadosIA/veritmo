@@ -11,7 +11,7 @@ import (
 	"testing"
 	"unicode/utf16"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // The exact text stable-diffusion.cpp wrote into a PNG and into a clip's

@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"strings"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
 )
 
 const chooseSystem = `You choose a part of a catalog of animated parts for one scene of a video, and fill in its parameters.

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/video/motion"
 )
 
 // gsapOrSkip points the page builder at the repository's GSAP file and a browser, or skips: both are needed to check a part.

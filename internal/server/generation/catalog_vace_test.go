@@ -3,7 +3,7 @@ package generation
 import (
 	"testing"
 
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/video/videoedit"
 )
 
 func TestCatalogVace_TheMotionControlModelIsThreeFilesTheToolReadsAndNoGenerationOption(t *testing.T) {

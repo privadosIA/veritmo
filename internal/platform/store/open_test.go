@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/settings"
 )
 
 type openProbe struct {

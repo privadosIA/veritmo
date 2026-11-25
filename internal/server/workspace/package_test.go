@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/video/motion"
 )
 
 const packageYAML = `project: Chicas Patines

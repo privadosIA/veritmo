@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"mediaOrquestator/internal/music/music"
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/probe"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/assemble"
+	"veritmo/internal/music/music"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/probe"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/assemble"
 )
 
 // bgmKey is the manifest key of the generated soundtrack.

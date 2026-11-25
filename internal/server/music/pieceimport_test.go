@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/store"
 )
 
 func writePieceFolder(t *testing.T, root string, info pieceInfo, docs map[string]string) string {

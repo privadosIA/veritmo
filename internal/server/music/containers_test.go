@@ -12,13 +12,13 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"mediaOrquestator/internal/music/clap"
-	"mediaOrquestator/internal/music/diffrhythm2"
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/music/clap"
+	"veritmo/internal/music/diffrhythm2"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/videovision"
 )
 
 // runFakeService is what the test binary does when the server starts it as a service (see TestMain and
@@ -41,7 +41,7 @@ func runFakeService(mode string) {
 }
 
 // installServices installs the four services in a temporary folder, with the test binary standing in for dotnet
-// (it answers ready, or stays silent when MO_FAKE_SERVICE says so), and stops what a test started.
+// (it answers ready, or stays silent when VERITMO_FAKE_SERVICE says so), and stops what a test started.
 func installServices(t *testing.T, s *testServer) {
 	t.Helper()
 	exe, err := os.Executable()
@@ -59,7 +59,7 @@ func installServices(t *testing.T, s *testServer) {
 			t.Fatal(err)
 		}
 	}
-	t.Setenv("MO_FAKE_SERVICE", "ready")
+	t.Setenv("VERITMO_FAKE_SERVICE", "ready")
 	s.Services = host
 	t.Cleanup(func() {
 		for _, sp := range specs {
@@ -132,7 +132,7 @@ func TestContainers_StartAndStopFromTheEnvironment(t *testing.T) {
 
 func TestContainers_AStartThatFailsLeavesItStoppedWithTheError(t *testing.T) {
 	s := containerServer(t)
-	t.Setenv("MO_FAKE_SERVICE", "silent") // the service starts but never says ready
+	t.Setenv("VERITMO_FAKE_SERVICE", "silent") // the service starts but never says ready
 	oldT, oldP := heartmula.StartTimeout, heartmula.PollEvery
 	heartmula.StartTimeout, heartmula.PollEvery = 300*1e6, 50*1e6
 	t.Cleanup(func() { heartmula.StartTimeout, heartmula.PollEvery = oldT, oldP })
@@ -164,7 +164,7 @@ func TestContainers_ARunIsRefusedWhileItsServiceIsStopped(t *testing.T) {
 	if lerr := s.containerPreflight(musicConfig(config.GeneratorACEStep)); lerr != nil {
 		t.Errorf("ACE-Step has no service: %+v", lerr)
 	}
-	t.Setenv("MO_FAKE_SERVICE", "silent")
+	t.Setenv("VERITMO_FAKE_SERVICE", "silent")
 	startFake(t, s, heartmula.Spec(), 1)
 	if lerr := s.containerPreflight(musicConfig(config.GeneratorHeartMuLa)); lerr != nil {
 		t.Errorf("running: %+v", lerr)
@@ -173,7 +173,7 @@ func TestContainers_ARunIsRefusedWhileItsServiceIsStopped(t *testing.T) {
 
 func TestContainers_ItIsNotStoppedWhileARunUsesIt(t *testing.T) {
 	s := containerServer(t)
-	t.Setenv("MO_FAKE_SERVICE", "silent")
+	t.Setenv("VERITMO_FAKE_SERVICE", "silent")
 	startFake(t, s, heartmula.Spec(), 1)
 	releaseRun := s.Workspace.SimulateRun("r1", musicConfig(config.GeneratorHeartMuLa))
 	if rec := doJSON(t, s.Handler(), http.MethodPost, "/api/music/engines/heartmula/stop", nil); rec.Code != http.StatusConflict {
@@ -228,7 +228,7 @@ func TestContract_StartAndStopListEveryEngine(t *testing.T) {
 func TestMetrics_ReportsTheMusicServices(t *testing.T) {
 	s := containerServer(t)
 	h := s.Handler()
-	if rec := doJSON(t, h, http.MethodGet, "/api/metrics", nil); !strings.Contains(rec.Body.String(), `mediaorquestator_music_service_running{service="heartmula"} 0`) {
+	if rec := doJSON(t, h, http.MethodGet, "/api/metrics", nil); !strings.Contains(rec.Body.String(), `veritmo_music_service_running{service="heartmula"} 0`) {
 		t.Fatalf("stopped: %s", rec.Body)
 	}
 	if rec := doJSON(t, h, http.MethodPost, "/api/music/engines/heartmula/start", map[string]any{"gpu": 1}); rec.Code != http.StatusAccepted {
@@ -236,6 +236,6 @@ func TestMetrics_ReportsTheMusicServices(t *testing.T) {
 	}
 	waitUntil(t, func() bool {
 		rec := doJSON(t, h, http.MethodGet, "/api/metrics", nil)
-		return strings.Contains(rec.Body.String(), `mediaorquestator_music_service_running{service="heartmula"} 1`)
+		return strings.Contains(rec.Body.String(), `veritmo_music_service_running{service="heartmula"} 1`)
 	})
 }

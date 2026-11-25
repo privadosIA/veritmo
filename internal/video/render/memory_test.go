@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 const oomError = "runner: sd --diffusion-model m.safetensors -W 1280 -H 704: exit status 1 (stderr: [E] krea2 segment 1/29 (krea2.blocks.0) failed during weight preparation --- ggml_runner.cpp:898)"

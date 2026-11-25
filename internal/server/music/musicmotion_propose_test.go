@@ -4,18 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"mediaOrquestator/internal/music/musicmotion"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+	"veritmo/internal/music/musicmotion"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/server/workspace"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/server/workspace"
+	"veritmo/internal/video/motion"
 )
 
 const designAnswer = `{"dark":"#0b0f14","light":"#e8f1ec","accent":"#ff2e54","display":"heavy","body":"grotesk","default_mode":"dark","concept":"a stage light that follows the voice"}`

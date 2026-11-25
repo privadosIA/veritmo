@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 func editCfg(edit bool) *config.Config {

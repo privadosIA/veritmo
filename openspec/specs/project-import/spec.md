@@ -78,3 +78,19 @@ In motion mode an entry with `Part:` SHALL appear in its report's `mapped` list 
 #### Scenario: Preview of an entry with a part
 - **WHEN** an entry has `Part: ticker`
 - **THEN** its `mapped` list holds exactly one `motion_part` line
+
+### Requirement: The import carries the descriptions of 3D scenes
+
+`POST /api/import/preview` and `POST /api/import/confirm` SHALL accept an optional `descriptions` object whose keys are plain `.scene.json` names and whose values are descriptions of a 3D scene (at most 20 and 1 MB in all). The preview SHALL check each one with the checks of a hand-written description, report a problem per file, and warn of every `Blender:` line whose file is neither given nor needs to exist at confirm. The confirmation SHALL write each description as `sources/<name>` of the new project before the project is validated, and SHALL create nothing when one does not pass (`422` naming the file) or when a scene names a file that is not in `sources/` (`422` from the project's own validation). A name SHALL never be a path, and a file the import does not name SHALL be refused.
+
+#### Scenario: The description travels with the scenes
+- **WHEN** the confirmation has a scene with `blender.build: hola.scene.json` and `descriptions` has that file
+- **THEN** the project exists with `sources/hola.scene.json` and it validates
+
+#### Scenario: The file is missing
+- **WHEN** a `Blender:` line names `hola.scene.json` and no description is given
+- **THEN** the preview warns, and the confirmation answers `422` and creates no project
+
+#### Scenario: A description that does not pass
+- **WHEN** a given description breaks a rule of the contract
+- **THEN** the preview reports the problems of that file and the confirmation answers `422` with nothing created

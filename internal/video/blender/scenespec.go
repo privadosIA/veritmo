@@ -97,6 +97,12 @@ type Env struct {
 	Palette Palette
 	// Sources is the sources folder, where the .ttf and .otf fonts a text names must be ("" skips that check).
 	Sources string
+	// NoFiles says the description has no sources folder at all (a scene written or checked with no project): a text can
+	// only name a role of the design, and a font file is refused.
+	NoFiles bool
+	// NoFontFiles says a text can only name a role of the design, even when there are sources (a piece of a music motion
+	// script has the files of its models but takes its fonts from the song's design).
+	NoFontFiles bool
 	// BPM is the project's tempo (defaults.motion.bpm), 0 when it has none: a key in beats is refused then.
 	BPM float64
 	// DesignFonts says which of the roles "display" and "body" the project's design has a font for in the server's pack.
@@ -166,8 +172,38 @@ type ObjectSpec struct {
 	Font     string   `json:"font,omitempty"`
 	// Curve is the radius, in metres, of the quarter circle that joins the floor and the wall of a backdrop.
 	Curve *float64 `json:"curve,omitempty"`
-	Keys  []Key    `json:"keys,omitempty"`
+	// File is the .glb of the sources a model places, and Animation the clip of it that plays (only for type model).
+	File      string         `json:"file,omitempty"`
+	Animation *AnimationSpec `json:"animation,omitempty"`
+	// Fit says which dimension of a model Size is: FitHeight (the default) or FitLargest (only for type model).
+	Fit  string `json:"fit,omitempty"`
+	Keys []Key  `json:"keys,omitempty"`
 }
+
+// AnimationSpec is the clip a model plays: one of the animations its file carries. Speed multiplies how fast it plays
+// (1 when absent), Loop repeats it for the whole scene (true when absent) and Offset delays it, in seconds (0 when absent).
+type AnimationSpec struct {
+	Clip   string   `json:"clip"`
+	Speed  *float64 `json:"speed,omitempty"`
+	Loop   *bool    `json:"loop,omitempty"`
+	Offset *float64 `json:"offset,omitempty"`
+}
+
+// The range of the speed of a clip.
+const (
+	MinClipSpeed = 0.1
+	MaxClipSpeed = 4.0
+)
+
+// The values of Fit: which dimension of a model its size is.
+const (
+	FitHeight  = "height"
+	FitLargest = "largest"
+)
+
+// ModelType is the type of an object that places a .glb of the sources. It is not in the table of primitives the writer's
+// prompt is made from: the writer is told about it only when the project has models.
+const ModelType = "model"
 
 // Key is a keyframe: the channels it gives are keyed at T seconds (or at Beat, converted to T while checking), the
 // others are left as the previous key had them.
@@ -300,6 +336,7 @@ func Parse(data []byte, sceneSeconds float64, env Env) (*Spec, error) {
 		return nil, c.problems
 	}
 	s.resolveColours(env.Palette)
+	s.resolveAnimations()
 	return s, nil
 }
 
@@ -320,7 +357,34 @@ func Resolve(data []byte, env Env) (*Spec, error) {
 		}
 	}
 	s.resolveColours(env.Palette)
+	s.resolveAnimations()
 	return s, nil
+}
+
+// resolveAnimations writes the defaults of every model (its fit, and the speed, loop and offset of its clip), so that two descriptions
+// that say the same thing in two ways have the same cache key and the script reads every field.
+func (s *Spec) resolveAnimations() {
+	for i := range s.Objects {
+		if s.Objects[i].Type == ModelType && s.Objects[i].Fit == "" {
+			s.Objects[i].Fit = FitHeight
+		}
+		a := s.Objects[i].Animation
+		if a == nil {
+			continue
+		}
+		if a.Speed == nil {
+			one := 1.0
+			a.Speed = &one
+		}
+		if a.Loop == nil {
+			yes := true
+			a.Loop = &yes
+		}
+		if a.Offset == nil {
+			zero := 0.0
+			a.Offset = &zero
+		}
+	}
 }
 
 // allKeys is the key lists of the camera and of every object (slices that share their array with the Spec).
@@ -389,6 +453,8 @@ type checker struct {
 	seconds  float64
 	env      Env
 	problems Problems
+	// models caches what the files of the sources say, by name (nil when the file could not be read).
+	models map[string]*Model
 }
 
 func (c *checker) bad(path, format string, a ...any) {
@@ -486,7 +552,7 @@ func (c *checker) check(s *Spec) {
 		c.bad("objects", "at most %d objects, got %d", MaxObjects, len(s.Objects))
 	}
 	seen := map[string]bool{}
-	backdrops := 0
+	backdrops, models := 0, 0
 	for i, o := range s.Objects {
 		p := fmt.Sprintf("objects[%d]", i)
 		switch {
@@ -502,8 +568,14 @@ func (c *checker) check(s *Spec) {
 				c.bad(p+".type", "a scene has at most one backdrop")
 			}
 		}
-		if !objectTypes[o.Type] {
-			c.bad(p+".type", "%q is not text, cube, sphere, cylinder, cone, torus, plane or backdrop", o.Type)
+		if o.Type == ModelType {
+			models++
+			if models == MaxModels+1 {
+				c.bad("objects", "at most %d models, got more", MaxModels)
+			}
+		}
+		if !objectTypes[o.Type] && o.Type != ModelType {
+			c.bad(p+".type", "%q is not text, cube, sphere, cylinder, cone, torus, plane, backdrop or model", o.Type)
 		}
 		switch {
 		case o.Size == nil:
@@ -521,6 +593,13 @@ func (c *checker) check(s *Spec) {
 			c.backdrop(p, o)
 		case o.Curve != nil:
 			c.bad(p+".curve", "curve is only for objects of type backdrop")
+		}
+		if o.Type == ModelType {
+			c.model(p, o)
+		} else if o.File != "" || o.Animation != nil {
+			c.bad(p, "file and animation are only for objects of type model")
+		} else if o.Fit != "" {
+			c.bad(p+".fit", "fit is only for objects of type model")
 		}
 		if o.Type == "text" {
 			c.text(p, o)
@@ -544,6 +623,122 @@ func (c *checker) backdrop(p string, o ObjectSpec) {
 	if math.IsNaN(*o.Curve) || *o.Curve < 0.1 || *o.Curve > *o.Size/2 {
 		c.bad(p+".curve", "%v is outside 0.1 to %v (half of the size)", *o.Curve, *o.Size/2)
 	}
+}
+
+// model checks an object of type model: its file (a plain .glb name of the sources that exists, is a valid binary glTF
+// and is not too heavy) and the clip it plays (one the file has).
+func (c *checker) model(p string, o ObjectSpec) {
+	if o.Fit != "" && o.Fit != FitHeight && o.Fit != FitLargest {
+		c.bad(p+".fit", "%q is not height or largest", o.Fit)
+	}
+	if o.File == "" {
+		c.bad(p+".file", "is required for a model")
+		return
+	}
+	if o.File != filepath.Base(o.File) || strings.ContainsAny(o.File, `/\`) || o.File == "." || o.File == ".." || strings.ToLower(filepath.Ext(o.File)) != ModelExt {
+		c.bad(p+".file", "%q must be the plain name of a %s file of the sources", o.File, ModelExt)
+		return
+	}
+	if c.env.NoFiles {
+		c.bad(p+".file", "models are files of a project's sources, and this scene has no project to hold %q", o.File)
+		return
+	}
+	if a := o.Animation; a != nil {
+		if a.Clip == "" {
+			c.bad(p+".animation.clip", "is required")
+		}
+		if a.Speed != nil && (math.IsNaN(*a.Speed) || *a.Speed < MinClipSpeed || *a.Speed > MaxClipSpeed) {
+			c.bad(p+".animation.speed", "%v is outside %v to %v", *a.Speed, MinClipSpeed, MaxClipSpeed)
+		}
+		if a.Offset != nil && (math.IsNaN(*a.Offset) || *a.Offset < 0 || *a.Offset > c.seconds) {
+			c.bad(p+".animation.offset", "%v is outside the scene (0 to %v s)", *a.Offset, c.seconds)
+		}
+	}
+	if c.env.Sources == "" {
+		return
+	}
+	m, err := c.readModel(o.File)
+	if err != nil {
+		c.bad(p+".file", "%s", err)
+		return
+	}
+	if m.Triangles > MaxModelTriangles {
+		c.bad(p+".file", "%q has %d triangles, at most %d", o.File, m.Triangles, MaxModelTriangles)
+	}
+	for _, need := range m.Needs {
+		if err := needPicture(c.env.Sources, o.File, need); err != nil {
+			c.bad(p+".file", "%s", err)
+		}
+	}
+	if a := o.Animation; a != nil && a.Clip != "" {
+		switch {
+		case len(m.Clips) == 0:
+			c.bad(p+".animation.clip", "%s has no clips", o.File)
+		case !m.HasClip(a.Clip):
+			c.bad(p+".animation.clip", "%q is not in %s (clips: %s)", a.Clip, o.File, strings.Join(m.Clips, ", "))
+		}
+	}
+}
+
+// readModel reads a model of the sources once per check. The error is worded for a description: it names the file and
+// the reason.
+func (c *checker) readModel(name string) (*Model, error) {
+	if m, ok := c.models[name]; ok {
+		if m == nil {
+			return nil, fmt.Errorf("the model %q was already refused", name)
+		}
+		return m, nil
+	}
+	if c.models == nil {
+		c.models = map[string]*Model{}
+	}
+	m, err := readSourceModel(c.env.Sources, name)
+	c.models[name] = m
+	return m, err
+}
+
+// resolveInSources is the real path of the file name of the sources folder, refusing a link that leads out of the folder.
+// what names it in the messages ("the model", "the picture").
+func resolveInSources(sources, name, what string) (string, error) {
+	dir, err := filepath.EvalSymlinks(sources)
+	if err != nil {
+		return "", fmt.Errorf("%s %q was not found: the sources folder cannot be read", what, name)
+	}
+	file, err := filepath.EvalSymlinks(filepath.Join(sources, name))
+	if err != nil {
+		return "", fmt.Errorf("%s %q was not found in the sources", what, name)
+	}
+	if rel, err := filepath.Rel(dir, file); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("%s %q resolves outside the sources", what, name)
+	}
+	return file, nil
+}
+
+// readSourceModel reads the model name of the sources folder.
+func readSourceModel(sources, name string) (*Model, error) {
+	file, err := resolveInSources(sources, name, "the model")
+	if err != nil {
+		return nil, err
+	}
+	m, err := ReadModel(file)
+	if err != nil {
+		return nil, fmt.Errorf("the model %q: %w", name, err)
+	}
+	return m, nil
+}
+
+// pictureExts are the picture formats a model's textures can be.
+var pictureExts = map[string]bool{".png": true, ".jpg": true, ".jpeg": true, ".webp": true}
+
+// needPicture checks that a picture a model refers to is a picture of the sources: a plain picture name that exists.
+func needPicture(sources, model, name string) error {
+	if name != filepath.Base(name) || !pictureExts[strings.ToLower(filepath.Ext(name))] {
+		return fmt.Errorf("%s needs %q, which is not a .png, .jpg, .jpeg or .webp picture", model, name)
+	}
+	if _, err := resolveInSources(sources, name, "the picture"); err != nil {
+		return fmt.Errorf("%s needs the picture %s, which is not in the sources", model, name)
+	}
+	return nil
 }
 
 func (c *checker) text(p string, o ObjectSpec) {
@@ -575,6 +770,14 @@ func (c *checker) font(p, name string) {
 	ext := strings.ToLower(filepath.Ext(name))
 	if name != filepath.Base(name) || strings.ContainsAny(name, `/\`) || name == "." || name == ".." || (ext != ".ttf" && ext != ".otf") {
 		c.bad(p, "%q must be display, body, or the name of a .ttf or .otf file of the sources", name)
+		return
+	}
+	if c.env.NoFiles {
+		c.bad(p, "the font %q is a file of the sources, and this scene has no project to hold it", name)
+		return
+	}
+	if c.env.NoFontFiles {
+		c.bad(p, "the font %q is a file: this scene takes its fonts from the design (display or body)", name)
 		return
 	}
 	if c.env.Sources == "" {
@@ -710,6 +913,55 @@ func (s *Spec) FontsHash(sourcesDir string) string {
 		}
 		_, _ = io.Copy(h, f)
 		f.Close()
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// Models is the names of the model files of the sources the description uses, sorted and without repeats.
+func (s *Spec) Models() []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, o := range s.Objects {
+		if o.Type == ModelType && o.File != "" && !seen[o.File] {
+			seen[o.File] = true
+			out = append(out, o.File)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// ModelsHash is one SHA-256 over the content of the model files of the sources the description uses and of the pictures
+// they need (found in sourcesDir), or "" when it uses none: a model or a texture replaced by another with the same name
+// changes it.
+func (s *Spec) ModelsHash(sourcesDir string) string {
+	models := s.Models()
+	if len(models) == 0 {
+		return ""
+	}
+	h := sha256.New()
+	for _, name := range models {
+		h.Write([]byte(name + "\x00"))
+		f, err := os.Open(filepath.Join(sourcesDir, name))
+		if err != nil {
+			h.Write([]byte("unreadable"))
+			continue
+		}
+		_, _ = io.Copy(h, f)
+		f.Close()
+		// and the pictures the model needs: a texture replaced by another is another model
+		if m, err := ReadModel(filepath.Join(sourcesDir, name)); err == nil {
+			for _, need := range m.Needs {
+				h.Write([]byte("\x00" + need + "\x00"))
+				pf, err := os.Open(filepath.Join(sourcesDir, need))
+				if err != nil {
+					h.Write([]byte("unreadable"))
+					continue
+				}
+				_, _ = io.Copy(h, pf)
+				pf.Close()
+			}
+		}
 	}
 	return hex.EncodeToString(h.Sum(nil))
 }

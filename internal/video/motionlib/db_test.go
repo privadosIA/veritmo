@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 func dbLibrary(t *testing.T, dir string) (*Store, *store.Store) {

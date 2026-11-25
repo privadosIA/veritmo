@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/video/videovision"
 )
 
 // stubVision writes a control of black three-channel frames the size of the ones it is given, or a short one.

@@ -53,8 +53,8 @@ func webDirHandler(dir string) http.Handler {
 func noFrontEndHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		fmt.Fprintln(w, "orchestrator API is running, but this server has no front end.")
-		fmt.Fprintln(w, "Serve a built one with: orchestrator serve --web-dir <folder>")
+		fmt.Fprintln(w, "veritmo API is running, but this server has no front end.")
+		fmt.Fprintln(w, "Serve a built one with: veritmo serve --web-dir <folder>")
 		fmt.Fprintln(w, "The API lives under /api/ (see docs/http-api.md).")
 	})
 }

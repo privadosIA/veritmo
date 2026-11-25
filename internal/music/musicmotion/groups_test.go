@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
 )
 
 // nineWords is one line of nine sung words, a quarter of a second each with a half-second pause after the fourth.

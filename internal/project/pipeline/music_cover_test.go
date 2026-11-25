@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 func sdCalls(fr *runner.FakeRunner) []runner.Invocation {

@@ -132,7 +132,7 @@ Before loading the model the step SHALL check that Ollama is reachable and that 
 
 ### Requirement: Describe is available from the API, the CLI and the editor
 
-The server SHALL expose `POST /api/describe` (body: `project`, `source` — the name of a picture or clip in the project's `sources/` — optional `model`, optional `detail`) and `GET /api/describe/models` (the installed vision models, the default and the detailed one), both behind the usual token rules and documented in `openapi.yaml`. A scene SHALL be able to record the model that wrote its prompt in an optional `described_by` field. The CLI SHALL offer `orchestrator describe [--model name] [--detail] <file>` printing the prompt on stdout (a second line `MOTION: …` for a clip) and the model used on stderr. The scene editor SHALL offer "Describe a reference" under the prompt of a generated scene: one file picker, then a proposal with the descriptor shown beside it, and on "Use" the prompt field is filled and stays editable (and `described_by` is recorded).
+The server SHALL expose `POST /api/describe` (body: `project`, `source` — the name of a picture or clip in the project's `sources/` — optional `model`, optional `detail`) and `GET /api/describe/models` (the installed vision models, the default and the detailed one), both behind the usual token rules and documented in `openapi.yaml`. A scene SHALL be able to record the model that wrote its prompt in an optional `described_by` field. The CLI SHALL offer `veritmo describe [--model name] [--detail] <file>` printing the prompt on stdout (a second line `MOTION: …` for a clip) and the model used on stderr. The scene editor SHALL offer "Describe a reference" under the prompt of a generated scene: one file picker, then a proposal with the descriptor shown beside it, and on "Use" the prompt field is filled and stays editable (and `described_by` is recorded).
 
 #### Scenario: API flow
 - **WHEN** a client uploads a file to the project's sources and calls describe with its name
@@ -143,7 +143,7 @@ The server SHALL expose `POST /api/describe` (body: `project`, `source` — the 
 - **THEN** describe answers 400 or 404 and no model is called
 
 #### Scenario: CLI
-- **WHEN** the user runs `orchestrator describe photo.png`
+- **WHEN** the user runs `veritmo describe photo.png`
 - **THEN** the prompt is printed on stdout and nothing else
 
 #### Scenario: recorded model
@@ -220,14 +220,14 @@ The "Describe a reference" control SHALL offer **One scene** (the default) and *
 
 ### Requirement: Splitting is reachable from the API and the CLI
 
-`POST /api/describe` SHALL accept `split` (boolean, default false) and, when true and the file is a clip, answer with `shots` (and `prompt` set to the first shot's, for clients that ignore `shots`). `orchestrator describe --split <clip>` SHALL print one line per shot, `[start-end] prompt`, and the movement prompt on a following `MOTION:` line when there is one.
+`POST /api/describe` SHALL accept `split` (boolean, default false) and, when true and the file is a clip, answer with `shots` (and `prompt` set to the first shot's, for clients that ignore `shots`). `veritmo describe --split <clip>` SHALL print one line per shot, `[start-end] prompt`, and the movement prompt on a following `MOTION:` line when there is one.
 
 #### Scenario: API
 - **WHEN** a client calls describe with `split: true` for a clip with two shots
 - **THEN** the answer has `shots` with two entries and the model used
 
 #### Scenario: CLI
-- **WHEN** the user runs `orchestrator describe --split clip.mp4`
+- **WHEN** the user runs `veritmo describe --split clip.mp4`
 - **THEN** each shot is printed as `[0.0-4.0] prompt…` and the model used goes to stderr
 
 ### Requirement: Describing uses the provider routed to it

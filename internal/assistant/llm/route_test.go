@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/settings"
 )
 
 func isolate(t *testing.T) {

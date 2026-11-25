@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 func writePNG(t *testing.T, dir, name string) string {

@@ -2,10 +2,10 @@ package quality
 
 import (
 	"fmt"
-	"mediaOrquestator/internal/platform/fsutil"
-	"mediaOrquestator/internal/platform/media"
 	"os"
 	"strconv"
+	"veritmo/internal/platform/fsutil"
+	"veritmo/internal/platform/media"
 
 	"gopkg.in/yaml.v3"
 )

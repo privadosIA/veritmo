@@ -23,9 +23,9 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/platform/probe"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/probe"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 // Engine programs installed in bin/.

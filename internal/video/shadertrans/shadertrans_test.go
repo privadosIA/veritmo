@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/motion"
 )
 
 func TestTheShadersAreTheFourteenOfHyperFrames(t *testing.T) {

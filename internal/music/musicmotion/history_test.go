@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 func TestTheRenderHistoryKeepsTheLastTenOnBothImplementations(t *testing.T) {

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"image"
 	"image/png"
-	"mediaOrquestator/internal/server/workspace"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,10 +13,11 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"veritmo/internal/server/workspace"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/export"
 )
 
 func pngBytes(w, h int) []byte {

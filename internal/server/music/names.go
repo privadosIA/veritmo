@@ -2,7 +2,7 @@ package music
 
 // names.go: the names under which this family uses what the workspace defines.
 
-import "mediaOrquestator/internal/server/workspace"
+import "veritmo/internal/server/workspace"
 
 type (
 	// Run is a run of a project, as the workspace family keeps it.

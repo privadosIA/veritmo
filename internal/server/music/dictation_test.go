@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 func postAudio(s *testServer, path string, body []byte) (int, string) {

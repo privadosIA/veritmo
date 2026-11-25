@@ -15,13 +15,13 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/assistant/ctxpress"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/assistant/ctxpress"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 // maxMotionPage bounds a page saved by hand.

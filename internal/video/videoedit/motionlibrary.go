@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"mediaOrquestator/internal/video/motionlib"
+	"veritmo/internal/video/motionlib"
 )
 
 // Library is the library of motions as motion control uses it: it gives a window of the control of a ready motion.

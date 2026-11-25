@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/video/motion"
 )
 
 // presetWriter is an assistant that answers with a fixed text.

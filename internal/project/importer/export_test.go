@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 func ip(v int) *int         { return &v }

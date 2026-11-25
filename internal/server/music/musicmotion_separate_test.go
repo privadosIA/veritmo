@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/server/workspace"
 )
 
 // withSeparator installs the fake demucs and its weights on the server of the test; its vocals are amp loud.

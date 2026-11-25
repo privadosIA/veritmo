@@ -3,18 +3,18 @@ package musicmotion
 import (
 	"context"
 	"encoding/json"
-	"mediaOrquestator/internal/music/transcribe"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"veritmo/internal/music/transcribe"
 
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/video/motion"
 )
 
 func stageOK() Stage {

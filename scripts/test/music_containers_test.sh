@@ -14,7 +14,7 @@ run() { out="$(bash "$IL_ROOT/scripts/music-containers.sh" "$@" 2>&1)"; st=$?; }
 setup
 run build heartmula
 assert_status "build" 0 "$st"
-assert_contains "builds the folder of the engine" "$(cat "$CALLS")" "build -t mediaorquestator/heartmula:1 $IL_ROOT/docker/heartmula"
+assert_contains "builds the folder of the engine" "$(cat "$CALLS")" "build -t veritmo/heartmula:1 $IL_ROOT/docker/heartmula"
 cleanup_sandbox
 
 setup
@@ -33,7 +33,7 @@ run up heartmula x
 assert_status "a card that is not a number" 1 "$st"
 run down diffrhythm2
 assert_status "down" 0 "$st"
-assert_contains "removes it" "$(cat "$CALLS")" "rm -f mo-diffrhythm2"
+assert_contains "removes it" "$(cat "$CALLS")" "rm -f vt-diffrhythm2"
 run status
 assert_contains "status lists both" "$out" "diffrhythm2  container: running"
 run up nothing

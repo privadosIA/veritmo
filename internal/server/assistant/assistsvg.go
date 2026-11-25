@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/server/api"
 )
 
 // svgBody is the body of POST /api/assist/svg.

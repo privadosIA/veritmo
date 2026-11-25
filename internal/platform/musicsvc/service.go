@@ -33,6 +33,8 @@ type ServiceSpec struct {
 	Cards bool
 	// Espeak says the service needs the espeak-ng library that sits in bin/.
 	Espeak bool
+	// Env are further variables (NAME=value) the service is started with, for what is the same on every machine (TRIPOSR_HOST=127.0.0.1).
+	Env []string
 }
 
 // ServiceHost is where the services are installed and where the program keeps what it knows of the ones it started.
@@ -107,7 +109,7 @@ func (h ServiceHost) readState(name string) (serviceState, bool) {
 }
 
 // serviceMarker is an environment variable of the process, so it can be told from another program with the same pid.
-func serviceMarker(name string) string { return "MO_SERVICE=" + name }
+func serviceMarker(name string) string { return "VERITMO_SERVICE=" + name }
 
 // start runs the service of an engine on a card and port, detached from this program (it survives a restart of the
 // server), with the weights directory as its checkpoint.
@@ -136,6 +138,7 @@ func (h ServiceHost) start(ctx context.Context, l Local, gpu GPUInfo, port int) 
 		sp.Prefix+"_PORT="+strconv.Itoa(port),
 		"DOTNET_gcServer=0",
 	)
+	env = append(env, sp.Env...)
 	switch {
 	case sp.Cards:
 		codec := gpu.Index

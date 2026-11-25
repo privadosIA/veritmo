@@ -3,7 +3,7 @@ package songmap_test
 import (
 	"fmt"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
 )
 
 // A map of a song of 20 seconds at 120 beats a minute whose lyrics have a verse and a chorus: the beats are half a

@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 // TestRealReferences_DistancesBetweenStyles prints how far apart the styles drawn from a real library of references are,
 // to tune the thresholds of a learning. It runs only when REFERENCES_DIR (and optionally PRESETS_DIR) is set.
 //
-//	REFERENCES_DIR=~/.config/mediaorquestator/references go test ./internal/music/motionref -run RealReferences -v
+//	REFERENCES_DIR=~/.config/veritmo/references go test ./internal/music/motionref -run RealReferences -v
 func TestRealReferences_DistancesBetweenStyles(t *testing.T) {
 	dir := os.Getenv("REFERENCES_DIR")
 	if dir == "" {

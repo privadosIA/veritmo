@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/music"
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/music/music"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 const musicYAML = `project: songs

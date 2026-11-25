@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/server/modelcat"
-	"mediaOrquestator/internal/server/servertest"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/server/modelcat"
+	"veritmo/internal/server/servertest"
 )
 
 // The names the tests use for the entries of the catalog.

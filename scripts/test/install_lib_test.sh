@@ -17,7 +17,7 @@ run_lib() { # runs the body in a subshell with the library loaded
 # --- a complete machine -------------------------------------------------------
 sandbox; complete_machine
 out="$(run_lib states)"
-for id in git cmake cc make curl ffmpeg go cuda sd piper voice acestep ytdlp gsap hflibs hfblocks node hfruntime upscalers browser blender model orchestrator ollama; do
+for id in git cmake cc make curl ffmpeg go cuda sd piper voice acestep ytdlp gsap hflibs hfblocks node hfruntime upscalers browser blender model veritmo ollama; do
     assert_contains "complete machine: $id" "$out" "$id=ok "
 done
 rep="$(run_lib il_report)"
@@ -173,6 +173,20 @@ assert_contains "no supported package manager" "$(run_lib il_report)" "none supp
 printf 'MemTotal:       16384000 kB\n' >"$T_DIR/meminfo"
 export IL_MEMINFO="$T_DIR/meminfo"
 assert_contains "memory is read" "$(run_lib il_report)" "memory       : 16000 MB"
+cleanup_sandbox
+
+# --- the cache directory of the former name moves once to the new one ---
+sandbox; complete_machine
+unset IL_LOG_DIR
+mkdir -p "$HOME/.cache/mediaorquestator"; echo "old log" >"$HOME/.cache/mediaorquestator/install.log"
+out="$(run_lib true 2>&1)"
+assert_contains "the old cache directory is announced as moved" "$out" "moved $HOME/.cache/mediaorquestator to $HOME/.cache/veritmo"
+assert_eq "the log travelled with it" "old log" "$(cat "$HOME/.cache/veritmo/install.log")"
+assert_eq "the old directory is gone" "no" "$([ -e "$HOME/.cache/mediaorquestator" ] && echo yes || echo no)"
+mkdir -p "$HOME/.cache/mediaorquestator"
+out="$(run_lib true 2>&1)"
+assert_contains "both directories: the old one is ignored with a warning" "$out" "is ignored"
+assert_eq "and untouched" "yes" "$([ -d "$HOME/.cache/mediaorquestator" ] && echo yes || echo no)"
 cleanup_sandbox
 
 pass_summary

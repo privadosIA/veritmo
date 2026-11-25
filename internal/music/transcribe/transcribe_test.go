@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 func TestCleanDropsLoopsAndNoise(t *testing.T) {

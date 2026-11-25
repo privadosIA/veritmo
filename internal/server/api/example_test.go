@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/server/api"
 )
 
 // Every error of the API has this body: a machine-readable code and a message for a person. The status of the response

@@ -14,11 +14,11 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/motion"
 )
 
 // stubParts is the catalog of parts of a test: the builder of pages and the choice of a part are functions the test sets.

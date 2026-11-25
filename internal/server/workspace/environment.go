@@ -9,24 +9,24 @@ package workspace
 import (
 	"context"
 	"fmt"
-	"mediaOrquestator/internal/server/modelcat"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+	"veritmo/internal/server/modelcat"
 
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/project/quality"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/project/quality"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 
-	"mediaOrquestator/internal/speech/tts"
+	"veritmo/internal/speech/tts"
 )
 
 // BinaryStatus is one program the pipeline needs or may use: whether it is installed, where, which version and how to fix it when it is not.

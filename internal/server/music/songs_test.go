@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/project/export"
 )
 
 func TestSongDelete_RemovesTheFileAndItsManifestEntryOnly(t *testing.T) {

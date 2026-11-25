@@ -20,7 +20,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // The two kinds of item of the library.

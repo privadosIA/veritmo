@@ -10,13 +10,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"mediaOrquestator/internal/platform/fsutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"syscall"
+	"veritmo/internal/platform/fsutil"
 )
 
 // Part is one thing of a project that lives in the media folder.

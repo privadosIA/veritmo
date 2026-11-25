@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"mediaOrquestator/internal/platform/providers"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/assistant"
+	"veritmo/internal/platform/providers"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/assistant"
 )
 
 // fakeChat serves the chat and, when models is true, /v1/models; it records the Authorization header and

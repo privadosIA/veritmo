@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 func addPart(t *testing.T, s *testServer, name, description string) {

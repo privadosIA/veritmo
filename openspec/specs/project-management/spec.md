@@ -476,3 +476,55 @@ Every save of a definition that changes it (through `PUT /api/projects/{id}/conf
 
 - **WHEN** the list is asked with `limit=10&sort=-updated_at`
 - **THEN** the 10 projects changed last come back with the total in `X-Total-Count`
+
+### Requirement: Sources accept 3D models
+
+The project's `sources/` SHALL accept binary glTF files (`.glb`) next to the other kinds: uploaded, listed, downloaded and deleted like the others, with `kind: "model"`. Each model of the listing SHALL carry `clips` (the names of the animations the file has, possibly none), `triangles` (its number of triangles) and `needs` (the names of the pictures of `sources/` the file refers to, possibly none), read from the file. A file that is not a valid binary glTF SHALL be refused on upload with a `400` that says so, and the other 3D formats (`.gltf`, `.fbx`, `.obj`) SHALL be refused as any name that is not accepted. Deleting a model that a stored description names is allowed, and the scene that names it is then refused at its next run, naming the file.
+
+#### Scenario: Upload a model
+- **WHEN** `character-female-a.glb` is uploaded to `PUT /api/projects/{id}/sources/character-female-a.glb`
+- **THEN** it answers `201` and `GET /sources` lists it with `kind: "model"`, its clips (`idle`, `sprint`, `walk`, …), its triangles and `needs: ["colormap.png"]`
+
+#### Scenario: Not a glb
+- **WHEN** a text file named `x.glb` is uploaded
+- **THEN** the upload is refused with `400` saying it is not a valid binary glTF and nothing is stored
+
+#### Scenario: Another 3D format
+- **WHEN** `x.fbx` is uploaded
+- **THEN** it is refused as a name that is not accepted
+
+### Requirement: A library model can be added to a project
+
+`POST /api/projects/{id}/sources/model` with `{from, name?}` SHALL copy the model `from` (`<pack>/<name>` of the library) into the project's `sources/`: the `.glb` as `<name>.glb` (or `name` when given, a plain `.glb` name) and every picture it needs, each stored as `<pack>--<picture name>` with the addresses inside the copy of the `.glb` rewritten to that name, so that models of two packs that call their texture the same never collide. A picture that is already there with the same content SHALL be reused and a `.glb` that is already there with the same content SHALL answer `200` without copying again. A file of the same name with other content SHALL be `409` naming it; an unknown model `404`; a project with a run queued or active `409`. The answer SHALL be `201 {name, pictures: [...]}` and the copy SHALL be an ordinary source, listed with `kind: model`, usable by `file` in a description, carried by the export of the project, and independent of the library from then on.
+
+#### Scenario: Add a character
+- **WHEN** `kenney-mini-characters/character-female-a` is added to a project
+- **THEN** `sources/` has `character-female-a.glb` and `kenney-mini-characters--colormap.png`, the list says `kind: model` with its clips and `needs: ["kenney-mini-characters--colormap.png"]`, and a scene that places it renders with its texture
+
+#### Scenario: Two characters of a pack
+- **WHEN** a second character of the same pack is added
+- **THEN** the picture is reused, not copied twice
+
+#### Scenario: Two packs with the same atlas name
+- **WHEN** models of two packs whose atlas is called `colormap.png` are added
+- **THEN** each has its own picture (`<pack>--colormap.png`) and both render with their own texture
+
+#### Scenario: A name taken by another file
+- **WHEN** the project has another `character-female-a.glb` with other content
+- **THEN** the call is `409` naming it, and `name` can give another
+
+### Requirement: The listings and the history know the mode models3d
+
+The projects listing SHALL report the mode `models3d` and SHALL accept it in the filter by mode where the listing has one; `GET /api/runs` and `GET /api/stats` SHALL accept `mode=models3d` (with the other modes, comma-separated) and report the runs of these projects and of the managed projects `api-m3d-…` under it; the check of whether a succeeded run still has its result SHALL look for a `.glb` in the run's output folder; the storage of a project SHALL count `out/<project>/*.glb` with its output; the project package SHALL carry its `models:` entries and the pictures of the entries that have their own, and its recipe SHALL say the engines it uses and the weights each one reads (the models themselves are outputs, as the songs and pictures of the other modes are, and a project makes them again); and `mode` values that are not known SHALL still be `400` naming the accepted ones, which now include `models3d`.
+
+#### Scenario: The history by mode
+- **WHEN** the run history is asked with `mode=models3d`
+- **THEN** only the runs of projects of that mode and of generations are listed
+
+#### Scenario: A result that was deleted
+- **WHEN** the `.glb` of a run is removed from `out/`
+- **THEN** the run no longer reports a result
+
+#### Scenario: The package
+- **WHEN** a project of this mode is exported as a package and imported
+- **THEN** it comes back with its entries and the pictures of the entries that have their own, and its recipe names the engines and the weights they read

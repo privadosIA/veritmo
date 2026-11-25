@@ -10,10 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/server/servertest"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/server/servertest"
+	"veritmo/internal/video/motion"
 )
 
 // readyRef makes a reference of the library that is analysed, with three key frames on disk.

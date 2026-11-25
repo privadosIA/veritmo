@@ -6,28 +6,28 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
-	"mediaOrquestator/internal/server/models"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
+	"veritmo/internal/server/models"
 
 	"gopkg.in/yaml.v3"
 
-	"mediaOrquestator/internal/music/clap"
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/assistant"
-	"mediaOrquestator/internal/server/music"
-	"mediaOrquestator/internal/server/workspace"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/music/clap"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/assistant"
+	"veritmo/internal/server/music"
+	"veritmo/internal/server/workspace"
+	"veritmo/internal/video/videoedit"
 )
 
 // The description (openapi.yaml) and the Go structures that build the answers must agree on which fields exist and
@@ -55,6 +55,8 @@ var structCases = []structCase{
 	{schema: "VideoEditRequest", value: videoEditRequest{}},
 	{schema: "VideoEdit", value: videoEditView{}},
 	{schema: "VideoEditResult", value: videoEditResult{}},
+	{schema: "ModelGeneration", value: modelGenerationView{}},
+	{schema: "ModelGenerationRequest", value: modelGenerationRequest{}, allOptional: true},
 	{schema: "VideoEditTool", value: videoEditToolView{}},
 	{schema: "VideoEditSetting", value: videoedit.Setting{}},
 	{schema: "Motion", value: libraryMotionView{}},

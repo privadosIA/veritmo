@@ -1,6 +1,6 @@
 // Package prompts is what the store of prompt presets is made of, shared by the server (which serves it) and by the command that fills it: the preset,
 // its kinds and limits, its check, and its store. The presets are rows of the database (db.go: DB, its migration and the importer of the files they
-// were kept in before, <dir>/<kind>/<id>.json); the folder under dir is only where the downloads of `orchestrator prompts fetch` are kept (.cache).
+// were kept in before, <dir>/<kind>/<id>.json); the folder under dir is only where the downloads of `veritmo prompts fetch` are kept (.cache).
 package prompts
 
 import (
@@ -12,12 +12,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mediaOrquestator/internal/platform/settings"
-	store "mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/settings"
+	store "veritmo/internal/platform/store"
 )
 
 // Kinds are the kinds of preset.
-var Kinds = []string{"image", "video", "motion", "music", "animation"}
+var Kinds = []string{"image", "video", "motion", "music", "animation", "model3d"}
 
 // Limits.
 const (
@@ -29,7 +29,7 @@ const (
 
 // StoreDir is the folder the files of the presets (the downloads in .cache, and the presets of before the database) are under: the media directory's
 // prompts/ and, with no media directory, prompts/ beside the projects directory. The media directory is the one given, else MEDIA_DIR, else the
-// one written in ~/.config/mediaorquestator/media-dir (what scripts/serve.sh reads too); "off" means none.
+// one written in ~/.config/veritmo/media-dir (what scripts/serve.sh reads too); "off" means none.
 func StoreDir(mediaDir, projectsDir string) string {
 	if mediaDir == "" {
 		mediaDir = os.Getenv("MEDIA_DIR")
@@ -43,7 +43,7 @@ func StoreDir(mediaDir, projectsDir string) string {
 	return filepath.Join(filepath.Dir(projectsDir), "prompts")
 }
 
-// savedMediaDir is the media directory written by hand in ~/.config/mediaorquestator/media-dir.
+// savedMediaDir is the media directory written by hand in ~/.config/veritmo/media-dir.
 func savedMediaDir() string {
 	dir := settings.Dir()
 	if dir == "" {

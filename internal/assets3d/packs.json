@@ -1,0 +1,120 @@
+[
+  {
+    "id": "kenney-mini-characters",
+    "name": "Kenney Mini Characters 2.0",
+    "author": "Kenney",
+    "licence": "CC0",
+    "page": "https://kenney.nl/assets/mini-characters",
+    "version": "2.0",
+    "size_bytes": 4024187,
+    "sha256": "add348e98ab9e23d9973c4740ef2c5cceb229c742106aca2d56b30a8f1241bb7",
+    "fetch": "kenney",
+    "licence_words": [
+      "Creative Commons Zero"
+    ],
+    "description": "Low-poly characters (six women, six men, a robot, a zombie, a knight...) with 32 animation clips each (idle, walk, sprint, jump, emotes...) and a few props.",
+    "tags": [
+      "characters",
+      "low-poly",
+      "animated"
+    ]
+  },
+  {
+    "id": "kenney-blocky-characters",
+    "name": "Kenney Blocky Characters 2.0",
+    "author": "Kenney",
+    "licence": "CC0",
+    "page": "https://kenney.nl/assets/blocky-characters",
+    "version": "2.0",
+    "size_bytes": 2148510,
+    "sha256": "5e123859aa0c1598342b600c6db197024a1d63eb9ec531398b310725f589887e",
+    "fetch": "kenney",
+    "licence_words": [
+      "Creative Commons Zero"
+    ],
+    "description": "Eighteen blocky characters.",
+    "tags": [
+      "characters",
+      "blocky"
+    ]
+  },
+  {
+    "id": "kenney-furniture-kit",
+    "name": "Kenney Furniture Kit 2.0",
+    "author": "Kenney",
+    "licence": "CC0",
+    "page": "https://kenney.nl/assets/furniture-kit",
+    "version": "2.0",
+    "size_bytes": 5130729,
+    "sha256": "e67652d0932cee41683f74711c03d3e192a2af9979ef8e6b237711f5482d46b0",
+    "fetch": "kenney",
+    "licence_words": [
+      "Creative Commons Zero"
+    ],
+    "description": "140 pieces of indoor furniture and decoration (cabinets, beds, tables, lamps...).",
+    "tags": [
+      "props",
+      "furniture",
+      "indoor"
+    ]
+  },
+  {
+    "id": "kenney-food-kit",
+    "name": "Kenney Food Kit 2.0",
+    "author": "Kenney",
+    "licence": "CC0",
+    "page": "https://kenney.nl/assets/food-kit",
+    "version": "2.0",
+    "size_bytes": 4606270,
+    "sha256": "cdad90853682499b94c9fda2f87678b24bfd8f3264e0ed323f6b6a27fd7c6f6f",
+    "fetch": "kenney",
+    "licence_words": [
+      "Creative Commons Zero"
+    ],
+    "description": "200 models of food and kitchen things (fruit, burgers, pizza, cutlery...), each with a preview.",
+    "tags": [
+      "props",
+      "food"
+    ]
+  },
+  {
+    "id": "kenney-retro-urban-kit",
+    "name": "Kenney Retro Urban Kit 2.0",
+    "author": "Kenney",
+    "licence": "CC0",
+    "page": "https://kenney.nl/assets/retro-urban-kit",
+    "version": "2.0",
+    "size_bytes": 2161463,
+    "sha256": "19201cbcb0d90080dfc33b54f5b4be2089de927c2a23274180798e7166d6b6ca",
+    "fetch": "kenney",
+    "licence_words": [
+      "Creative Commons Zero"
+    ],
+    "description": "124 pieces to build a retro street (buildings, balconies, signs, street furniture), each with a preview.",
+    "tags": [
+      "props",
+      "urban",
+      "street"
+    ]
+  },
+  {
+    "id": "kenney-platformer-kit",
+    "name": "Kenney Platformer Kit 4.1",
+    "author": "Kenney",
+    "licence": "CC0",
+    "page": "https://kenney.nl/assets/platformer-kit",
+    "version": "4.1",
+    "size_bytes": 4640135,
+    "sha256": "899605d237367688c6b42e41fff2206c0fb8d626163158294556353f7baa7c1b",
+    "fetch": "kenney",
+    "licence_words": [
+      "Creative Commons Zero"
+    ],
+    "description": "153 pieces of a platformer level (blocks, platforms, coins, crates, flags), each with a preview.",
+    "tags": [
+      "props",
+      "platformer",
+      "game"
+    ]
+  }
+]

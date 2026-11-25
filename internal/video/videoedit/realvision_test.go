@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/video/videovision"
 )
 
 // realVision starts the real vision service (the one built in bin/services/videovision, on the CPU) with the models

@@ -7,23 +7,24 @@ package generation
 // are artifacts of the project.
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/workspace"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/workspace"
 
 	"gopkg.in/yaml.v3"
 
-	"mediaOrquestator/internal/platform/fsutil"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/fsutil"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // --- state and progress ------------------------------------------------------------------------
@@ -103,6 +104,9 @@ type generationRequest struct {
 	// ReuseInputsOf is the identifier of another generation whose input files (start and last picture, references)
 	// this one uses without receiving them again.
 	ReuseInputsOf string `json:"reuse_inputs_of,omitempty"`
+	// Blender is the 3D scene of the option "blender": its description, as a hand-written one is checked. The view of a
+	// generation reports `blender: {}` and lists the description among its inputs.
+	Blender *blenderRequest `json:"blender,omitempty"`
 }
 
 // generationInput is a file a generation used, with the read-only address it can be fetched from.
@@ -202,7 +206,7 @@ func (h *Handler) handleGenerationOptions(w http.ResponseWriter, r *http.Request
 	cat := h.catalogNow()
 	m := h.machineNow()
 	api.WriteJSON(w, http.StatusOK, generationOptions{
-		Video:        buildVideoOptions(cat, m, h.ws.FirstAsset("voices")),
+		Video:        h.videoOptions(r.Context(), cat, m, h.ws.FirstAsset("voices")),
 		ImageModels:  buildImageModels(cat, m),
 		AspectRatios: aspectRatios,
 		Qualities:    qualityNames,
@@ -235,8 +239,14 @@ func (h *Handler) handleGenerationCreate(w http.ResponseWriter, r *http.Request)
 			return
 		}
 	}
+	// A description sent with the request wins over the one of a generation that is reused: it takes its place.
+	var scene []byte
+	if req.Blender != nil && len(bytes.TrimSpace(req.Blender.Description)) > 0 {
+		scene = req.Blender.Description
+		inputs = withoutKind(inputs, inputScene)
+	}
 	req.Prompt = strings.TrimSpace(req.Prompt)
-	if req.Prompt == "" && pic == nil && len(inputs) == 0 {
+	if req.Prompt == "" && pic == nil && len(inputs) == 0 && scene == nil && req.Option != optionBlender {
 		api.Refuse(w, "a prompt or a start picture is needed")
 		return
 	}
@@ -255,7 +265,7 @@ func (h *Handler) handleGenerationCreate(w http.ResponseWriter, r *http.Request)
 	cat := h.catalogNow()
 	m := h.machineNow()
 	voice := h.ws.FirstAsset("voices")
-	options := buildVideoOptions(cat, m, voice)
+	options := h.videoOptions(r.Context(), cat, m, voice)
 	if req.Option == "" {
 		for _, o := range options {
 			if o.Default {
@@ -306,6 +316,11 @@ func (h *Handler) handleGenerationCreate(w http.ResponseWriter, r *http.Request)
 		api.Refuse(w, "option %s cannot write audio: only MiniMax H3 and LTX 2.3 can", opt.ID)
 		return
 	}
+	sceneName, sceneRaw, msg := h.sceneOfRequest(opt.ID, req, scene, &inputs, pic != nil)
+	if msg != "" {
+		api.Refuse(w, "%s", msg)
+		return
+	}
 	if msg := h.checkGenerationInputs(r.Context(), *opt, options, pic != nil, inputs); msg != "" {
 		api.Refuse(w, "%s", msg)
 		return
@@ -329,7 +344,14 @@ func (h *Handler) handleGenerationCreate(w http.ResponseWriter, r *http.Request)
 			vr.RefAudios = append(vr.RefAudios, f.Name)
 		}
 	}
-	plan, err := planVideo(id, vr, choice, cat, m, voice)
+	var plan *videoPlan
+	var err error
+	if sceneRaw != nil {
+		sceneName = id + config.SceneSpecSuffix
+		plan, err = planBlender(id, sceneName, req, voice)
+	} else {
+		plan, err = planVideo(id, vr, choice, cat, m, voice)
+	}
 	if err != nil {
 		api.WriteError(w, http.StatusServiceUnavailable, api.CodeUnavailable, err.Error())
 		return
@@ -345,12 +367,24 @@ func (h *Handler) handleGenerationCreate(w http.ResponseWriter, r *http.Request)
 		api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, err.Error())
 		return
 	}
-	body, _ := json.Marshal(req)
+	stored := req
+	if stored.Blender != nil {
+		stored.Blender = &blenderRequest{} // the description is an input, not part of the request that is reported
+	}
+	body, _ := json.Marshal(stored)
 	info := &managedInfo{ID: id, Kind: kindGeneration, CreatedAt: time.Now().UTC(), Request: body, ClipSeconds: plan.ClipSeconds, Estimate: plan.Estimate}
 	for _, f := range inputs {
 		info.Inputs = append(info.Inputs, managedInput{Kind: f.Kind, Name: f.Name})
 	}
+	if sceneRaw != nil {
+		info.Inputs = append(info.Inputs, managedInput{Kind: inputScene, Name: sceneName})
+	}
 	rec, lerr := h.ws.CreateManagedStaged(info, yml, func(sources string) error {
+		if sceneRaw != nil {
+			if err := os.WriteFile(filepath.Join(sources, sceneName), sceneBytes(sceneRaw), 0o644); err != nil {
+				return err
+			}
+		}
 		if pic != nil && len(pic.data) > 0 {
 			if err := os.WriteFile(filepath.Join(sources, pic.name), pic.data, 0o644); err != nil {
 				return err

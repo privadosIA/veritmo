@@ -15,22 +15,23 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"mediaOrquestator/internal/server/generation"
 	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"time"
+	"veritmo/internal/server/generation"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/music/separate"
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/server/api"
-	mmrender "mediaOrquestator/internal/video/render"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/music/separate"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
+	mmrender "veritmo/internal/video/render"
 )
 
 // pieceInfo is piece.json.
@@ -81,6 +82,11 @@ type pieceInfo struct {
 }
 
 func (h *Handler) pieceDir(id string) string { return h.ws.ProjectDir(id) }
+
+// pieceSources is the sources folder of a piece's project: its song, the descriptions of its 3D pieces and the models they place.
+func (h *Handler) pieceSources(id string) string {
+	return filepath.Join(h.pieceDir(id), config.SourcesSubdir)
+}
 
 func (h *Handler) readPiece(id string) (*pieceInfo, bool) {
 	if !strings.HasPrefix(id, piecePrefix) || !api.ProjectIDPattern.MatchString(id) {
@@ -728,7 +734,7 @@ func (h *Handler) handleMusicMotionSetDesign(w http.ResponseWriter, r *http.Requ
 	script, has := musicmotion.LoadScriptAt(h.place(info.ID))
 	if has {
 		if m, ok := h.pieceMap(info.ID); ok {
-			if err := script.ValidateAll(h.mmCatalog(), h.mmLibrary(), m, d, info.Width, info.Height); err != nil {
+			if err := script.WithSources(h.pieceSources(info.ID)).ValidateAll(h.mmCatalog(), h.mmLibrary(), m, d, info.Width, info.Height); err != nil {
 				api.Refuse(w, "%v", err)
 				return
 			}
@@ -763,7 +769,7 @@ func (h *Handler) handleMusicMotionSetScript(w http.ResponseWriter, r *http.Requ
 		api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, "the piece has lost its song map or its design")
 		return
 	}
-	if err := script.ValidateAll(h.mmCatalog(), h.mmLibrary(), m, st.Design, info.Width, info.Height); err != nil {
+	if err := script.WithSources(h.pieceSources(info.ID)).ValidateAll(h.mmCatalog(), h.mmLibrary(), m, st.Design, info.Width, info.Height); err != nil {
 		api.Refuse(w, "%v", err)
 		return
 	}
@@ -818,7 +824,7 @@ func (h *Handler) handleMusicMotionRender(w http.ResponseWriter, r *http.Request
 		return
 	}
 	cat, lib := h.mmCatalog(), h.mmLibrary()
-	if err := script.ValidateAll(cat, lib, m, st.Design, info.Width, info.Height); err != nil {
+	if err := script.WithSources(h.pieceSources(info.ID)).ValidateAll(cat, lib, m, st.Design, info.Width, info.Height); err != nil {
 		api.Refuse(w, "the script is not valid: %v", err)
 		return
 	}
@@ -826,9 +832,25 @@ func (h *Handler) handleMusicMotionRender(w http.ResponseWriter, r *http.Request
 		api.WriteError(w, http.StatusConflict, api.CodeConflict, fmt.Sprintf("run %s is already drawing this piece", id))
 		return
 	}
-	if _, err := h.ws.MotionBrowserFor(); err != nil {
-		api.WriteError(w, http.StatusServiceUnavailable, api.CodeUnavailable, err.Error())
-		return
+	pages, scenes3D := 0, 0
+	for _, p := range script.Pieces {
+		if p.Blender != nil {
+			scenes3D++
+		} else {
+			pages++
+		}
+	}
+	if pages > 0 { // the browser draws the pieces made from parts; a script of 3D pieces only does not need it
+		if _, err := h.ws.MotionBrowserFor(); err != nil {
+			api.WriteError(w, http.StatusServiceUnavailable, api.CodeUnavailable, err.Error())
+			return
+		}
+	}
+	if scenes3D > 0 {
+		if err := h.ws.BlenderUsable(r.Context()); err != nil {
+			api.WriteError(w, http.StatusServiceUnavailable, api.CodeUnavailable, "the 3D pieces are drawn by Blender: "+err.Error())
+			return
+		}
 	}
 	spec := musicmotion.ProjectSpec{Dir: dir, Name: info.ID, SongFile: filepath.Join(dir, info.SongFile), Map: m, Design: st.Design, Script: script,
 		Cat: cat, Lib: lib, FPS: info.FPS, Width: info.Width, Height: info.Height, Client: info.Client}
@@ -939,7 +961,7 @@ func (m SeparateMode) resolved() SeparateMode {
 }
 
 // separateByDefault says whether SeparateAuto separates the voice, when the separator is installed and fits. It does, by the rule of
-// the bench against the attacks of the voice (`orchestrator words bench`, 2026-11-14, ten distinct songs made with HeartMuLa, an
+// the bench against the attacks of the voice (`veritmo words bench`, 2026-11-14, ten distinct songs made with HeartMuLa, an
 // Intel Core Ultra 7 265, large-v3-turbo-q5_0): moving the heard words onto the attacks lifts the share within 50 ms of an attack from
 // 26.4 % to 62.0 % on the median song (33.7 points, the rule asks for 20) and the whole voice way takes 1.22 times the length of the
 // song (the rule asks for under 3). Two things the numbers do not say: the gain is by construction (a word moved onto an attack is
@@ -1300,7 +1322,7 @@ func (h *Handler) fixedScriptFor(info *pieceInfo, m songmap.Map, d musicmotion.D
 	if info.Style == musicmotion.StyleIllustrated {
 		musicmotion.AddStages(&prop.Script, h.mmLibrary(), d)
 	}
-	if err := prop.Script.ValidateAll(h.mmCatalog(), h.mmLibrary(), m, d, info.Width, info.Height); err != nil {
+	if err := prop.Script.WithSources(h.pieceSources(info.ID)).ValidateAll(h.mmCatalog(), h.mmLibrary(), m, d, info.Width, info.Height); err != nil {
 		return musicmotion.Script{}, err
 	}
 	return prop.Script, nil

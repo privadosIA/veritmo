@@ -11,20 +11,20 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/workspace"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/workspace"
 
-	"mediaOrquestator/internal/platform/fsutil"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/platform/fsutil"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/videoedit"
 )
 
 // maxEditSide is the largest side a scaled video may have.

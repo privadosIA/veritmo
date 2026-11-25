@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion" // the catalog of parts: it checks the parts a dataset names
+	"veritmo/internal/music/musicmotion" // the catalog of parts: it checks the parts a dataset names
 )
 
 // The sample datasets of docs/examples are the ones the documentation walks through: they must keep importing

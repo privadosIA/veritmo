@@ -11,8 +11,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/store"
 )
 
 // Folders are the folders the three stores were kept in before the database: what the importers read.

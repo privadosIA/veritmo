@@ -2,9 +2,9 @@ package musicmotion
 
 // A measure, not a check: how often a real model gets a design and a script accepted with the old texts and with the
 // new ones (spec music-motion, "The assistant is told the limits it is checked against"). It runs only when
-// MO_REAL_OLLAMA_MODEL names an installed model of the Ollama at MO_OLLAMA_URL (default http://127.0.0.1:11434).
+// VERITMO_REAL_OLLAMA_MODEL names an installed model of the Ollama at VERITMO_OLLAMA_URL (default http://127.0.0.1:11434).
 //
-//	MO_REAL_OLLAMA_MODEL=qwen3:8b MO_REAL_RUNS=6 go test ./internal/music/musicmotion -run RealLimits -v -timeout 90m
+//	VERITMO_REAL_OLLAMA_MODEL=qwen3:8b VERITMO_REAL_RUNS=6 go test ./internal/music/musicmotion -run RealLimits -v -timeout 90m
 
 import (
 	"bytes"
@@ -74,21 +74,21 @@ const realPrompt = "A dark, glitchy horror piece: flickering red and black text 
 	"Keep every label short and every number moderate; the viewer must be able to read each line at a glance, even on a small phone screen in a dark room."
 
 func TestRealLimits_AcceptanceWithTheOldAndTheNewTexts(t *testing.T) {
-	model := os.Getenv("MO_REAL_OLLAMA_MODEL")
+	model := os.Getenv("VERITMO_REAL_OLLAMA_MODEL")
 	if model == "" {
-		t.Skip("MO_REAL_OLLAMA_MODEL is not set")
+		t.Skip("VERITMO_REAL_OLLAMA_MODEL is not set")
 	}
-	url := os.Getenv("MO_OLLAMA_URL")
+	url := os.Getenv("VERITMO_OLLAMA_URL")
 	if url == "" {
 		url = "http://127.0.0.1:11434"
 	}
 	runs := 6
-	if n, err := strconv.Atoi(os.Getenv("MO_REAL_RUNS")); err == nil && n > 0 {
+	if n, err := strconv.Atoi(os.Getenv("VERITMO_REAL_RUNS")); err == nil && n > 0 {
 		runs = n
 	}
 	type tally struct{ n, designOK, scriptOK, designCalls, scriptCalls int }
 	arms := []string{"old", "new"}
-	if a := os.Getenv("MO_REAL_ARMS"); a != "" {
+	if a := os.Getenv("VERITMO_REAL_ARMS"); a != "" {
 		arms = strings.Split(a, ",")
 	}
 	res := map[string]*tally{}

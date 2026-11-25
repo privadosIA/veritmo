@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 // PreviewBody is what a preview may carry: a design and a script that replace the saved ones for this call only.
@@ -30,6 +30,9 @@ type PreviewScene struct {
 	End   float64         `json:"end"`
 	HTML  string          `json:"html"`
 	Song  json.RawMessage `json:"song"`
+	// Blender says the piece is a 3D scene drawn by Blender: it has no page (html and song are empty); ask for its frames with
+	// GET .../frame?t= or POST .../script/{piece}/blender/frame.
+	Blender bool `json:"blender,omitempty"`
 }
 
 // PreviewReplacement says that the part of a piece was swapped for another.
@@ -70,7 +73,7 @@ func (h *Handler) specOf(w http.ResponseWriter, info *pieceInfo, body PreviewBod
 		script = *body.Script
 	}
 	cat, lib := h.mmCatalog(), h.mmLibrary()
-	if err := script.ValidateAll(cat, lib, m, design, info.Width, info.Height); err != nil {
+	if err := script.WithSources(h.pieceSources(info.ID)).ValidateAll(cat, lib, m, design, info.Width, info.Height); err != nil {
 		api.Refuse(w, "%v", err)
 		return musicmotion.ProjectSpec{}, false
 	}
@@ -101,13 +104,48 @@ func (h *Handler) handleMusicMotionPreview(w http.ResponseWriter, r *http.Reques
 			only = append(only, strings.TrimSpace(id))
 		}
 	}
-	pages, err := musicmotion.BuildPages(spec, only)
-	if err != nil {
-		api.Refuse(w, "%v", err)
-		return
+	// The 3D pieces have no page: they are listed as they are and the others are drawn.
+	threeD := map[string]musicmotion.Piece{}
+	for _, p := range spec.Script.Pieces {
+		if p.Blender != nil {
+			threeD[p.ID] = p
+		}
+	}
+	var onlyPages []string
+	for _, id := range only {
+		if _, is3D := threeD[id]; !is3D {
+			onlyPages = append(onlyPages, id)
+		}
+	}
+	if len(only) > 0 && len(onlyPages) == 0 {
+		onlyPages = []string{} // every piece asked for is a 3D one: no page to build
+	}
+	var pages []musicmotion.PieceMotion
+	if len(only) == 0 || len(onlyPages) > 0 {
+		var err error
+		if pages, err = musicmotion.BuildPages(spec, onlyPages); err != nil {
+			api.Refuse(w, "%v", err)
+			return
+		}
+	}
+	pageOf := map[string]musicmotion.PieceMotion{}
+	for _, pg := range pages {
+		pageOf[pg.ID] = pg
+	}
+	asked := map[string]bool{}
+	for _, id := range only {
+		asked[id] = true
 	}
 	out := PiecePreview{Width: info.Width, Height: info.Height, FPS: info.FPS, Scenes: []PreviewScene{}, Replacements: []PreviewReplacement{}}
-	for _, pg := range pages {
+	for _, p := range spec.Script.Pieces {
+		if len(asked) > 0 && !asked[p.ID] {
+			continue
+		}
+		if p.Blender != nil {
+			out.Scenes = append(out.Scenes, PreviewScene{ID: p.ID, Start: p.Start, End: p.End, Song: json.RawMessage("{}"), Blender: true})
+			continue
+		}
+		pg := pageOf[p.ID]
 		out.Scenes = append(out.Scenes, PreviewScene{ID: pg.ID, Start: pg.Start, End: pg.End, Song: pg.Song,
 			HTML: motion.PreviewHTMLSong(pg.HTML, pg.Seconds, pg.Song)})
 	}
@@ -137,6 +175,11 @@ func (h *Handler) handleMusicMotionFrame(w http.ResponseWriter, r *http.Request)
 	}
 	if piece == nil {
 		api.Refuse(w, "t=%g is outside the piece (0 to %g)", t, spec.Script.Pieces[len(spec.Script.Pieces)-1].End)
+		return
+	}
+	if piece.Blender != nil { // a 3D piece: Blender draws it, on the CPU, at the piece's own second
+		cfg := musicmotion.BlenderConfig(spec.Map, spec.Design, info.Width, info.Height, info.FPS)
+		h.writeBlenderFrame(w, r, cfg, h.pieceSources(info.ID), piece.Blender.Description, t-piece.Start, piece.End-piece.Start, 0)
 		return
 	}
 	b, err := h.ws.MotionBrowserFor()

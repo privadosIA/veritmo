@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 // TestSynthWithRealEngine runs the real ace-synth on the DiT-only path (own

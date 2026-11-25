@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/settings"
 )
 
 // Writer asks a language model for text. It is the one thing the generator needs

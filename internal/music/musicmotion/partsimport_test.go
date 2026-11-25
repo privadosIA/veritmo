@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 func writePartFolder(t *testing.T, dir, name string, manifest []byte, fragment string, origin string) {

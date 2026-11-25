@@ -19,9 +19,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/motion"
 )
 
 // KeepVersions is how many versions of a definition a project keeps.
@@ -516,7 +516,7 @@ func (p *projectStore) List(f ProjectFilter, params store.ListParams) ([]Project
 	base := p.db.DB.Model(&ProjectRow{}).Omit("definition")
 	kinds := []string{kindProject}
 	if f.IncludeManaged {
-		kinds = append(kinds, string(KindGeneration), string(KindImageEdit), string(KindVideoEdit))
+		kinds = append(kinds, string(KindGeneration), string(KindImageEdit), string(KindVideoEdit), string(KindModelGeneration))
 	}
 	base = base.Where("kind IN ?", kinds)
 	if len(f.Clients) > 0 {

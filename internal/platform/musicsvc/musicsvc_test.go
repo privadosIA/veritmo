@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 var testSpec = Spec{
-	Name: "Other", Version: "3", Container: "mo-other", WeightsDir: "models/music/other",
+	Name: "Other", Version: "3", Container: "vt-other", WeightsDir: "models/music/other",
 	MinFreeMB: 8000, Missing: func(string) []string { return []string{"a"} }, Sends: "lyrics and a style",
 }
 

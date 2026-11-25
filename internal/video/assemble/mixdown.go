@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 // MixdownInput is one clip of a music mix with the file it reads and that

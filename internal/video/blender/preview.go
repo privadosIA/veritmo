@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // Preview limits and defaults.
@@ -76,11 +76,18 @@ func Preview(ctx context.Context, r runner.CommandRunner, bin string, spec *Spec
 	}
 	defer os.RemoveAll(dir)
 	frame := PreviewFrame(o.T, o.Seconds, o.FPS)
+	// the render runs in a folder of its own: a relative sources folder (the server's projects folder is relative) would be read from it
+	sources := o.Sources
+	if sources != "" && !filepath.IsAbs(sources) {
+		if abs, err := filepath.Abs(sources); err == nil {
+			sources = abs
+		}
+	}
 	// CUDA_VISIBLE_DEVICES is emptied and the device is cpu: whatever the environment says, no card is touched
 	_, err = Render(ctx, r, bin, Params{
 		Dir: dir, Out: "f", Samples: previewSamples, Device: "cpu", Width: width, Height: height,
 		Count: int(math.Ceil(o.Seconds * float64(o.FPS))), FPS: o.FPS, Frame: frame,
-		Spec: spec, Sources: o.Sources, Fonts: o.Fonts,
+		Spec: spec, Sources: sources, Fonts: o.Fonts,
 	}, []string{"CUDA_VISIBLE_DEVICES="})
 	if err != nil {
 		return nil, err

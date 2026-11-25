@@ -674,8 +674,11 @@ type BlenderParams struct {
 	// Build and Font are only for a built scene (omitted otherwise, so the hash of a .blend scene is the one it always
 	// was): the SHA-256 of the description resolved (every key in seconds, every colour #rrggbb), and the identity of
 	// the font files it uses (the files of the sources and the WOFF2 of the design's fonts).
-	Build      string `json:"build,omitempty"`
-	Font       string `json:"font,omitempty"`
+	Build string `json:"build,omitempty"`
+	Font  string `json:"font,omitempty"`
+	// Models is the identity of the model files a built scene uses and of the pictures they need (omitted when it has none,
+	// so the hash of every scene without a model is the one it always was).
+	Models     string `json:"models,omitempty"`
 	Inject     string `json:"inject"` // canonical JSON (keys sorted)
 	Samples    int    `json:"samples"`
 	Frames     []int  `json:"frames,omitempty"`

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/video/motionlib"
+	"veritmo/internal/video/motionlib"
 )
 
 type storeLibrary struct{ st *motionlib.Store }

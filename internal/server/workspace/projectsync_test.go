@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/video/motion"
 )
 
 func syncFixture(t *testing.T) (*projectStore, string) {

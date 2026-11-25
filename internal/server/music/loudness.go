@@ -10,8 +10,8 @@ import (
 	"os"
 	"sync"
 
-	"mediaOrquestator/internal/platform/probe"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/probe"
+	"veritmo/internal/server/api"
 )
 
 type loudnessAnswer struct {

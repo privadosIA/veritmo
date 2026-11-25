@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
 )
 
 // GET /api/data/status -> store.Status
@@ -61,7 +61,7 @@ func (h *Handler) handleDataImport(w http.ResponseWriter, r *http.Request) {
 // GET /api/data/export -> a .zip
 func (h *Handler) handleDataExport(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", `attachment; filename="mediaorquestator-data-`+time.Now().UTC().Format("20060102-150405")+`.zip"`)
+	w.Header().Set("Content-Disposition", `attachment; filename="veritmo-data-`+time.Now().UTC().Format("20060102-150405")+`.zip"`)
 	if err := h.cfg.Store.Export(w); err != nil {
 		// The zip may be half written: the status cannot change any more, so the connection is cut and the error is logged.
 		slog.Error("data export failed", "err", err)

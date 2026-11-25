@@ -7,7 +7,7 @@ Lets the user keep the model files in one directory, possibly on another disk, w
 
 ### Requirement: The models directory is set by a flag, a variable or a user file
 
-The server SHALL take the models directory from `--models-dir`, else from `MODELS_DIR`, else from the first line of `~/.config/mediaorquestator/models-dir` (in `$XDG_CONFIG_HOME` when it is set). With none of them nothing SHALL change: `models/` stays where it is. `MODELS_DIR=off` SHALL ignore the user file.
+The server SHALL take the models directory from `--models-dir`, else from `MODELS_DIR`, else from the first line of `~/.config/veritmo/models-dir` (in `$XDG_CONFIG_HOME` when it is set). With none of them nothing SHALL change: `models/` stays where it is. `MODELS_DIR=off` SHALL ignore the user file.
 
 #### Scenario: Flag wins
 - **WHEN** the flag, the variable and the file name different directories
@@ -27,7 +27,7 @@ With a models directory the repository's `models` SHALL be a symbolic link to it
 
 #### Scenario: Not migrated yet
 - **WHEN** a models directory is configured and `models` is still a real folder
-- **THEN** the server warns that `orchestrator models migrate` is pending and keeps using that folder
+- **THEN** the server warns that `veritmo models migrate` is pending and keeps using that folder
 
 ### Requirement: The models directory is checked and never replaced by the local disk
 
@@ -39,7 +39,7 @@ At start the server SHALL create nothing in it and SHALL report, naming the dire
 
 ### Requirement: Existing models are migrated without loss
 
-`orchestrator models migrate` SHALL copy the contents of `models/` to the models directory, check that every file arrived with its name and size, rename the original to `models.migrated`, create the link and only then delete the old copy. It SHALL skip what is already in the destination with the same size (so an interrupted run resumes), SHALL be repeatable, SHALL support `--dry-run` (what would be copied and the space it needs), SHALL refuse when the destination lacks the space, and SHALL refuse while a server is running unless told otherwise. It SHALL NOT delete the original when the check fails, and SHALL leave `voices` and everything outside `models/` untouched.
+`veritmo models migrate` SHALL copy the contents of `models/` to the models directory, check that every file arrived with its name and size, rename the original to `models.migrated`, create the link and only then delete the old copy. It SHALL skip what is already in the destination with the same size (so an interrupted run resumes), SHALL be repeatable, SHALL support `--dry-run` (what would be copied and the space it needs), SHALL refuse when the destination lacks the space, and SHALL refuse while a server is running unless told otherwise. It SHALL NOT delete the original when the check fails, and SHALL leave `voices` and everything outside `models/` untouched.
 
 #### Scenario: Migration
 - **WHEN** `models/` is a real folder and the command runs

@@ -4,7 +4,7 @@
 > `web/` monorepo; `embed.FS` behind the `webui` build tag; run history in SQLite via GORM;
 > Spanish (Castilian) with `@angular/localize` from v1. It is kept as a design reference.
 
-# TASK: Plan an Angular management frontend for mediaOrquestator with OpenSpec
+# TASK: Plan an Angular management frontend for Veritmo with OpenSpec
 
 You are a senior Go + Angular engineer. Your job in this session is ONLY planning
 (OpenSpec `propose` flow): do not implement anything until I run `/opsx:apply`.
@@ -18,7 +18,7 @@ Read and summarise in 10 lines what you understand of:
 - `README.md` — CLI flags, `scenes.yaml`, hash cache, `--only`, `--keep-tmp`, `--gpu`.
 - `docs/events.md` — the JSON-lines contract of `--json`. IT IS THE INTEGRATION CONTRACT
   of the frontend: do not change it, consume it.
-- `cmd/orchestrator` and `internal/` — only to understand how a run is launched and which
+- `cmd/veritmo` and `internal/` — only to understand how a run is launched and which
   packages exist (one capability per package).
 - The specs of `add-image-output-mode`, `add-scene-importer` and `add-camera-motion`
   (archived in `openspec/specs/` or still in `openspec/changes/`): the `scenes.yaml`
@@ -27,14 +27,14 @@ Read and summarise in 10 lines what you understand of:
   depends on them.
 
 ## 1. Goal
-An Angular web frontend that lets you manage mediaOrquestator without touching the terminal:
+An Angular web frontend that lets you manage Veritmo without touching the terminal:
 edit `scenes.yaml` projects, launch runs with their flags, watch progress live,
 review intermediate artifacts and the final video, and check the state of the environment
 (binaries, models, voices, GPUs).
 
 ## 2. Architecture constraints (non-negotiable)
 - The browser cannot launch processes: a bridge is needed. Propose it in Go inside
-  this same repo (e.g. an `orchestrator serve` subcommand or `cmd/server`) that
+  this same repo (e.g. an `veritmo serve` subcommand or `cmd/server`) that
   exposes REST + SSE and launches the existing CLI/pipeline. No Python or Node in the backend.
 - The bridge does NOT reimplement the pipeline: it reuses the `internal/` packages or invokes
   the binary with `--json` and re-emits the `docs/events.md` events over SSE unaltered.
@@ -79,7 +79,7 @@ review intermediate artifacts and the final video, and check the state of the en
   `manifest.json` left by `image-export` (scene, variant, effective seed, final
   prompt), with the actions "fijar esta seed en la escena" (pin this seed on the scene) and "re-renderizar esta escena" (re-render this scene).
   The gallery is built by the UI; the backend only serves files and the manifest.
-- **Import**: upload a JSON/HTML with the format accepted by `orchestrator import` and
+- **Import**: upload a JSON/HTML with the format accepted by `veritmo import` and
   create a new project from it, showing the report of what was mapped and what was
   discarded before saving. The UI does not reimplement the parsing: it calls the subcommand.
 - **Runs**: launch with `--gpu`, `--keep-tmp`, `--force`, `--only <id>`, `--vram-warn-mb`;

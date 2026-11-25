@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
-// listedManaged says whether a managed project is one `managed=include` lists: a generation, an image edit or a video
-// edit. The animations of the music motion engine (`api-mm-`) keep their own screen and are never listed.
+// listedManaged says whether a managed project is one `managed=include` lists: a generation, an image edit, a video
+// edit or a 3D model generation. The animations of the music motion engine (`api-mm-`) keep their own screen and are never listed.
 func listedManaged(id string) bool { return managedKindOfID(id) != "" }
 
 // managedKindOfID is the kind of a managed project read from its name; "" for any other (and for an animation).
@@ -25,6 +25,8 @@ func managedKindOfID(id string) ManagedKind {
 		return KindImageEdit
 	case strings.HasPrefix(id, VideoPrefix):
 		return KindVideoEdit
+	case strings.HasPrefix(id, ModelGenPrefix):
+		return KindModelGeneration
 	}
 	return ""
 }

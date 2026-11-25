@@ -16,15 +16,15 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/modelcat"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/modelcat"
+	"veritmo/internal/video/videoedit"
 )
 
 // wsHandler lets testServer embed the handler under a name that does not clash with its Handler method.

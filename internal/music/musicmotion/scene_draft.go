@@ -106,7 +106,9 @@ func BuildSceneInput(spec ProjectSpec, ref SceneRef, brief string) (SceneDraftIn
 		}
 		q := spec.Script.Pieces[i]
 		n := NeighbourScene{Index: i + 1, Part: q.Part}
-		if part, ok := spec.Cat.Get(q.Part); ok {
+		if q.Blender != nil {
+			n.Part, n.Description = "3D scene", "a 3D scene drawn by Blender"
+		} else if part, ok := spec.Cat.Get(q.Part); ok {
 			n.Description = sentence(part.Description, 110)
 		}
 		in.Neighbours = append(in.Neighbours, n)

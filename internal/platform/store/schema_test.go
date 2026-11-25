@@ -297,7 +297,7 @@ func TestCheckMigratedSaysWhatIsPendingAndWhatToDoAndChangesNothing(t *testing.T
 		s := newMem(t)
 		list := []*Migration{migCreate("202601010000_a", "ta"), migCreate("202601020000_b", "tb")}
 		err := s.checkMigratedWith(list)
-		if !errors.Is(err, ErrNotMigrated) || !strings.Contains(err.Error(), "202601010000_a") || !strings.Contains(err.Error(), "orchestrator data migrate") {
+		if !errors.Is(err, ErrNotMigrated) || !strings.Contains(err.Error(), "202601010000_a") || !strings.Contains(err.Error(), "veritmo data migrate") {
 			t.Fatalf("err = %v", err)
 		}
 		if s.DB.Migrator().HasTable("ta") || s.DB.Migrator().HasTable(&schemaMigration{}) && func() bool { a, _ := s.applied(); return len(a) > 0 }() {

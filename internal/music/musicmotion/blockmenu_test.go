@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/music/songmap"
 )
 
 func TestTheMenuHasOnlyWhatCanBeDrawnNow(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/llm"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/llm"
 )
 
 // visionPrompt asks for a verdict on the people in one frame. A normal pose, a

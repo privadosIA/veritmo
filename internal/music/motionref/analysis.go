@@ -13,9 +13,9 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/platform/fsutil"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/platform/fsutil"
+	"veritmo/internal/platform/runner"
 )
 
 // The settings of the analysis are constants: the same video gives the same analysis.

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/video/videovision"
 )
 
 func TestCatalogVision_TheTwoOnnxModelsAreOneEntryThatMatchesWhatTheServiceReads(t *testing.T) {

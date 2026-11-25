@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/platform/httpclient"
-	"mediaOrquestator/internal/platform/runner"
 	"mime"
 	"mime/multipart"
 	"net"
@@ -20,6 +18,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"veritmo/internal/platform/httpclient"
+	"veritmo/internal/platform/runner"
 )
 
 // BinaryServer is the HTTP server program of acestep.cpp.

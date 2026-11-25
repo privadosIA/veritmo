@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
 )
 
 // systemWriter keeps what the assistant is told, system and user, and answers in turn.

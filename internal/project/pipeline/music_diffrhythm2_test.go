@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/music/diffrhythm2"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/music/diffrhythm2"
+	"veritmo/internal/project/config"
 )
 
 // fakeDR2 is a DiffRhythm2 service that records the requests it gets and answers every job as done.

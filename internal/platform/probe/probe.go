@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // Flags centralizes every ffprobe CLI flag in one place so they are easy to

@@ -1,4 +1,4 @@
-// Package server implements the `orchestrator serve` HTTP bridge: a local
+// Package server implements the `veritmo serve` HTTP bridge: a local
 // REST + SSE API over the existing pipeline, projects, artifacts and
 // environment, plus, when it is given a directory (--web-dir), the static files of a front end. It never changes
 // pipeline semantics — it drives internal/project/pipeline and re-emits its event stream verbatim.
@@ -9,11 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/media"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/videoedit"
 	"net"
 	"net/http"
 	"os"
@@ -21,20 +16,29 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"veritmo/internal/assets3d"
+	"veritmo/internal/assets3d/generate"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/media"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/videoedit"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/settingsdb"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/assistant"
-	"mediaOrquestator/internal/server/generation"
-	"mediaOrquestator/internal/server/models"
-	"mediaOrquestator/internal/server/music"
-	"mediaOrquestator/internal/server/prompts"
-	"mediaOrquestator/internal/server/workspace"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/settingsdb"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/assistant"
+	"veritmo/internal/server/generation"
+	"veritmo/internal/server/library3d"
+	"veritmo/internal/server/models"
+	"veritmo/internal/server/music"
+	"veritmo/internal/server/prompts"
+	"veritmo/internal/server/workspace"
+	"veritmo/internal/video/motion"
 )
 
 // Config holds the serve subcommand's settings.
@@ -51,7 +55,7 @@ type Config struct {
 	// ModelsDir, when set, is where the model files live (spec models-directory): models/ in the repository is a link
 	// to it. Empty leaves models/ where it is.
 	ModelsDir string
-	// Store is the database of the process, opened and checked by the caller (orchestrator serve does it, and refuses to start while
+	// Store is the database of the process, opened and checked by the caller (veritmo serve does it, and refuses to start while
 	// migrations are pending). When nil, New opens the one DBPath and Database name and applies its migrations: for tests and for an
 	// embedder that has no deployment workflow.
 	Store *store.Store
@@ -74,7 +78,7 @@ type Config struct {
 	// them (see musicsvc.ServiceHost).
 	Services *musicsvc.ServiceHost
 	// Database is where the run history is kept: empty means the SQLite file at DBPath. ServerName is how this
-	// server is called in a history that several share. cmd/orchestrator fills both from the settings; tests leave
+	// server is called in a history that several share. cmd/veritmo fills both from the settings; tests leave
 	// them empty so they never touch a real database.
 	Database   settings.Database
 	ServerName string
@@ -107,6 +111,7 @@ type Server struct {
 	models     *models.Handler
 	generation *generation.Handler
 	music      *music.Handler
+	models3d   *library3d.Handler
 	prompts    *prompts.Handler
 
 	// started is when the server was built, for its uptime.
@@ -169,7 +174,7 @@ func New(cfg Config) (*Server, error) {
 		cfg.MediaDir = abs
 		for _, id := range media.Projects(cfg.ProjectsDir) {
 			if p := media.Pending(filepath.Join(cfg.ProjectsDir, id), abs, id); len(p) > 0 {
-				slog.Warn("a project still keeps files outside the media directory: run `orchestrator media migrate`", "project", id, "files", strings.Join(p, ", "))
+				slog.Warn("a project still keeps files outside the media directory: run `veritmo media migrate`", "project", id, "files", strings.Join(p, ", "))
 			}
 		}
 	}
@@ -184,7 +189,7 @@ func New(cfg Config) (*Server, error) {
 		}
 	}
 	// The one database of the process: the run history and every table of the data layer live in it. The program gives it opened and
-	// checked (orchestrator serve refuses to start while migrations are pending: the schema is changed by `orchestrator data migrate`,
+	// checked (veritmo serve refuses to start while migrations are pending: the schema is changed by `veritmo data migrate`,
 	// run by the deployment workflow). Without one (tests, an embedder with no workflow) New opens DBPath and migrates it, and closes it.
 	st, ownStore := cfg.Store, false
 	if st == nil {
@@ -235,6 +240,19 @@ func New(cfg Config) (*Server, error) {
 	s.models.SweepPartials()
 	s.generation = generation.New(generationHost{s})
 	s.music = music.New(musicHost{s})
+	s.models3d = library3d.New(assets3d.New(assets3d.ResolveDir(os.Getenv), assets3d.DefaultPacks()))
+	s.models3d.Library().Preview = func(ctx context.Context, sources string, description []byte, width int) ([]byte, error) {
+		// a square frame of the model on its own: the settings of a scene of no project
+		cfg := &config.Config{Defaults: config.Defaults{Resolution: "1024x1024", FPS: 30}}
+		return s.workspace.PreviewDescriptionIn(ctx, cfg, sources, description, 0, 1, width)
+	}
+	s.models3d.SetHost(model3dHost{s})
+	s.models3d.SetWorkspace(s.workspace)
+	model3dService := NewModel3DService(s.envRunner, true, s.cfg.Services)
+	s.models3d.SetService(model3dService)
+	s.workspace.SetModelLibrary(s.models3d.Library())
+	s.workspace.SetModelService(model3dService) // a run of a models3d project makes its models with it (it never starts the container: NoStart)
+	s.music.SetModelLibrary(s.models3d.Library())
 	s.prompts = prompts.New(promptsHost{s})
 	s.routes()
 	s.videoedit.SetVision(s.models.Vision())           // the tools that read a picture with a network ask this server's service
@@ -263,6 +281,9 @@ func (s *Server) routes() {
 	// music-motion, the waveform of a song and its analysis, recognition, dictation, loudness, and the engines
 	// HeartMuLa, DiffRhythm2 and CLAP with the start and stop of their containers
 	s.music.Register(s.handle)
+
+	// model-library: the packs of 3D models, their installation, the catalog of their models and its thumbnails
+	s.models3d.Register(s.handle)
 
 	// api-access-control
 	s.handle("POST /api/auth/ticket", s.handleAuthTicket)
@@ -401,4 +422,31 @@ func useBlockStore(st *store.Store) (release func()) {
 	dir := hyperframes.ResolveDir(os.Getenv)
 	musicmotion.BlockStore = func() hyperframes.Store { return hyperframes.NewStoreDB(dir, st) }
 	return func() { musicmotion.BlockStore = prev }
+}
+
+// absOr is the absolute path of a relative one (the same text when the working folder cannot be read).
+func absOr(p string) string {
+	if abs, err := filepath.Abs(p); err == nil {
+		return abs
+	}
+	return p
+}
+
+// NewModel3DService is the 3D generator service of this machine: its container, its weights in models/model3d and the Hugging Face key saved
+// here. The server never starts it by itself (noStart); the command line does. TripoSR runs as the .NET service of services (bin/services/triposr)
+// unless the setting model3d_backend says docker; Stable Fast 3D always runs in the container.
+func NewModel3DService(r runner.CommandRunner, noStart bool, services *musicsvc.ServiceHost) *generate.Service {
+	svc := &generate.Service{Runner: r, ModelsDir: absOr(generate.WeightsDir), NoStart: noStart, Services: services, Backend: settings.Model3DBackend,
+		HFKey: func() string { return keyServices["huggingface"].effective() }}
+	if host := strings.TrimSpace(os.Getenv("MODEL3D_HOST")); host != "" {
+		// a service somewhere else (the compose stack sets it): setting the address is the decision to send pictures there
+		token := strings.TrimSpace(os.Getenv("MODEL3D_TOKEN"))
+		if f := strings.TrimSpace(os.Getenv("MODEL3D_TOKEN_FILE")); f != "" {
+			if b, err := os.ReadFile(f); err == nil {
+				token = strings.TrimSpace(string(b))
+			}
+		}
+		svc.External = musicsvc.External{Host: host, Token: token, Consented: true}
+	}
+	return svc
 }

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 func detectFor(t *testing.T, found bool, version string) (Info, error) {
@@ -63,7 +63,7 @@ func TestDetectUnreadableVersion(t *testing.T) {
 }
 
 func TestParseDevices(t *testing.T) {
-	out := "Blender 5.2.3\nMO_DEVICE OPTIX NVIDIA GeForce RTX 5060 Ti\nMO_DEVICE CUDA NVIDIA GeForce RTX 5060 Ti\nMO_DEVICE CPU Intel Core Ultra 7 265\nnoise\n"
+	out := "Blender 5.2.3\nVERITMO_DEVICE OPTIX NVIDIA GeForce RTX 5060 Ti\nVERITMO_DEVICE CUDA NVIDIA GeForce RTX 5060 Ti\nVERITMO_DEVICE CPU Intel Core Ultra 7 265\nnoise\n"
 	devs := parseDevices(out)
 	if len(devs) != 3 || devs[0].Type != "OPTIX" || devs[0].Name != "NVIDIA GeForce RTX 5060 Ti" || devs[2].Type != "CPU" {
 		t.Fatalf("devices = %+v", devs)
@@ -72,7 +72,7 @@ func TestParseDevices(t *testing.T) {
 
 func TestDevicesPassesTheEnvironment(t *testing.T) {
 	fr := runner.NewFakeRunner()
-	fr.Script(runner.ScriptedResult{Stdout: []byte("MO_DEVICE CPU x\n")})
+	fr.Script(runner.ScriptedResult{Stdout: []byte("VERITMO_DEVICE CPU x\n")})
 	devs, err := Devices(context.Background(), fr, "/usr/bin/blender", "CUDA_VISIBLE_DEVICES=1")
 	if err != nil || len(devs) != 1 {
 		t.Fatalf("devs=%v err=%v", devs, err)

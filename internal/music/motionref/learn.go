@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 // MaxPartIdeas is how many ideas of parts a learning asks the assistant for.

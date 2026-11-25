@@ -3,7 +3,7 @@ package cache_test
 import (
 	"fmt"
 
-	"mediaOrquestator/internal/platform/cache"
+	"veritmo/internal/platform/cache"
 )
 
 // A picture is found again in the cache when every parameter that draws it is the same: change one (here the seed)

@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/video/motion"
 )
 
 func browserOrSkip(t *testing.T) string {

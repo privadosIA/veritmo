@@ -5,10 +5,10 @@
 package models
 
 import (
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/modelcat"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/modelcat"
 )
 
 // Host is what the family needs from the server. The values tests replace after the server is built are asked

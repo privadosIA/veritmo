@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/project/pipeline"
+	"veritmo/internal/project/pipeline"
 )
 
 func good() Design {

@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/assistant/describe"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/describe"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
 )
 
 // ReviewField is the `review` of a draft request: true, false or {min, attempts}.
@@ -158,8 +158,10 @@ type PieceReview struct {
 	FinishedAt *time.Time                `json:"finished_at,omitempty"`
 	Model      string                    `json:"model,omitempty"`
 	Scenes     []musicmotion.SceneReview `json:"scenes"`
-	Overall    *musicmotion.Overall      `json:"overall,omitempty"`
-	Error      string                    `json:"error,omitempty"`
+	// Skipped are the script pieces the review left out because Blender draws them (a 3D scene is not a page to grade).
+	Skipped []string             `json:"skipped,omitempty"`
+	Overall *musicmotion.Overall `json:"overall,omitempty"`
+	Error   string               `json:"error,omitempty"`
 }
 
 func (h *Handler) saveReview(id string, r PieceReview) {
@@ -198,6 +200,16 @@ func (h *Handler) handlePieceReview(w http.ResponseWriter, r *http.Request) {
 		api.Refuse(w, "the piece has no script yet: propose or set one first")
 		return
 	}
+	var skipped []string
+	for _, p := range script.Pieces {
+		if p.Blender != nil {
+			skipped = append(skipped, p.ID)
+		}
+	}
+	if len(skipped) == len(script.Pieces) {
+		api.Refuse(w, "every piece of the script is a 3D scene (blender): there is no page to review")
+		return
+	}
 	if err := llm.Check(settings.TaskQuality, ""); err != nil && api.WriteRoutingError(w, err) {
 		return
 	}
@@ -222,7 +234,7 @@ func (h *Handler) handlePieceReview(w http.ResponseWriter, r *http.Request) {
 		api.WriteError(w, http.StatusConflict, api.CodeConflict, "a proposal, a batch of scenes or a review of this piece is still running: wait for it")
 		return
 	}
-	rv := PieceReview{State: PieceReviewRunning, StartedAt: time.Now().UTC(), Scenes: []musicmotion.SceneReview{}}
+	rv := PieceReview{State: PieceReviewRunning, StartedAt: time.Now().UTC(), Scenes: []musicmotion.SceneReview{}, Skipped: skipped}
 	h.saveReview(info.ID, rv)
 	spec := musicmotion.ProjectSpec{Map: m, Design: st.Design, Script: script, Cat: h.mmCatalog(), Lib: h.mmLibrary(), FPS: info.FPS, Width: info.Width, Height: info.Height, World: info.World}
 	h.drafts.wg.Add(1)

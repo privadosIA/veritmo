@@ -11,8 +11,8 @@ import (
 	"strings"
 	"unicode"
 
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/server/api"
 )
 
 const (

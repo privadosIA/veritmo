@@ -24,7 +24,7 @@ output:
 
 ```bash
 # o puntualmente desde la CLI, sin tocar el YAML:
-bin/orchestrator --mode images scenes.yaml
+bin/veritmo --mode images scenes.yaml
 ```
 
 `--mode images` on a video project runs the image pipeline

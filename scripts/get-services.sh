@@ -8,23 +8,25 @@
 #   diffrhythm2 diffrhythm2-service     (song generator) and the diffrhythm2 executable (MuQ-MuLan: "muq" in "Take it from a video or audio")
 #   lionclap    lionclap-service        (LAION-CLAP, the sound classifier of "Take it from a video or audio")
 #   videovision videovision-service     (the person mask and the depth of the video-edit tools; runs on the CPU, no CUDA)
+#   triposr     triposr-service         (3D model from one picture, TripoSR; the same HTTP contract as the docker/model3d container, which stays as the other backend)
+#   stable-fast-3d  stablefast3d-service (3D model from one picture, Stable Fast 3D; the same contract, the other engine of that container)
 #
 #   bash scripts/get-services.sh                       # all of them, for an NVIDIA GPU
 #   bash scripts/get-services.sh --only lionclap       # one of them (or several: --only lionclap,videovision)
 #   bash scripts/get-services.sh --cpu                 # CPU build (no CUDA libraries)
 #   bash scripts/get-services.sh --no-share            # keep a separate copy of every library (see below)
 #   bash scripts/get-services.sh --share-only          # build nothing: share the libraries of the services already in bin/services
-#   MO_SERVICES_SRC=~/src bash scripts/get-services.sh # where the repositories are (default: the folder above this one)
+#   VERITMO_SERVICES_SRC=~/src bash scripts/get-services.sh # where the repositories are (default: the folder above this one)
 #
-# The source of the ports (heartmula, diffrhythm2, lion-clap, video-vision and the musicgen-core they share) is in dotnet/ of this
-# repository (revisions in dotnet/REVISIONS.txt); MO_SERVICES_SRC uses other checkouts instead. The CUDA libraries are the same
+# The source of the ports (heartmula, diffrhythm2, lion-clap, video-vision, triposr, stable-fast-3d and the musicgen-core they share) is in dotnet/ of this
+# repository (revisions in dotnet/REVISIONS.txt); VERITMO_SERVICES_SRC uses other checkouts instead. The CUDA libraries are the same
 # files in the three big services, so after building the script keeps each of them once and makes the other copies hard links to it
 # (measured: 12.3 of 18.8 GB; see share_libraries). The weights are not touched: they live in models/music/ (and models/video/ for video-vision). Needs the .NET SDK 8 or newer. Safe to re-run.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-if [[ -n "${MO_SERVICES_SRC:-}" ]]; then SRC="${MO_SERVICES_SRC}"; else SRC="${ROOT}/dotnet"; fi
+if [[ -n "${VERITMO_SERVICES_SRC:-}" ]]; then SRC="${VERITMO_SERVICES_SRC}"; else SRC="${ROOT}/dotnet"; fi
 OUT="${ROOT}/bin/services"
 BACKEND="cuda-linux"
 ONLY=""
@@ -37,7 +39,7 @@ while [[ $# -gt 0 ]]; do
         --only) ONLY="${2:?--only needs a name}"; shift 2 ;;
         --no-share) SHARE=0; shift ;;
         --share-only) SHARE_ONLY=1; shift ;;
-        -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
         *) echo "unknown option '$1' (try --help)" >&2; exit 2 ;;
     esac
 done
@@ -86,6 +88,8 @@ SERVICES=(
     "diffrhythm2|diffrhythm2|src/DiffRhythm2.Service/DiffRhythm2.Service.csproj|src/DiffRhythm2.Cli/DiffRhythm2.Cli.csproj"
     "lionclap|lion-clap|src/LionClap.Service/LionClap.Service.csproj"
     "videovision|video-vision|src/VideoVision.Service/VideoVision.Service.csproj"
+    "triposr|triposr|src/TripoSR.Service/TripoSR.Service.csproj"
+    "stable-fast-3d|stable-fast-3d|src/StableFast3D.Service/StableFast3D.Service.csproj"
 )
 
 done_any=0
@@ -94,7 +98,7 @@ for entry in "${SERVICES[@]}"; do
     [[ -n "${ONLY}" && ",${ONLY}," != *",${name},"* ]] && continue
     csproj="${SRC}/${repo}/${project}"
     if [[ ! -f "${csproj}" ]]; then
-        echo "[get-services] ✗  ${name}: ${csproj} is not there (dotnet/ is incomplete; or set MO_SERVICES_SRC)" >&2
+        echo "[get-services] ✗  ${name}: ${csproj} is not there (dotnet/ is incomplete; or set VERITMO_SERVICES_SRC)" >&2
         exit 1
     fi
     echo "[get-services] Building ${name} (${BACKEND}) ..."
@@ -108,6 +112,6 @@ for entry in "${SERVICES[@]}"; do
     done_any=1
 done
 
-[[ "${done_any}" == 1 ]] || { echo "[get-services] nothing to build: '${ONLY}' names none of heartmula, diffrhythm2, lionclap, videovision" >&2; exit 2; }
+[[ "${done_any}" == 1 ]] || { echo "[get-services] nothing to build: '${ONLY}' names none of heartmula, diffrhythm2, lionclap, videovision, triposr, stable-fast-3d" >&2; exit 2; }
 [[ "${SHARE}" == 1 ]] && share_libraries
 echo "[get-services] Done. Start them from the Environment screen."

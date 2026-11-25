@@ -13,9 +13,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"mediaOrquestator/internal/platform/media"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/modelcat"
 	"net/http"
 	"os"
 	"os/exec"
@@ -25,12 +22,15 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"veritmo/internal/platform/media"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/modelcat"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/video/videoedit"
 )
 
 // ---------------------------------------------------------------------------
@@ -88,6 +88,8 @@ type runManager struct {
 	// motion and services are the music motion engine and the music services of the server (see Host).
 	motion   pipeline.MotionEngine
 	services *musicsvc.ServiceHost
+	// models3d is the 3D service and the library a run of a models3d project makes its models with (set by the server).
+	models3d pipeline.Models3DServices
 	// browserCheck says whether a browser exists for the motion graphics of a run (nil: the check of the configuration, which looks on this machine).
 	browserCheck func() error
 
@@ -140,6 +142,7 @@ func (m *runManager) pipelineExecute(ctx context.Context, rn *run, emitter *even
 		VideoEdit:     m.videoEdit,
 		MotionParts:   m.motionParts(),
 		MusicServices: m.services,
+		Models3D:      &m.models3d,
 
 		NoContainerStart: true,
 	}, emitter)
@@ -728,7 +731,7 @@ func (h *Handler) handleRunsList(w http.ResponseWriter, r *http.Request) {
 	}
 	modes, bad := parseRunModes(r.URL.Query().Get("mode"))
 	if bad != "" {
-		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("invalid mode %q: use video, images, music or animation (comma separated)", bad))
+		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("invalid mode %q: use %s (comma separated)", bad, RunModesText))
 		return
 	}
 	listLimit := limit
@@ -1032,19 +1035,45 @@ func (h *Handler) UsesGenerator(generator string) bool {
 	return false
 }
 
+// UsesModels3D says whether a queued or running run makes 3D models, which is to say that it needs the 3D service to stay as it is.
+func (h *Handler) UsesModels3D() bool {
+	m := h.rm
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, rn := range m.runs {
+		if rn.cfg != nil && rn.cfg.Output.Mode == config.ModeModels3D {
+			return true
+		}
+	}
+	return false
+}
+
 // ProjectSize is the size in bytes of everything a project keeps on disk.
 func (h *Handler) ProjectSize(id string) int64 {
 	_, total := h.projectStorage(id)
 	return total
 }
 
-// parseRunModes reads a comma separated list of modes (video, images, music, animation); bad is the first one that is none.
+// validRunMode says whether the history and the statistics take it as a `mode`: the output modes they report (not video_edit, which has its own tools) and
+// animation, the music-motion pieces.
+func validRunMode(m string) bool {
+	switch mode := config.OutputMode(m); mode {
+	case config.ModeVideo, config.ModeImages, config.ModeMusic, config.ModeModels3D, ModeAnimation:
+		return true
+	}
+	return false
+}
+
+// RunModesText names the modes a run list or the statistics accept, for the message of a 400.
+const RunModesText = "video, images, music, models3d or animation"
+
+// parseRunModes reads a comma separated list of modes (video, images, music, models3d, animation); bad is the first one that is none.
 func parseRunModes(v string) (modes []string, bad string) {
 	for _, m := range strings.Split(v, ",") {
 		if m = strings.TrimSpace(m); m == "" {
 			continue
 		}
-		if mode := config.OutputMode(m); mode != config.ModeVideo && mode != config.ModeImages && mode != config.ModeMusic && mode != ModeAnimation {
+		if !validRunMode(m) {
 			return nil, m
 		}
 		modes = append(modes, m)

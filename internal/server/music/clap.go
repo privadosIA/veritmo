@@ -6,7 +6,7 @@ package music
 import (
 	"path/filepath"
 
-	"mediaOrquestator/internal/music/clap"
+	"veritmo/internal/music/clap"
 )
 
 func (h *Handler) clapWeightsDir() string {

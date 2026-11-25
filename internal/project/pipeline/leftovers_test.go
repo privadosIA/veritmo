@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 func TestIsLeftover_OnlyArtifactsOfScenesThatAreGone(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/platform/edition"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/platform/edition"
 )
 
 // A model the edition does not use is a 400 with its own code, for the assistant

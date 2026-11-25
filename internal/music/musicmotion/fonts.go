@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/music/musicmotion/fonts"
+	"veritmo/internal/music/musicmotion/fonts"
 )
 
 const fontLicence = "OFL-1.1"

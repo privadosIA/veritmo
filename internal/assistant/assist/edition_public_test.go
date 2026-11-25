@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"mediaOrquestator/internal/platform/edition"
+	"veritmo/internal/platform/edition"
 )
 
 // The public edition never sends anything to a model on the deny list, whichever

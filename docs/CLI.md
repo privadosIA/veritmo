@@ -1,4 +1,4 @@
-# Command line (`orchestrator`)
+# Command line (`veritmo`)
 
 [← Back to the README](../README.md)
 
@@ -6,41 +6,41 @@
 Build the CLI once from the project root:
 
 ```bash
-go build -o bin/orchestrator ./cmd/orchestrator
+go build -o bin/veritmo ./cmd/veritmo
 ```
 
 Then run it:
 
 ```bash
-bin/orchestrator [flags] [scenes.yaml]                 # run the pipeline
-bin/orchestrator import <dataset> -o scenes.yaml       # convert a scene dataset (see IMPORT.md)
-bin/orchestrator import --mode motion <dataset> -o scenes.yaml   # animated graphics; --mode music for songs
-bin/orchestrator export scenes.yaml -o dataset.json    # write a project as a dataset (or --format zip for a package; see IMPORT.md)
-bin/orchestrator serve --strict                          # start the server hiding every project not marked adult: false (by default only adult: true ones are hidden)
-bin/orchestrator --version                               # the edition of this build (private or public)
-bin/orchestrator describe photo.png                       # read a picture or a clip with a local vision model and print its prompt; --split gives one per shot (see ASSISTANT.md)
-bin/orchestrator check scenes.yaml                     # look at the animated clips of a project that was run: deformed people, colour drift, blur
-bin/orchestrator --project <id>                        # run a project of the database by its id (also with check and export); see below
-bin/orchestrator project pull <id> [file]              # write the saved definition of a project to a file; push <id> [file] saves a file as the definition
+bin/veritmo [flags] [scenes.yaml]                 # run the pipeline
+bin/veritmo import <dataset> -o scenes.yaml       # convert a scene dataset (see IMPORT.md)
+bin/veritmo import --mode motion <dataset> -o scenes.yaml   # animated graphics; --mode music for songs
+bin/veritmo export scenes.yaml -o dataset.json    # write a project as a dataset (or --format zip for a package; see IMPORT.md)
+bin/veritmo serve --strict                          # start the server hiding every project not marked adult: false (by default only adult: true ones are hidden)
+bin/veritmo --version                               # the edition of this build (private or public)
+bin/veritmo describe photo.png                       # read a picture or a clip with a local vision model and print its prompt; --split gives one per shot (see ASSISTANT.md)
+bin/veritmo check scenes.yaml                     # look at the animated clips of a project that was run: deformed people, colour drift, blur
+bin/veritmo --project <id>                        # run a project of the database by its id (also with check and export); see below
+bin/veritmo project pull <id> [file]              # write the saved definition of a project to a file; push <id> [file] saves a file as the definition
 ```
 
-The `scenes.yaml` path may be given positionally or via `--config`; if neither is given, it defaults to `./scenes.yaml`. **Flags must come before the positional path**, not after: Go's standard `flag` package stops parsing flags at the first non-flag argument, so `orchestrator scenes.yaml --json` silently treats `--json` as a second positional argument rather than a flag. Use `orchestrator --json scenes.yaml`, or pass the path via `--config` if you want flags in any order.
+The `scenes.yaml` path may be given positionally or via `--config`; if neither is given, it defaults to `./scenes.yaml`. **Flags must come before the positional path**, not after: Go's standard `flag` package stops parsing flags at the first non-flag argument, so `veritmo scenes.yaml --json` silently treats `--json` as a second positional argument rather than a flag. Use `veritmo --json scenes.yaml`, or pass the path via `--config` if you want flags in any order.
 
 ## Projects of the database
 
-The server keeps each project's definition in its database (see [DATA_STORE.md](DATA_STORE.md#the-projects-in-the-database)). The command line runs one of them with `--project <id>` (flags `--projects-dir`, default `projects`, and `--db`, default `.orchestrator/orchestrator.db`, or the database saved in Settings): it writes the saved definition and pages to the project's folder, runs there (the command moves into that folder, so the relative paths of the definition, such as `models/…`, resolve through the links it has) and takes back what the run changed as a new version. `check --project <id>` and `export --project <id>` do the same; a fix applied by `check --fix` becomes a version and no `scenes.yaml.bak` is left. An unknown project exits non-zero naming it before any program runs. `bin/orchestrator [scenes.yaml]` and `--config` still run a loose file and open no database.
+The server keeps each project's definition in its database (see [DATA_STORE.md](DATA_STORE.md#the-projects-in-the-database)). The command line runs one of them with `--project <id>` (flags `--projects-dir`, default `projects`, and `--db`, default `.orchestrator/orchestrator.db`, or the database saved in Settings): it writes the saved definition and pages to the project's folder, runs there (the command moves into that folder, so the relative paths of the definition, such as `models/…`, resolve through the links it has) and takes back what the run changed as a new version. `check --project <id>` and `export --project <id>` do the same; a fix applied by `check --fix` becomes a version and no `scenes.yaml.bak` is left. An unknown project exits non-zero naming it before any program runs. `bin/veritmo [scenes.yaml]` and `--config` still run a loose file and open no database.
 
 ```bash
-bin/orchestrator --project demo --keep-tmp
-bin/orchestrator project pull demo my.yaml     # edit my.yaml with an editor ...
-bin/orchestrator project push demo my.yaml     # ... and save it (validated like PUT /api/projects/{id}/config; the replaced definition is a version)
+bin/veritmo --project demo --keep-tmp
+bin/veritmo project pull demo my.yaml     # edit my.yaml with an editor ...
+bin/veritmo project push demo my.yaml     # ... and save it (validated like PUT /api/projects/{id}/config; the replaced definition is a version)
 ```
 
 **Editing `projects/<id>/scenes.yaml` by hand has no effect:** the next run overwrites it with the saved definition. Use `project pull` and `project push`, the editor, or `PUT /api/projects/{id}/config`. `push` exits non-zero with the validation error, and changes nothing, for a file that is not valid.
 
 ## The settings of a command
 
-A command reads and writes the same settings as the server, which are in the database (see [DATA_STORE.md](DATA_STORE.md#the-settings-the-prompts-the-blocks-and-the-motions-in-the-database)): `orchestrator cors add` is seen by a running server within 5 seconds, and a model routing saved in Settings is the one `check`, `describe` and `assist` use. The database is opened the first time a command needs a setting (the SQLite file `.orchestrator/orchestrator.db` of the folder it runs in, or the MySQL or Postgres saved in Settings); a command that never reads one opens nothing. Before the first start of the server there is no database file and the settings are still `settings.json`. A database that exists and is not migrated is not used: readers are told once (`run orchestrator data migrate`) and get no settings, and a command that saves one fails instead of saving over what it could not read.
+A command reads and writes the same settings as the server, which are in the database (see [DATA_STORE.md](DATA_STORE.md#the-settings-the-prompts-the-blocks-and-the-motions-in-the-database)): `veritmo cors add` is seen by a running server within 5 seconds, and a model routing saved in Settings is the one `check`, `describe` and `assist` use. The database is opened the first time a command needs a setting (the SQLite file `.orchestrator/orchestrator.db` of the folder it runs in, or the MySQL or Postgres saved in Settings); a command that never reads one opens nothing. Before the first start of the server there is no database file and the settings are still `settings.json`. A database that exists and is not migrated is not used: readers are told once (`run veritmo data migrate`) and get no settings, and a command that saves one fails instead of saving over what it could not read.
 
 ## Flags
 
@@ -65,14 +65,14 @@ A command reads and writes the same settings as the server, which are in the dat
 
 ## Filling the prompt presets
 
-`orchestrator prompts fetch [--source id] [--max n] [--seed n] [--media-dir DIR] [--db file] [--sources file] [--out file] [--dry-run]` downloads public prompt datasets whose licence it reads from their cards and writes them into the database of the server (`--db` is the SQLite file when no other database is saved in Settings; it must be migrated), so a running server lists them at once; the downloads and the report stay in `<prompts>/.cache` (or a bundle with `--out`). It is described in [PROMPT_PRESETS.md](PROMPT_PRESETS.md).
+`veritmo prompts fetch [--source id] [--max n] [--seed n] [--media-dir DIR] [--db file] [--sources file] [--out file] [--dry-run]` downloads public prompt datasets whose licence it reads from their cards and writes them into the database of the server (`--db` is the SQLite file when no other database is saved in Settings; it must be migrated), so a running server lists them at once; the downloads and the report stay in `<prompts>/.cache` (or a bundle with `--out`). It is described in [PROMPT_PRESETS.md](PROMPT_PRESETS.md).
 
 ## Checking the animated clips
 
-Wan sometimes deforms faces and bodies, or drifts in colour, from some second of a clip on. `orchestrator check scenes.yaml` looks at the animated clips of a project that has been run (it reads `tmp/scene_<id>.anim.avi`, so run with `--keep-tmp`) and says, for each animated scene, whether it is fine, can be **cut** at some second, or should be **made again**:
+Wan sometimes deforms faces and bodies, or drifts in colour, from some second of a clip on. `veritmo check scenes.yaml` looks at the animated clips of a project that has been run (it reads `tmp/scene_<id>.anim.avi`, so run with `--keep-tmp`) and says, for each animated scene, whether it is fine, can be **cut** at some second, or should be **made again**:
 
 ```text
-$ orchestrator check --model qwen3.8:27b scenes.yaml
+$ veritmo check --model qwen3.8:27b scenes.yaml
 [check] s01_bench_wide: ok (2.0s clean)
 [check] s04c_two_smile: trim to 1.0s of 2.0s — from 1.25s (vision: Extra arm on left person, fused anatomy)
 [check] s13_curve_path: retry (bad from the start) — from 1.00s (color)
@@ -83,11 +83,11 @@ checked 15 animated scenes: 10 ok, 5 with problems
 - **The verdict**: from the first counted bad frame the clean part is the time before it (minus one sampling step). With at least 0.8 s clean (`--min-keep`) the scene is **trim**; with less it is **retry**. One doubtful frame from the vision model alone is ignored unless it is severe (9 or more). The report goes to `out/<project>/quality.json`.
 - **`--fix`** edits `scenes.yaml` (comments kept, the original saved once as `scenes.yaml.bak`): a silent scene with a trim gets that `silence_seconds`, any other bad scene gets its `seed` + 1000 (a narrated scene cannot be cut: its clip is fitted to the narration). Then run the project: only the changed scenes are made again.
 - **Exit codes**: 0 when nothing is wrong (or `--fix` edited the file), 3 when there are problems and no `--fix`, 1 on an error.
-- **All in one**: `orchestrator --check --fix --check-model qwen3.8:27b --gpu 1 scenes.yaml` runs the project, checks it, fixes, runs the changed scenes again and checks again, up to `--check-attempts` rounds. The model needs the memory of its own (17 GB for the ones above), which is why the check runs when the run is over and unloads it.
+- **All in one**: `veritmo --check --fix --check-model qwen3.8:27b --gpu 1 scenes.yaml` runs the project, checks it, fixes, runs the changed scenes again and checks again, up to `--check-attempts` rounds. The model needs the memory of its own (17 GB for the ones above), which is why the check runs when the run is over and unloads it.
 
 ## HyperFrames blocks
 
-`orchestrator blocks import-hyperframes <registry/blocks dir>` copies the blocks of a HyperFrames clone whole into the catalog (the files in `hyperframes/`, or `$HYPERFRAMES_DIR`; the record of each block in the database, `--db` like the other commands) and checks them; `blocks check [name ...]` checks them again, `blocks list [--json]` lists them and `blocks frame <name> <seconds> <out.png>` draws one frame. The installer's optional component `hfblocks` does the whole thing (`bash scripts/get-hyperframes-blocks.sh`). See [HYPERFRAMES.md](HYPERFRAMES.md).
+`veritmo blocks import-hyperframes <registry/blocks dir>` copies the blocks of a HyperFrames clone whole into the catalog (the files in `hyperframes/`, or `$HYPERFRAMES_DIR`; the record of each block in the database, `--db` like the other commands) and checks them; `blocks check [name ...]` checks them again, `blocks list [--json]` lists them and `blocks frame <name> <seconds> <out.png>` draws one frame. The installer's optional component `hfblocks` does the whole thing (`bash scripts/get-hyperframes-blocks.sh`). See [HYPERFRAMES.md](HYPERFRAMES.md).
 
 ## Music generators in Docker
 
@@ -110,11 +110,11 @@ Splitting one clip across both GPUs does not speed it up; the gain comes from ru
 bash scripts/build-sd.sh
 bash scripts/get-piper.sh
 bash scripts/get-models.sh
-bin/orchestrator --gpu 1 --keep-tmp scenes.yaml
+bin/veritmo --gpu 1 --keep-tmp scenes.yaml
 ```
 
 Re-running with `--keep-tmp` from the previous run and only `scene_outro`'s prompt changed:
 
 ```bash
-bin/orchestrator --gpu 1 --keep-tmp --only scene_outro scenes.yaml
+bin/veritmo --gpu 1 --keep-tmp --only scene_outro scenes.yaml
 ```

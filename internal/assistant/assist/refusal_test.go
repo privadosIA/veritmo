@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/sched"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/sched"
 )
 
 func TestIsRefusal(t *testing.T) {

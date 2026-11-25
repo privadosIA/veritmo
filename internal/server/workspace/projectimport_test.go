@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 func writeFile(t *testing.T, path, text string, mod time.Time) {

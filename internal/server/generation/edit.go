@@ -11,17 +11,17 @@ import (
 	_ "image/jpeg" // the decoders image.DecodeConfig reads the size of the picture with
 	_ "image/png"
 	"math"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/workspace"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/workspace"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/export"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/export"
+	"veritmo/internal/server/api"
 )
 
 // defaultEditStrength is the strength an img2img edit uses when none is written (the Create page's).

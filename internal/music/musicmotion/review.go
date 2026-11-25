@@ -16,8 +16,8 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/video/motion"
 )
 
 // Limits of a review.

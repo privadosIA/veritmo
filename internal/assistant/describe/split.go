@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/platform/probe"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/platform/probe"
+	"veritmo/internal/platform/runner"
 )
 
 // Shot detection limits: a shot shorter than MinShotSeconds is merged into its

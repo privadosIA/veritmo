@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/video/blender"
+	"veritmo/internal/video/blender"
 )
 
 // blenderProbe is what asking Blender gives: who it is and what Cycles can render on.

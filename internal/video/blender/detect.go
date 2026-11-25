@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // Minimum is the oldest Blender the render is written for.
@@ -86,7 +86,7 @@ func DetectWith(ctx context.Context, r runner.CommandRunner, lookPath func(strin
 	return Info{Path: p, Version: v}, nil
 }
 
-// devicesScript prints one line per Cycles device ("MO_DEVICE <type> <name>").
+// devicesScript prints one line per Cycles device ("VERITMO_DEVICE <type> <name>").
 const devicesScript = `import bpy
 p = bpy.context.preferences.addons['cycles'].preferences
 for t in ('OPTIX', 'CUDA'):
@@ -97,10 +97,10 @@ for t in ('OPTIX', 'CUDA'):
         continue
     for d in p.devices:
         if d.type == t:
-            print('MO_DEVICE', d.type, d.name)
+            print('VERITMO_DEVICE', d.type, d.name)
 for d in p.devices:
     if d.type == 'CPU':
-        print('MO_DEVICE CPU', d.name)
+        print('VERITMO_DEVICE CPU', d.name)
         break
 `
 
@@ -126,7 +126,7 @@ func Devices(ctx context.Context, r runner.CommandRunner, bin string, env ...str
 func parseDevices(out string) []Device {
 	var devs []Device
 	for _, line := range strings.Split(out, "\n") {
-		rest, ok := strings.CutPrefix(strings.TrimSpace(line), "MO_DEVICE ")
+		rest, ok := strings.CutPrefix(strings.TrimSpace(line), "VERITMO_DEVICE ")
 		if !ok {
 			continue
 		}

@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/platform/httpclient"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
+	"veritmo/internal/platform/httpclient"
 )
 
 // Net is the part of the network the command uses, so that a test can put a fake in its place.

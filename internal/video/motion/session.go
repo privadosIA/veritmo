@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/platform/httpclient"
 	"net/http"
 	"os"
 	"os/exec"
@@ -17,6 +16,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"veritmo/internal/platform/httpclient"
+	"veritmo/internal/platform/legacyname"
 )
 
 // pageURL is the address the page is served under. Nothing is served there: the
@@ -141,11 +142,11 @@ func gpuArgs(args []string) []string {
 			out = append(out, a)
 		}
 	}
-	if os.Getenv("MO_BROWSER_GPU") == "hardware" {
+	if legacyname.Getenv("BROWSER_GPU") == "hardware" {
 		// the card of this machine through Vulkan (faster for heavy WebGL scenes; the frames can differ a little between machines)
 		out = append(out, "--use-gl=angle", "--use-angle=vulkan", "--enable-features=Vulkan,VulkanFromANGLE", "--ignore-gpu-blocklist", "--enable-unsafe-webgpu",
 			"--enable-blink-features=CanvasDrawElement", "--disable-vulkan-surface", "--unsafely-treat-insecure-origin-as-secure="+pageURL)
-		if extra := os.Getenv("MO_BROWSER_GPU_FLAGS"); extra != "" {
+		if extra := legacyname.Getenv("BROWSER_GPU_FLAGS"); extra != "" {
 			out = append(out, strings.Fields(extra)...)
 		}
 		return out

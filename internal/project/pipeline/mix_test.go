@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
 )
 
 func fp(v float64) *float64 { return &v }

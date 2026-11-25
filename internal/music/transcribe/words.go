@@ -79,7 +79,7 @@ func (t Tool) RunWords(ctx context.Context, wav, language string) (Heard, error)
 
 // RunWordsBySegments reads the words with the call that cuts the output into one segment per word (the way the words were
 // timed before the times of the tokens were used): each word has the span of its slice, which can be off by a good part of
-// a second. RunWords falls back to it; the bench of the timing of the words (orchestrator words bench) calls it to measure
+// a second. RunWords falls back to it; the bench of the timing of the words (veritmo words bench) calls it to measure
 // what the tokens improve.
 func (t Tool) RunWordsBySegments(ctx context.Context, wav, language string) (Heard, error) {
 	raw, err := t.runWhisper(ctx, wav, language, "-ml", "1", "-sow", "-oj") // one word per segment

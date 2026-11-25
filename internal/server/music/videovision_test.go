@@ -14,11 +14,11 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/server/generation"
-	"mediaOrquestator/internal/video/videoedit"
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/server/generation"
+	"veritmo/internal/video/videoedit"
+	"veritmo/internal/video/videovision"
 )
 
 // visionSetup is a server whose vision service is installed (or not), has its model files (or not) and runs (or

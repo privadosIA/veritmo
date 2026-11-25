@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/video/videoedit"
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/video/videoedit"
+	"veritmo/internal/video/videovision"
 )
 
 // videoEditServer is a server whose runs go through the real pipeline with stub tools: scale writes its result at

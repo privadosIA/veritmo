@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/settings"
 )
 
 // Version is the version of the service this program is made for.
@@ -21,7 +21,7 @@ const Version = "1"
 // What the local engine is made of.
 const (
 	// Container is the name the service is known by (its state and log files carry it).
-	Container = "mo-diffrhythm2"
+	Container = "vt-diffrhythm2"
 	// WeightsDir is where the weights live, relative to the project root.
 	WeightsDir = "models/music/diffrhythm2"
 	// MinFreeMB is the video memory a song needs: 7.8 GB at the peak, measured, and a little room.
@@ -104,7 +104,7 @@ var spec = musicsvc.Spec{
 	Name: "DiffRhythm2", Version: Version, Container: Container, WeightsDir: WeightsDir,
 	MinFreeMB: MinFreeMB, Missing: MissingForService, Sends: "lyrics and style",
 	Service: musicsvc.ServiceSpec{Dir: "diffrhythm2", DLL: "diffrhythm2-service.dll", Prefix: "DIFFRHYTHM2", Device: true, Espeak: true},
-	Docker:  musicsvc.DockerSpec{Image: "mediaorquestator/diffrhythm2:1", Port: 8788},
+	Docker:  musicsvc.DockerSpec{Image: "veritmo/diffrhythm2:1", Port: 8788},
 	// measured on 2026-11-19: the image is 14.0 GB, the .NET service 5.8 GB with its native libraries; the weights are about 9.5 GB
 	Sizes: musicsvc.Sizes{Service: 5_800_000_000, Image: 14_000_000_000, Weights: 9_500_000_000},
 }

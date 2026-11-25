@@ -1,11 +1,11 @@
 > **STATUS (2026-10-08): COMPLETED.** The two changes this plan asked for — `add-scene-importer`
-> (the `orchestrator import` subcommand, package `internal/project/importer`) and `add-camera-motion` (the
+> (the `veritmo import` subcommand, package `internal/project/importer`) and `add-camera-motion` (the
 > `motion`/`look` presets, silent scenes with `silence_seconds`) — are implemented and archived in
 > `openspec/changes/archive/2026-10-08-*`. Closed decisions: subcommand (not a separate binary),
 > closed presets, silent scenes inside camera-motion, LoRA out of v1, concat -c copy with
 > stream normalization. Current reference: `README.md` + `openspec/specs/`.
 
-# TASK: Plan with OpenSpec a scene importer and a camera-motion phase for mediaOrquestator
+# TASK: Plan with OpenSpec a scene importer and a camera-motion phase for Veritmo
 
 You are a senior Go engineer. Your job in this session is planning ONLY
 (OpenSpec `propose` flow): do not implement anything until I run `/opsx:apply`.
@@ -111,7 +111,7 @@ Requirements to cover:
 
 ## 6. Decisions you must close WITH ME before writing specs
 One by one, with your recommendation:
-1. Importer as the subcommand `orchestrator import <in> -o scenes.yaml` or a separate
+1. Importer as the subcommand `veritmo import <in> -o scenes.yaml` or a separate
    binary in `cmd/import`? My bias: subcommand, it shares validation.
 2. `motion`/`look` as closed presets (above) or allow raw ffmpeg
    expressions per scene? My bias: presets in v1.

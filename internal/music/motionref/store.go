@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mediaOrquestator/internal/platform/store"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"veritmo/internal/platform/store"
 )
 
 // The states of a reference.

@@ -9,7 +9,7 @@ LABEL = {"yes": "Yes", "conditions": "With conditions", "no": "**No**", "unknown
 
 head = """# Third-party software and models
 
-mediaOrquestator is released under the [Apache License 2.0](LICENSE). That covers this repository's own code only.
+Veritmo is released under the [Apache License 2.0](LICENSE). That covers this repository's own code only.
 It does not bundle any model: models are downloaded on demand, from the Models tab or the `scripts/get-*.sh`
 scripts, **from their authors, under their authors' licenses**. Check each license before using the output
 commercially. This file is a guide, not legal advice, and the license text of each project is the one that counts.
@@ -33,7 +33,7 @@ The licenses below are what each project declares in its repository (checked 202
 | The video-vision service (a .NET service of ours, in its own repository) with ONNX Runtime and SkiaSharp | person mask and depth of the video-edit tools | ONNX Runtime MIT; SkiaSharp MIT |
 | [Ollama](https://ollama.com) | local assistant and vision (optional) | MIT |
 | Chrome / Chromium | motion graphics, rendered headless (system install) | its own terms |
-| [HyperFrames](https://github.com/heygen-com/hyperframes) (HeyGen; blocks imported with `orchestrator parts import-hyperframes`) | the parts `hf-<block>` converted from its blocks, each with an `origin.json` naming the block (the small pictures of a block's `assets/` are part of its Apache-2.0 files and travel inside the part); and the craft rules of the planner, script, scene and review prompts, of `docs/MUSIC_MODE_MOTION.md` § Craft and of `.claude/skills/music-video/`, distilled (not copied) from its skill references `story.md`, `motion.md`, `captions.md`, `review.md`, `film.md` and `types/music.md` at commit `3a4f57252377051f6602bd0149e84f8ead0845b2` | Apache-2.0 |
+| [HyperFrames](https://github.com/heygen-com/hyperframes) (HeyGen; blocks imported with `veritmo parts import-hyperframes`) | the parts `hf-<block>` converted from its blocks, each with an `origin.json` naming the block (the small pictures of a block's `assets/` are part of its Apache-2.0 files and travel inside the part); and the craft rules of the planner, script, scene and review prompts, of `docs/MUSIC_MODE_MOTION.md` § Craft and of `.claude/skills/music-video/`, distilled (not copied) from its skill references `story.md`, `motion.md`, `captions.md`, `review.md`, `film.md` and `types/music.md` at commit `3a4f57252377051f6602bd0149e84f8ead0845b2` | Apache-2.0 |
 | [GSAP](https://gsap.com) core 3.13.0 (GreenSock, now Webflow; `scripts/get-gsap.sh`, optional) | the timelines of the parts and scenes that animate with GSAP, drawn inline in the page the server builds | GSAP Standard "No Charge" License (not an open-source licence; see below) |
 | The libraries the HyperFrames blocks load from a CDN (`scripts/get-hyperframes-libs.sh`, optional): [three](https://threejs.org) and its loaders, [d3](https://d3js.org) and d3-delaunay, topojson-client, [lottie-web](https://github.com/airbnb/lottie-web), [clipper-lib](https://sourceforge.net/projects/jsclipper/), the Draco decoder, map data (us-atlas, world-atlas, es-atlas), [Inter](https://rsms.me/inter/) and GSAP 3.14.2 | drawn locally inside the pages of the blocks, so that no block asks the network for anything | MIT (three, lottie-web), ISC (d3, topojson-client, the atlases), Boost (clipper-lib), Apache-2.0 (Draco), SIL OFL 1.1 (Inter), GSAP as below; read from each package's `license` field on 2026-11-17, not legal advice |
 | The runtime of [HyperFrames](https://github.com/heygen-com/hyperframes) (`scripts/get-hyperframes-runtime.sh`, optional), built here from its source at a pinned commit with esbuild, postcss, acorn, acorn-walk and @chenglou/pretext | drawing the components and the blocks that mount sub-compositions | Apache-2.0 (HyperFrames); MIT (esbuild, postcss, acorn, acorn-walk, pretext; their code is bundled into the runtime; read from each package's `license` field on 2026-11-17, not legal advice) |
@@ -69,7 +69,7 @@ Anything you install from another source (for example a checkpoint from Civitai 
 own license; the orchestrator does not check it. Some checkpoints forbid selling the images or running them as a
 paid service, and some impose content rules.
 
-## Prompt datasets (only when you run `orchestrator prompts fetch`)
+## Prompt datasets (only when you run `veritmo prompts fetch`)
 
 The command reads the licence from each dataset's card on every run and uses a source only when it is `cc0-1.0`,
 `cc-by-4.0`, `apache-2.0` or `mit`; each preset keeps its source and licence. Built in: **DiffusionDB**

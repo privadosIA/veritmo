@@ -8,15 +8,15 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"mediaOrquestator/internal/server/api"
 	"os"
 	"path/filepath"
+	"veritmo/internal/server/api"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/fsutil"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/fsutil"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/video/videoedit"
 )
 
 // clipOptions maps the engines of the API to the generation options that take a first frame.

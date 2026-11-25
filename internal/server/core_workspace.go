@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/server/workspace"
 )
 
 type (
@@ -44,7 +44,7 @@ func (s *Server) dropsAvailability(next http.HandlerFunc) http.HandlerFunc {
 }
 
 // WriteProjectPackage writes the package of the project in projectDir (its scenes.yaml, sources/, a README and the
-// recipe) to w; `orchestrator export` uses it.
+// recipe) to w; `veritmo export` uses it.
 func WriteProjectPackage(w io.Writer, projectDir, assetsRoot, lang string) error {
 	return workspace.WriteProjectPackage(catalog, w, projectDir, assetsRoot, lang)
 }

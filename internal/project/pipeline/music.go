@@ -12,17 +12,17 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/music/diffrhythm2"
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/music/music"
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/music/diffrhythm2"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/music/music"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/export"
 )
 
 // runMusic drives the music-mode pipeline: per track, compose (only when the

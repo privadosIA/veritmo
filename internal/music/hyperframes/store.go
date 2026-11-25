@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // DirEnv names the environment variable that moves the folder of the blocks.

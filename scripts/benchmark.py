@@ -11,7 +11,7 @@ memory it needed, so two machines (a big desktop and a modest laptop) can be com
   python3 scripts/benchmark.py --gpu 1              # run on one GPU (index as nvidia-smi shows it)
   python3 scripts/benchmark.py --compare a.json b.json   # print two result files side by side
 
-Every test is a real project run through bin/orchestrator with fixed seeds (the same work on every
+Every test is a real project run through bin/veritmo with fixed seeds (the same work on every
 machine), forced (no cache) and measured from the phase events: seconds per phase (and, for the tests that run sd, `load_seconds`: how much of it sd spent loading models), the peak VRAM of
 the GPU in use and the lowest free RAM. A test that fails (out of memory on a modest card, say) is
 recorded as failed with the reason: that is a result too. The tests do not touch your projects; they
@@ -178,7 +178,7 @@ SERVER = os.environ.get("BENCH_SERVER", "http://127.0.0.1:4666")
 def api(method, path):
     """A call to the local server with the token that ./serve.sh keeps; returns the decoded JSON or None."""
     try:
-        token = open(os.path.expanduser("~/.config/mediaorquestator/token")).read().strip()
+        token = open(os.path.expanduser("~/.config/veritmo/token")).read().strip()
         req = urllib.request.Request(SERVER + path, method=method, headers={"Authorization": "Bearer " + token})
         with urllib.request.urlopen(req, timeout=30) as r:
             return json.load(r)
@@ -215,7 +215,7 @@ def run_test(tid, gpu, timeout, keep=None):
     name = project["project"]
     path = os.path.join(tempfile.mkdtemp(prefix="bench-"), "scenes.yaml")
     open(path, "w").write(to_yaml(project))
-    cmd = [os.path.join(ROOT, "bin/orchestrator"), "--json", "--force"]
+    cmd = [os.path.join(ROOT, "bin/veritmo"), "--json", "--force"]
     if gpu is not None:
         cmd += ["--gpu", str(gpu)]
     cmd.append(path)
@@ -327,8 +327,8 @@ def main():
             m = missing(tid)
             print(f"{tid:12} {title}  [{'ready' if not m else 'missing: ' + ', '.join(m)}]")
         return
-    if not os.access(os.path.join(ROOT, "bin/orchestrator"), os.X_OK):
-        sys.exit("bin/orchestrator is not built: go build -o bin/orchestrator ./cmd/orchestrator")
+    if not os.access(os.path.join(ROOT, "bin/veritmo"), os.X_OK):
+        sys.exit("bin/veritmo is not built: go build -o bin/veritmo ./cmd/veritmo")
     ids = a.only.split(",") if a.only else list(TESTS)
     bad = [i for i in ids if i not in TESTS]
     if bad:

@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/music"
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/music/music"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/export"
 )
 
 const enrichedJSON = `{"caption":"rich caption","lyrics":"[Verse]\nsung by the model","bpm":96,"duration":30,"keyscale":"G minor","timesignature":"4","vocal_language":"en","seed":%d,"lm_seed":%d,"audio_codes":"1,2,3","inference_steps":8,"output_format":"mp3","synth_model":"acestep-v15-turbo-Q8_0.gguf","lm_model":"acestep-5Hz-lm-1.7B-Q8_0.gguf"}`

@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/server/api"
 )
 
 const (

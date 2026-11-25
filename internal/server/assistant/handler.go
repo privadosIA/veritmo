@@ -7,12 +7,12 @@ import (
 	"context"
 	"net/http"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/describe"
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/describe"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
 )
 
 // Host is what the assistant needs from the server.

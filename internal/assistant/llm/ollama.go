@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"mediaOrquestator/internal/platform/httpclient"
 	"net/http"
 	"sort"
 	"strings"
+	"veritmo/internal/platform/httpclient"
 
-	"mediaOrquestator/internal/platform/edition"
+	"veritmo/internal/platform/edition"
 )
 
 // Ollama is a Provider backed by an Ollama server.

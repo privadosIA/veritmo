@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/settings"
 )
 
 const (

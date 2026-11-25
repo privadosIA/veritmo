@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"mediaOrquestator/internal/platform/media"
+	"veritmo/internal/platform/media"
 )
 
 // AtomicWrite writes data to path via a temp file + rename so a reader

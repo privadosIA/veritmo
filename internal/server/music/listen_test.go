@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/platform/runner"
 )
 
 const sungWords = `{"result":{"language":"es"},"transcription":[

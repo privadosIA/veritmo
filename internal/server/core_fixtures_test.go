@@ -17,9 +17,9 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/server/servertest"
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/server/servertest"
+	"veritmo/internal/server/workspace"
 )
 
 // The types of the answers of the workspace, under the names the tests use.

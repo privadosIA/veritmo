@@ -2,12 +2,12 @@ package describe
 
 import (
 	"context"
-	"mediaOrquestator/internal/platform/httpclient"
 	"os"
 	"time"
+	"veritmo/internal/platform/httpclient"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/settings"
 )
 
 // TaskOf is the routed task that describes a file of this kind.

@@ -38,7 +38,7 @@ The server SHALL keep prompt presets as rows of the database, with `kind` one of
 - **THEN** the answer is `added: 1`, `already: 1` and one `refused` entry with its index
 
 ### Requirement: The store sees presets written to its folder by another process
-The server SHALL list, without a restart, the presets the command `orchestrator prompts fetch` adds while it runs: the command writes them to the database the server uses. A preset file put in the folder by hand SHALL be listed only after an import is asked for.
+The server SHALL list, without a restart, the presets the command `veritmo prompts fetch` adds while it runs: the command writes them to the database the server uses. A preset file put in the folder by hand SHALL be listed only after an import is asked for.
 
 #### Scenario: Presets fetched while the server runs
 - **WHEN** the command writes presets while the server runs
@@ -64,3 +64,19 @@ What a preset is and how it is saved SHALL live in one package used by both the 
 
 - **WHEN** a preset with `own: false` is put
 - **THEN** the answer is `403` and the preset is unchanged
+
+### Requirement: Prompt presets have a kind for 3D models
+
+The kinds of prompt presets SHALL include `model3d`: `POST /api/prompts`, `GET /api/prompts?kind=model3d`, the search, the update, the deletion and the import and export of bundles SHALL treat it like the other kinds (a prompt of up to 2000 characters, tags, source and licence for a bundled preset), a kind that is not known SHALL be `400` naming the accepted ones, which include it, and the presets of this kind SHALL be the ones given to the assistant as style examples for the mode and the kind `model3d`. `veritmo prompts fetch` SHALL have no source for this kind and SHALL say so when it is asked for it (`--kind model3d`), fetching nothing; presets of the kind come from the person or from a bundle.
+
+#### Scenario: Save and find
+- **WHEN** a preset "a glossy pink roller skate, studio render" is saved with kind `model3d` and tag `props`
+- **THEN** `GET /api/prompts?kind=model3d&q=skate` finds it
+
+#### Scenario: Bundles
+- **WHEN** a bundle (format `prompt-presets`) with items of kind `model3d` is imported
+- **THEN** they are added, and listed by `GET /api/prompts?kind=model3d`
+
+#### Scenario: Fetch has no source
+- **WHEN** `veritmo prompts fetch` is asked for the kind `model3d`
+- **THEN** it says there is no public source for it and fetches nothing

@@ -2,7 +2,7 @@ package store
 
 // schema.go: the schema changes only through versioned migrations (what Flyway does in Java), run with gormigrate. A migration
 // has an id that orders it by date, is applied once, in order, when the program opens the database, is recorded in the table
-// schema_migrations with the time it was applied, and can be undone with Rollback (only `orchestrator data rollback` does it).
+// schema_migrations with the time it was applied, and can be undone with Rollback (only `veritmo data rollback` does it).
 // AutoMigrate is never called to create or change a table of the data layer.
 
 import (
@@ -70,7 +70,7 @@ type AppliedMigration struct {
 
 // Migrate applies, in order, the migrations the database has not applied, all or nothing where the engine allows it (SQLite
 // and Postgres; MySQL commits each DDL statement). It refuses a database that has applied migrations the program does not have.
-// Only `orchestrator data migrate` (which the deployment workflow runs) calls it in the program: the server never migrates, it
+// Only `veritmo data migrate` (which the deployment workflow runs) calls it in the program: the server never migrates, it
 // checks with CheckMigrated. Two migrations at once, in this process or (MySQL, Postgres) in two, take turns: the second finds
 // nothing left to apply.
 func (s *Store) Migrate() error { return s.migrateWith(s.reg.Migrations()) }
@@ -92,7 +92,7 @@ func (s *Store) checkMigratedWith(list []*Migration) error {
 		return err
 	}
 	if len(pending) > 0 {
-		return fmt.Errorf("%w: %d pending (%s): run `orchestrator data migrate` (the deployment workflow does) before starting", ErrNotMigrated, len(pending), strings.Join(pending, ", "))
+		return fmt.Errorf("%w: %d pending (%s): run `veritmo data migrate` (the deployment workflow does) before starting", ErrNotMigrated, len(pending), strings.Join(pending, ", "))
 	}
 	return nil
 }
@@ -102,7 +102,7 @@ var ErrNotMigrated = errors.New("the database is not migrated")
 
 // migrationLockName is the name of the lock two programs migrating the same MySQL or Postgres database take turns with.
 const (
-	migrationLockName = "mediaorquestator_migrations"
+	migrationLockName = "veritmo_migrations"
 	migrationLockKey  = 727274915 // the same lock for Postgres, which takes a number
 )
 

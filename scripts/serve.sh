@@ -9,17 +9,17 @@
 #
 # The token is created once and reused on every start, so the one you pasted
 # in the dashboard keeps working. It is stored outside the repo, in
-# ~/.config/mediaorquestator/token (mode 600). Delete that file to rotate it.
+# ~/.config/veritmo/token (mode 600). Delete that file to rotate it.
 # The server starts censored: projects marked for adults (adult: true in their
 # scenes.yaml) do not exist for the API. STRICT=1 also hides the projects that
 # were not marked as reviewed (adult: false).
 # The projects (configuration, sources, cache and results) can be kept in another directory, possibly on another
-# disk: MEDIA_DIR, or the path written in ~/.config/mediaorquestator/media-dir when the variable is not set (empty:
+# disk: MEDIA_DIR, or the path written in ~/.config/veritmo/media-dir when the variable is not set (empty:
 # they stay whole inside PROJECTS_DIR; MEDIA_DIR=off ignores the file). The project folder only holds links into it. Projects made
-# before it are moved with: bin/orchestrator-api media migrate --dry-run (then without it, with the server stopped).
+# before it are moved with: bin/veritmo-api media migrate --dry-run (then without it, with the server stopped).
 # A built front end (for example dashboards-lab: WEB_DIR=$HOME/Proyectos/dashboards-lab/dist/dashboard-full/browser) is served at the
 # root of the same port, so a Tailscale or a tunnel address that points at the server shows it with no CORS: WEB_DIR, or the path
-# written in ~/.config/mediaorquestator/web-dir when the variable is not set (WEB_DIR=off ignores the file). Without it the root is a
+# written in ~/.config/veritmo/web-dir when the variable is not set (WEB_DIR=off ignores the file). Without it the root is a
 # plain note and the server is only the API.
 # Environment overrides: ADDR (wins over --local), PROJECTS_DIR, MEDIA_DIR, NO_BUILD=1
 # (start the binary as it is), STRICT=1,
@@ -28,7 +28,7 @@
 # machine down; if a run goes over, that process is killed instead of the machine
 # hanging). Use MEM_MAX=0 (or off) to run without a cap, or another size such as MEM_MAX=40G.
 # --stop sends SIGTERM (a clean shutdown) to the PID saved in
-# ~/.config/mediaorquestator/serve-<port>.pid, or to the orchestrator listening on the
+# ~/.config/veritmo/serve-<port>.pid, or to the veritmo listening on the
 # port when there is no pid file, and waits for it to exit. A run in progress
 # is interrupted.
 
@@ -53,34 +53,44 @@ done
 if [ "$LOCAL" = "1" ]; then DEFAULT_ADDR="127.0.0.1:4666"; else DEFAULT_ADDR="0.0.0.0:4666"; fi
 ADDR="${ADDR:-$DEFAULT_ADDR}"
 PROJECTS_DIR="${PROJECTS_DIR:-projects}"
-MEDIA_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/mediaorquestator/media-dir"
+# The directory of the former name (mediaorquestator) moves once to the new one, so that the token and the other files are found where they always were:
+# a rename, nothing is copied or deleted (the binary does the same when it starts).
+CONFIG_BASE="${XDG_CONFIG_HOME:-$HOME/.config}"
+if [ -d "$CONFIG_BASE/mediaorquestator" ]; then
+  if [ ! -e "$CONFIG_BASE/veritmo" ]; then
+    mv "$CONFIG_BASE/mediaorquestator" "$CONFIG_BASE/veritmo" && echo "moved $CONFIG_BASE/mediaorquestator to $CONFIG_BASE/veritmo"
+  else
+    echo "warning: $CONFIG_BASE/mediaorquestator is ignored ($CONFIG_BASE/veritmo exists); it may be deleted" >&2
+  fi
+fi
+MEDIA_FILE="$CONFIG_BASE/veritmo/media-dir"
 if [ -z "${MEDIA_DIR+x}" ] && [ -r "$MEDIA_FILE" ]; then MEDIA_DIR="$(head -n1 "$MEDIA_FILE")"; fi
 MEDIA_DIR="${MEDIA_DIR-}"
 case "$MEDIA_DIR" in off|none|0) MEDIA_DIR="" ;; esac
-WEB_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/mediaorquestator/web-dir"
+WEB_FILE="$CONFIG_BASE/veritmo/web-dir"
 if [ -z "${WEB_DIR+x}" ] && [ -r "$WEB_FILE" ]; then WEB_DIR="$(head -n1 "$WEB_FILE")"; fi
 WEB_DIR="${WEB_DIR-}"
 case "$WEB_DIR" in off|none|0) WEB_DIR="" ;; esac
 
-TOKEN_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/mediaorquestator/token"
+TOKEN_FILE="$CONFIG_BASE/veritmo/token"
 
 PORT="${ADDR##*:}"
 PID_FILE="$(dirname "$TOKEN_FILE")/serve-$PORT.pid"
 
-# True when $1 is a live `orchestrator serve` (not a recycled PID).
+# True when $1 is a live `veritmo serve` (not a recycled PID).
 is_server() {
-  [ -r "/proc/$1/cmdline" ] && tr '\0' ' ' < "/proc/$1/cmdline" | grep -Eq 'orchestrator(-api)? serve'
+  [ -r "/proc/$1/cmdline" ] && tr '\0' ' ' < "/proc/$1/cmdline" | grep -Eq "(veritmo|orchestrator)(-api)? serve"
 }
 
 if [ "$STOP" = "1" ]; then
   PID="$(cat "$PID_FILE" 2>/dev/null || true)"
   if [ -z "$PID" ] || ! is_server "$PID"; then
-    # Started some other way: look for the orchestrator listening on the port.
+    # Started some other way: look for the veritmo listening on the port.
     PID="$(ss -ltnpH "sport = :$PORT" 2>/dev/null | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2 || true)"
     if [ -n "$PID" ] && ! is_server "$PID"; then PID=""; fi
   fi
   if [ -z "$PID" ]; then
-    echo "No mediaOrquestator server found (pid file $PID_FILE, port $PORT)."
+    echo "No Veritmo server found (pid file $PID_FILE, port $PORT)."
     rm -f "$PID_FILE"
     exit 0
   fi
@@ -123,10 +133,10 @@ EDITION_TAG=""
 CAN_BUILD=1
 { [ "${NO_BUILD:-0}" = "1" ] || ! command -v go >/dev/null 2>&1; } && CAN_BUILD=0
 
-BIN=bin/orchestrator-api
+BIN=bin/veritmo-api
 if [ "$CAN_BUILD" = "1" ] || [ ! -x "$BIN" ]; then
   echo "Building $BIN..."
-  go build ${EDITION_TAG:+-tags "$EDITION_TAG"} -o "$BIN" ./cmd/orchestrator
+  go build ${EDITION_TAG:+-tags "$EDITION_TAG"} -o "$BIN" ./cmd/veritmo
 fi
 
 if [ "$SHOW_TOKEN" = "1" ]; then TOKEN_SHOWN="$ORCHESTRATOR_TOKEN"; else TOKEN_SHOWN="(hidden: read it with: cat $TOKEN_FILE, or start with --show-token)"; fi
@@ -134,7 +144,7 @@ if [ "$SHOW_TOKEN" = "1" ]; then TOKEN_SHOWN="$ORCHESTRATOR_TOKEN"; else TOKEN_S
 cat <<EOF
 
 ==================================================================
-  mediaOrquestator server
+  Veritmo server
   Listening on:  $ADDR
   Projects in:   ${MEDIA_DIR:-$PROJECTS_DIR}
   Front end:     ${WEB_DIR:-none (API only)}

@@ -3,7 +3,7 @@ package motionlib
 import (
 	"testing"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // eachStore runs a test twice: on a library that keeps the record of a motion in its motion.json and on one that keeps it in the database, so that

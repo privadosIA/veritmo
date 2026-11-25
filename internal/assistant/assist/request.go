@@ -10,20 +10,21 @@ import (
 // Kind is what a free-form request asks to make.
 type Kind string
 
-// The kinds of request: a video, a picture or a song.
+// The kinds of request: a video, a picture, a song or a 3D model. The model never decides the last one: only the caller asks for it.
 const (
-	KindVideo Kind = "video"
-	KindImage Kind = "image"
-	KindMusic Kind = "music"
+	KindVideo   Kind = "video"
+	KindImage   Kind = "image"
+	KindMusic   Kind = "music"
+	KindModel3D Kind = "model3d"
 )
 
 // ParseKind validates a kind name.
 func ParseKind(s string) (Kind, error) {
 	switch k := Kind(strings.ToLower(strings.TrimSpace(s))); k {
-	case KindVideo, KindImage, KindMusic:
+	case KindVideo, KindImage, KindMusic, KindModel3D:
 		return k, nil
 	}
-	return "", fmt.Errorf("%w: unknown kind %q (use %q, %q or %q)", ErrInvalidInput, s, KindVideo, KindImage, KindMusic)
+	return "", fmt.Errorf("%w: unknown kind %q (use %q, %q, %q or %q)", ErrInvalidInput, s, KindVideo, KindImage, KindMusic, KindModel3D)
 }
 
 // TaskKind reads a request and says what it asks to make. It is not offered through ParseTask: the
@@ -68,7 +69,7 @@ var (
 func ParseKindReply(reply string) KindGuess {
 	var g KindGuess
 	if m := kindField.FindStringSubmatch(reply); m != nil {
-		if k, err := ParseKind(m[1]); err == nil {
+		if k, err := ParseKind(m[1]); err == nil && k != KindModel3D { // the kind of a 3D model is the caller's to name, never the model's
 			g.Kind, g.Understood = k, true
 		}
 	}
@@ -146,4 +147,15 @@ func SplitSpeech(text string) (speech, rest string) {
 func cleanRest(s string) string {
 	s = danglingConnector.ReplaceAllString(strings.TrimSpace(s), "")
 	return strings.Join(strings.Fields(s), " ")
+}
+
+// model3DTask is the prompt of the task that writes the prompt of one 3D model.
+func model3DTask() taskSpec {
+	return taskSpec{
+		system: "You write prompts for a 3D model generator that makes ONE object from one picture of it. Reply with ONE line in English, 12 to 35 words, " +
+			"at most 200 characters, describing a single object alone: its shape, material, colour and finish, as a product photographed on its own. " +
+			"No scene, no room, no people, no hands, no text to read, no background (it is added later) and no several objects together. No preamble, no quotes.",
+		user:      func(text string) string { return "Object: " + text + "\n(Answer in English.)" },
+		maxTokens: 100,
+	}
 }

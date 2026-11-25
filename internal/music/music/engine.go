@@ -3,7 +3,7 @@ package music
 import (
 	"context"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // Engine runs the two engine phases for the pipeline: compose (request to

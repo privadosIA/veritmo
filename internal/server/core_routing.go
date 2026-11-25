@@ -10,12 +10,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/providers"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/assistant"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/providers"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/assistant"
 )
 
 type routedTask struct {

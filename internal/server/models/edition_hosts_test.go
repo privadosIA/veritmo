@@ -1,6 +1,6 @@
 package models
 
-import "mediaOrquestator/internal/platform/edition"
+import "veritmo/internal/platform/edition"
 
 // The tests talk to fake servers; the public edition accepts only listed hosts.
 func init() {

@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/platform/store"
 	"mime"
 	"net/http"
 	"os"
@@ -20,15 +19,16 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"veritmo/internal/platform/store"
 
-	"mediaOrquestator/internal/assistant/describe"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/assistant"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/assistant/describe"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/assistant"
+	"veritmo/internal/video/motion"
 )
 
 const (

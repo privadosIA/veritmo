@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/video/motion"
 )
 
 // clipYAML is a video project whose scenes use the given clips (scene id -> file in sources/).

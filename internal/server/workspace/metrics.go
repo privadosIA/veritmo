@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/sched"
+	"veritmo/internal/platform/sched"
 )
 
 // durationBuckets are the upper bounds, in seconds, of the histogram of how long a run takes.
@@ -153,26 +153,26 @@ func (h *Handler) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	if h.cfg.Database.IsRemote() {
 		driver = h.cfg.Database.Driver
 	}
-	m.gauge("mediaorquestator_info", "This server, and the engine its history is kept in.", 1, "server", server, "database", driver)
-	m.gauge("mediaorquestator_uptime_seconds", "Seconds since the server started.", time.Since(h.host.Started()).Seconds())
+	m.gauge("veritmo_info", "This server, and the engine its history is kept in.", 1, "server", server, "database", driver)
+	m.gauge("veritmo_uptime_seconds", "Seconds since the server started.", time.Since(h.host.Started()).Seconds())
 
 	// The history.
 	dbUp := 0.0
 	if sqlDB, err := h.rm.hist.db.DB(); err == nil && sqlDB.PingContext(ctx) == nil {
 		dbUp = 1
 	}
-	m.gauge("mediaorquestator_database_up", "1 when the database of the history answers.", dbUp)
+	m.gauge("veritmo_database_up", "1 when the database of the history answers.", dbUp)
 	if dbUp == 1 {
 		h.runMetrics(&m, server)
 	}
 
 	// The machine.
 	if used, total, err := readRAMProc(); err == nil {
-		m.gauge("mediaorquestator_memory_used_bytes", "RAM in use (total minus available).", float64(used)*1048576)
-		m.gauge("mediaorquestator_memory_total_bytes", "RAM of the machine.", float64(total)*1048576)
+		m.gauge("veritmo_memory_used_bytes", "RAM in use (total minus available).", float64(used)*1048576)
+		m.gauge("veritmo_memory_total_bytes", "RAM of the machine.", float64(total)*1048576)
 	}
 	if avail, err := sched.MemAvailable(); err == nil {
-		m.gauge("mediaorquestator_memory_available_bytes", "RAM available (what can be used without swapping).", float64(avail))
+		m.gauge("veritmo_memory_available_bytes", "RAM available (what can be used without swapping).", float64(avail))
 	}
 	var disks []sample
 	for _, f := range []struct{ name, dir string }{{"projects", h.cfg.ProjectsDir}, {"models", filepath.Join(h.host.AssetsRoot(), "models")}} {
@@ -183,7 +183,7 @@ func (h *Handler) handleMetrics(w http.ResponseWriter, r *http.Request) {
 			disks = append(disks, sample{labelsOf("folder", f.name), float64(free)})
 		}
 	}
-	m.family("mediaorquestator_disk_free_bytes", "gauge", "Free space of the disk that holds the folder.", disks...)
+	m.family("veritmo_disk_free_bytes", "gauge", "Free space of the disk that holds the folder.", disks...)
 	if gpus, err := h.readGPUMetrics(ctx); err == nil && len(gpus) > 0 {
 		var used, total, util, temp, watt []sample
 		for _, g := range gpus {
@@ -194,11 +194,11 @@ func (h *Handler) handleMetrics(w http.ResponseWriter, r *http.Request) {
 			temp = append(temp, sample{l, g.TempC})
 			watt = append(watt, sample{l, g.Watt})
 		}
-		m.family("mediaorquestator_gpu_memory_used_bytes", "gauge", "Video memory in use.", used...)
-		m.family("mediaorquestator_gpu_memory_total_bytes", "gauge", "Video memory of the card.", total...)
-		m.family("mediaorquestator_gpu_utilization_ratio", "gauge", "How busy the card is, from 0 to 1.", util...)
-		m.family("mediaorquestator_gpu_temperature_celsius", "gauge", "Temperature of the card.", temp...)
-		m.family("mediaorquestator_gpu_power_watts", "gauge", "Power the card draws.", watt...)
+		m.family("veritmo_gpu_memory_used_bytes", "gauge", "Video memory in use.", used...)
+		m.family("veritmo_gpu_memory_total_bytes", "gauge", "Video memory of the card.", total...)
+		m.family("veritmo_gpu_utilization_ratio", "gauge", "How busy the card is, from 0 to 1.", util...)
+		m.family("veritmo_gpu_temperature_celsius", "gauge", "Temperature of the card.", temp...)
+		m.family("veritmo_gpu_power_watts", "gauge", "Power the card draws.", watt...)
 	}
 
 	// The music services (HeartMuLa, DiffRhythm2, LAION-CLAP).
@@ -218,8 +218,8 @@ func (h *Handler) handleMetrics(w http.ResponseWriter, r *http.Request) {
 		running = append(running, sample{l, boolFloat(a.Container.State == "running")})
 		starting = append(starting, sample{l, boolFloat(a.Container.State == "starting")})
 	}
-	m.family("mediaorquestator_music_service_running", "gauge", "1 when the service runs on this machine and is ready.", running...)
-	m.family("mediaorquestator_music_service_starting", "gauge", "1 while the service loads its model.", starting...)
+	m.family("veritmo_music_service_running", "gauge", "1 when the service runs on this machine and is ready.", running...)
+	m.family("veritmo_music_service_starting", "gauge", "1 while the service loads its model.", starting...)
 
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 	_, _ = w.Write([]byte(m.b.String()))
@@ -236,7 +236,7 @@ func boolFloat(b bool) float64 {
 const maxMetricClients = 20
 
 // runKindSQL is RunKindOf as an expression of the query (the history can be any of the engines gorm talks to).
-const runKindSQL = "CASE WHEN project LIKE 'api-gen-%' THEN 'video' WHEN project LIKE 'api-edit-%' THEN 'edit' ELSE 'project' END"
+const runKindSQL = "CASE WHEN project LIKE 'api-gen-%' THEN 'video' WHEN project LIKE 'api-edit-%' THEN 'edit' WHEN project LIKE 'api-m3d-%' THEN 'models3d' ELSE 'project' END"
 
 // runSeries is one series of the run metrics: what asked for the runs and the way they were asked for.
 type runSeries struct{ Client, Kind string }
@@ -278,7 +278,7 @@ func (h *Handler) runMetrics(m *metricsWriter, server string) {
 				rows = append(rows, sample{labelsOf("state", string(st), "client", k.Client, "kind", k.Kind), have[k][string(st)]})
 			}
 		}
-		m.family("mediaorquestator_runs", "gauge", "Runs of this server in the history, by state, client and kind (deleting a run lowers it).", rows...)
+		m.family("veritmo_runs", "gauge", "Runs of this server in the history, by state, client and kind (deleting a run lowers it).", rows...)
 		h.durationMetrics(m, server, named)
 	}
 }
@@ -303,7 +303,7 @@ func (h *Handler) durationMetrics(m *metricsWriter, server string, named func(st
 	if len(groups) == 0 {
 		groups[runSeries{clientEmbedded, kindProjectRun}] = nil
 	}
-	m.histogram("mediaorquestator_run_duration_seconds", "How long the latest successful runs of this server took, by client and kind.", durationBuckets, groups)
+	m.histogram("veritmo_run_duration_seconds", "How long the latest successful runs of this server took, by client and kind.", durationBuckets, groups)
 }
 
 // namedClients answers, for a client, the name it goes by in the metrics: its own when it is one of the

@@ -11,9 +11,9 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
 )
 
 // partsListSpec says what the list of parts can be sorted by.

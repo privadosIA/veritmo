@@ -10,16 +10,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/platform/store"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+	"veritmo/internal/platform/store"
 
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/server/api"
 )
 
 // learnTimeout bounds one learning (the drafts it starts run on their own and are not counted).

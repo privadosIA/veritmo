@@ -16,12 +16,12 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/music/music"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/export"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/music/music"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/export"
+	"veritmo/internal/server/api"
 )
 
 // The song library: every song of every music project in one list, with the

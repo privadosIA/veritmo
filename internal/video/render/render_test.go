@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 func TestParseResolution(t *testing.T) {

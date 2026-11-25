@@ -11,11 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/music/separate"
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/music/separate"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/platform/runner"
 )
 
 // heardJSON is what the fake whisper-cli writes: four words with the time of their tokens, which also reads as segments.

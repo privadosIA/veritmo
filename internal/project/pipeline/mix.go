@@ -10,13 +10,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/probe"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/export"
-	"mediaOrquestator/internal/video/assemble"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/probe"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/export"
+	"veritmo/internal/video/assemble"
 )
 
 // mixGraphVersion changes when the filter graph changes in a way that alters

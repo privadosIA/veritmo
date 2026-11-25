@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/project/config"
 )
 
 // fakeService is a HeartMuLa service that records the requests it gets and answers every job as done.

@@ -1,0 +1,27 @@
+# Models placed from files (spec blender-engine): sources/patinadoras.scene.json puts four characters of Kenney's
+# "Mini Characters 2.0" (CC0, see LICENSE-kenney-mini-characters.txt) on a rink under a 3D title: two cross it running (one
+# a fifth of a second behind the other), a third runs the other way and a fourth jumps in place without looping. 5 s at 120 bpm.
+project: blender-models
+
+output:
+  mode: video
+  file: out/blender-models.mp4
+
+defaults:
+  resolution: 1280x720
+  fps: 30
+  motion:
+    bpm: 120
+    design:
+      dark: "#10151c"
+      light: "#f1f5f9"
+      accent: "#ff4f8b"
+      display: playfair-display
+      body: mono
+      default_mode: dark
+
+scenes:
+  - id: patinadoras
+    silence_seconds: 5
+    blender:
+      build: patinadoras.scene.json

@@ -114,19 +114,19 @@ The CLI SHALL accept a `--mode` flag whose value is `video`, `images` or `music`
 
 #### Scenario: --mode images overrides a video-mode project
 
-- WHEN `scenes.yaml` has `output.mode: video` (or no `output` block) and the user invokes `orchestrator --mode images`
+- WHEN `scenes.yaml` has `output.mode: video` (or no `output` block) and the user invokes `veritmo --mode images`
 - THEN the CLI SHALL run the images phase sequence (`render` × variants → `export`) and SHALL NOT require `output.file`
 - AND no `tts`, `probe`, `clip`, or `concat` phase SHALL run
 
 #### Scenario: Invalid --mode value is rejected
 
-- WHEN the user invokes `orchestrator --mode audio`
+- WHEN the user invokes `veritmo --mode audio`
 - THEN the CLI SHALL exit with a non-zero status and an error stating that `--mode` must be `video`, `images` or `music`
 - AND no scene SHALL be processed
 
 #### Scenario: --mode music without tracks
 
-- WHEN the user invokes `orchestrator --mode music` on a project that declares only `scenes`
+- WHEN the user invokes `veritmo --mode music` on a project that declares only `scenes`
 - THEN the CLI SHALL exit with a non-zero status saying `tracks` are required in music mode
 
 ### Requirement: Pre-flight dependency check matches the selected mode
@@ -183,7 +183,7 @@ The existing flags `--only` and `--force` SHALL retain their documented semantic
 
 - WHEN `output.mode` is `images`
 - AND the project contains scenes `intro`, `middle`, and `outro`
-- AND the user invokes `orchestrator --only middle`
+- AND the user invokes `veritmo --only middle`
 - THEN the CLI SHALL render and export only scene `middle`
 - AND the CLI SHALL NOT render or export scenes `intro` or `outro`
 - AND any previously generated `out/<project>/intro.png` and `out/<project>/outro.png` files SHALL remain on disk unmodified
@@ -194,7 +194,7 @@ The existing flags `--only` and `--force` SHALL retain their documented semantic
 - WHEN `output.mode` is `images`
 - AND scene `intro` has `variants: 2`
 - AND a cached PNG for `intro` variant 0 and variant 1 already exists (matching `ImageHash`)
-- AND the user invokes `orchestrator --force`
+- AND the user invokes `veritmo --force`
 - THEN the CLI SHALL re-invoke `sd` for both variant 0 and variant 1 of scene `intro`
 - AND the CLI SHALL overwrite the existing PNG files with the new renders
 - AND the `
@@ -259,14 +259,14 @@ In `music` mode `--only <id>` SHALL refer to a track ID. An unknown ID SHALL be 
 
 ### Requirement: The command line exports a project
 
-`orchestrator export <scenes.yaml> -o <file>` SHALL write the project as a dataset (`-format dataset`, the default) or as the full project package with its recipe (`-format zip`, with `-lang es|en` for the language of `RECIPE.md`), never run the pipeline, print what a dataset cannot carry and how many entries were written, and refuse to overwrite an existing file unless `--force-overwrite` is given. Missing arguments or an unknown format SHALL exit non-zero.
+`veritmo export <scenes.yaml> -o <file>` SHALL write the project as a dataset (`-format dataset`, the default) or as the full project package with its recipe (`-format zip`, with `-lang es|en` for the language of `RECIPE.md`), never run the pipeline, print what a dataset cannot carry and how many entries were written, and refuse to overwrite an existing file unless `--force-overwrite` is given. Missing arguments or an unknown format SHALL exit non-zero.
 
 #### Scenario: Dataset
-- **WHEN** `orchestrator export -o demo.json scenes.yaml` is run
-- **THEN** the file is a dataset that `orchestrator import` reads back, and the notes are printed
+- **WHEN** `veritmo export -o demo.json scenes.yaml` is run
+- **THEN** the file is a dataset that `veritmo import` reads back, and the notes are printed
 
 #### Scenario: Full project
-- **WHEN** `orchestrator export -format zip -o demo.zip scenes.yaml` is run
+- **WHEN** `veritmo export -format zip -o demo.zip scenes.yaml` is run
 - **THEN** the zip holds `scenes.yaml`, the README, `RECIPE.md`, `recipe.json` and the sources
 
 #### Scenario: Existing output
@@ -275,7 +275,7 @@ In `music` mode `--only <id>` SHALL refer to a track ID. An unknown ID SHALL be 
 
 ### Requirement: The command line checks the clips of a project
 
-`orchestrator check [flags] <scenes.yaml>` SHALL check the animated clips of the project, print one line per scene and a total, and write `out/<project>/quality.json`, without running the pipeline. It SHALL exit 0 when nothing is wrong (or after `--fix` edited the file), 3 when there are problems and no `--fix`, and 1 on an error. `--no-vision`, `--min-severity`, `--min-keep` and `--fps` SHALL tune it.
+`veritmo check [flags] <scenes.yaml>` SHALL check the animated clips of the project, print one line per scene and a total, and write `out/<project>/quality.json`, without running the pipeline. It SHALL exit 0 when nothing is wrong (or after `--fix` edited the file), 3 when there are problems and no `--fix`, and 1 on an error. `--no-vision`, `--min-severity`, `--min-keep` and `--fps` SHALL tune it.
 
 #### Scenario: Problems and no fix
 - **WHEN** a scene is bad and the command runs without `--fix`
@@ -299,7 +299,7 @@ A run with `--check` SHALL keep `tmp/` and, when it ends, check the clips. With 
 
 ### Requirement: The command line imports HyperFrames blocks as parts
 
-`orchestrator parts import-hyperframes <dir> [--only a,b] [--dry-run] [--json]` SHALL convert the blocks installed in `<dir>` into parts as the `music-motion-parts` specification says, SHALL exit 0 when at least one block was written (or, with `--dry-run`, would be) and 1 when none, and SHALL print one line per block with `written` or `refused: <reason>` (JSON with `--json`), the warnings under it, and, for a written block that embeds pictures, the files embedded with their size (`pictures: stroke.svg 12 KB, paper.webp 140 KB`; in JSON, `pictures: [{name, kind, bytes}]`). It SHALL need no running server and SHALL use the same parts folder and checks the server uses.
+`veritmo parts import-hyperframes <dir> [--only a,b] [--dry-run] [--json]` SHALL convert the blocks installed in `<dir>` into parts as the `music-motion-parts` specification says, SHALL exit 0 when at least one block was written (or, with `--dry-run`, would be) and 1 when none, and SHALL print one line per block with `written` or `refused: <reason>` (JSON with `--json`), the warnings under it, and, for a written block that embeds pictures, the files embedded with their size (`pictures: stroke.svg 12 KB, paper.webp 140 KB`; in JSON, `pictures: [{name, kind, bytes}]`). It SHALL need no running server and SHALL use the same parts folder and checks the server uses.
 
 #### Scenario: A folder of blocks
 - **WHEN** the command runs over a folder with twelve installed blocks of which eight pass the checks
@@ -315,7 +315,7 @@ A run with `--check` SHALL keep `tmp/` and, when it ends, check the clips. With 
 
 ### Requirement: The command line uses the database of the server
 
-A command of `orchestrator` that reads or writes state kept in the database SHALL open the same database the server uses: the one saved in Settings, or the SQLite file given with `--db` (by default the one `serve` uses). A command SHALL be able to name another MySQL or Postgres database with `--driver`, `--host`, `--port`, `--database` and `--user`, and SHALL read its password from the environment variable `MO_DB_PASSWORD` and never from a flag (a command line is visible to the other users of the machine); those flags without `--driver`, `--driver sqlite` and an engine that does not exist SHALL be a usage error. It SHALL work while the server is running on the same SQLite file. A command that cannot open the database SHALL exit with a non-zero code and an error that names the database, before doing any work.
+A command of `veritmo` that reads or writes state kept in the database SHALL open the same database the server uses: the one saved in Settings, or the SQLite file given with `--db` (by default the one `serve` uses). A command SHALL be able to name another MySQL or Postgres database with `--driver`, `--host`, `--port`, `--database` and `--user`, and SHALL read its password from the environment variable `VERITMO_DB_PASSWORD` (or `MO_DB_PASSWORD` as the obsolete fallback) and never from a flag (a command line is visible to the other users of the machine); those flags without `--driver`, `--driver sqlite` and an engine that does not exist SHALL be a usage error. It SHALL work while the server is running on the same SQLite file. A command that cannot open the database SHALL exit with a non-zero code and an error that names the database, before doing any work.
 
 #### Scenario: While the server runs
 
@@ -329,45 +329,45 @@ A command of `orchestrator` that reads or writes state kept in the database SHAL
 
 ### Requirement: The command line manages the data
 
-`orchestrator data status` SHALL print the engine, the migrations applied and pending, the tables with their rows, the imports and the files left behind, changing nothing, on a database that is not migrated too. `orchestrator data migrate` SHALL apply the migrations the database has not applied, say which, and be the only command that changes the schema besides `rollback`; `import`, `export` and `restore` SHALL refuse a database with migrations pending and say to run `migrate`. `orchestrator data import [entity]` SHALL run the import of the state kept in files. `orchestrator data export <file>` SHALL write the export, `orchestrator data restore <file>` SHALL load it into an empty database and `orchestrator data rollback <migration>` SHALL undo the last migration applied (see `data-store`). Each SHALL exit with a non-zero code and a reason when it fails.
+`veritmo data status` SHALL print the engine, the migrations applied and pending, the tables with their rows, the imports and the files left behind, changing nothing, on a database that is not migrated too. `veritmo data migrate` SHALL apply the migrations the database has not applied, say which, and be the only command that changes the schema besides `rollback`; `import`, `export` and `restore` SHALL refuse a database with migrations pending and say to run `migrate`. `veritmo data import [entity]` SHALL run the import of the state kept in files. `veritmo data export <file>` SHALL write the export, `veritmo data restore <file>` SHALL load it into an empty database and `veritmo data rollback <migration>` SHALL undo the last migration applied (see `data-store`). Each SHALL exit with a non-zero code and a reason when it fails.
 
 #### Scenario: Status
 
-- **WHEN** `orchestrator data status` runs
+- **WHEN** `veritmo data status` runs
 - **THEN** it prints the engine, the migrations applied and one line per table with its rows
 
 #### Scenario: Migrate
 
-- **WHEN** `orchestrator data migrate` runs on a new database
+- **WHEN** `veritmo data migrate` runs on a new database
 - **THEN** it applies every migration and prints them, and a second run says there is nothing to apply
 
 #### Scenario: Import before migrating
 
-- **WHEN** `orchestrator data import` runs on a database with migrations pending
-- **THEN** it exits with a non-zero code saying to run `orchestrator data migrate`, and changes nothing
+- **WHEN** `veritmo data import` runs on a database with migrations pending
+- **THEN** it exits with a non-zero code saying to run `veritmo data migrate`, and changes nothing
 
 #### Scenario: Restore on a database with rows
 
-- **WHEN** `orchestrator data restore` runs on a database that is not empty
+- **WHEN** `veritmo data restore` runs on a database that is not empty
 - **THEN** it exits with a non-zero code, says why and changes nothing
 
 ### Requirement: The command line runs a project of the database
 
-`orchestrator --project <id>` (and the commands `check` and `export` given `--project <id>` instead of a `scenes.yaml`) SHALL read the definition and the pages of the project from the database, write them to its directory and run there, and take back what the run changed, as the server does. `orchestrator <scenes.yaml>` and `--config` SHALL keep running a loose file with no database, as before. An unknown project SHALL exit with a non-zero code naming it before any subprocess runs.
+`veritmo --project <id>` (and the commands `check` and `export` given `--project <id>` instead of a `scenes.yaml`) SHALL read the definition and the pages of the project from the database, write them to its directory and run there, and take back what the run changed, as the server does. `veritmo <scenes.yaml>` and `--config` SHALL keep running a loose file with no database, as before. An unknown project SHALL exit with a non-zero code naming it before any subprocess runs.
 
 #### Scenario: A project of the database
 
-- **WHEN** `orchestrator --project demo` runs
+- **WHEN** `veritmo --project demo` runs
 - **THEN** the run uses the definition saved for `demo`, in its directory
 
 #### Scenario: A loose file
 
-- **WHEN** `orchestrator some/scenes.yaml` runs
+- **WHEN** `veritmo some/scenes.yaml` runs
 - **THEN** it runs as before and no database is opened
 
 ### Requirement: The definition can be pulled and pushed as a file
 
-`orchestrator project pull <id> [file]` SHALL write the saved definition of a project to a file (by default `scenes.yaml` in its directory). `orchestrator project push <id> [file]` SHALL save the file as the definition after the validation a save through the API passes, keeping the replaced one as a version; a file that is not valid SHALL exit with a non-zero code and the validation error, changing nothing.
+`veritmo project pull <id> [file]` SHALL write the saved definition of a project to a file (by default `scenes.yaml` in its directory). `veritmo project push <id> [file]` SHALL save the file as the definition after the validation a save through the API passes, keeping the replaced one as a version; a file that is not valid SHALL exit with a non-zero code and the validation error, changing nothing.
 
 #### Scenario: Edit with an editor
 

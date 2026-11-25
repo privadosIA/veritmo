@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/music/transcribe"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/music/transcribe"
 )
 
 // heardAt is a whisper-cli output with the given words, each 0.5 s long from its start (seconds), timed by token. The fake

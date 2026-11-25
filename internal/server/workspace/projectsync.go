@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 const definitionFile = "scenes.yaml"
@@ -61,7 +61,7 @@ func (p *projectStore) materialize(id, dir string) error {
 	have, exists := fileSHA(path)
 	if !exists || have != row.DefinitionSHA {
 		if exists && have != p.lastSeen(id) {
-			slog.Warn("scenes.yaml was changed by hand and is overwritten by the saved definition (change a definition with PUT /api/projects/{id}/config or orchestrator project push)", "project", id)
+			slog.Warn("scenes.yaml was changed by hand and is overwritten by the saved definition (change a definition with PUT /api/projects/{id}/config or veritmo project push)", "project", id)
 		}
 		if err := api.AtomicWrite(path, []byte(row.Definition)); err != nil {
 			return err

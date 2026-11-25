@@ -14,7 +14,7 @@ import (
 	"regexp"
 	"strings"
 
-	"mediaOrquestator/internal/music/hyperframes"
+	"veritmo/internal/music/hyperframes"
 )
 
 // BlockStore is the catalog of blocks the layers read (the server's own folder); a test seam.

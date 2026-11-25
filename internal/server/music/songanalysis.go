@@ -19,12 +19,12 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/music/separate"
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/music/separate"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // whisperDir is where the Whisper model lives (a variable so tests can point it elsewhere).

@@ -3,8 +3,8 @@ package generation
 // names.go: the names under which this family uses what the workspace and the catalog define.
 
 import (
-	"mediaOrquestator/internal/server/modelcat"
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/server/modelcat"
+	"veritmo/internal/server/workspace"
 )
 
 type (

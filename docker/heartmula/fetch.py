@@ -2,7 +2,7 @@
 """Downloads the weights of the HeartMuLa service into /ckpt (about 21 GB). It is the only thing of this image that touches the network, and it only
 runs when the user asks for it:
 
-  docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v <weights folder>:/ckpt mediaorquestator/heartmula:1 python /opt/fetch.py
+  docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v <weights folder>:/ckpt veritmo/heartmula:1 python /opt/fetch.py
 
 It prints one line per step, so the caller can show where it is, and exits 0 only when every file is there. What is already in /ckpt is not downloaded again.
 """

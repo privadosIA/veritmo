@@ -16,7 +16,7 @@ type MigrationsStatus struct {
 	Pending []string           `json:"pending"`
 }
 
-// Status is the answer of GET /api/data/status and of `orchestrator data status`.
+// Status is the answer of GET /api/data/status and of `veritmo data status`.
 type Status struct {
 	Engine      string           `json:"engine"`
 	Migrations  MigrationsStatus `json:"migrations"`

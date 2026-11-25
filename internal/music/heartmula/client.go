@@ -4,7 +4,7 @@
 // service is in internal/platform/musicsvc.
 package heartmula
 
-import "mediaOrquestator/internal/platform/musicsvc"
+import "veritmo/internal/platform/musicsvc"
 
 // Version is the version of the service this program is made for.
 const Version = "1"

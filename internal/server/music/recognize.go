@@ -16,10 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/clap"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/clap"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/server/api"
 )
 
 // The recognition methods.

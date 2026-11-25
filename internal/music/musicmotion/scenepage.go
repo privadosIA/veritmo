@@ -10,9 +10,9 @@ import (
 	"math"
 	"strings"
 
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
 )
 
 // fixedTempoSeconds is how much of a fixed-tempo clock is made: a narrated scene's length is only known after its

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 func TestReferenceLimits_FollowTheMemoryOfTheCard(t *testing.T) {

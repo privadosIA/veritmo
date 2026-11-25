@@ -77,7 +77,7 @@ output:
 ```
 
 ```bash
-bin/orchestrator --mode music scenes.yaml     # or one-off from the CLI
+bin/veritmo --mode music scenes.yaml     # or one-off from the CLI
 ```
 
 A music project uses `tracks:` instead of `scenes:`; the two are
@@ -249,7 +249,7 @@ decide: **Use** writes the style into the track's prompt and the lyrics into its
 It is the same local assistant as the image one (Ollama, `qwen3:8b` by default,
 **CPU only**: the GPUs are not used), so it takes a few tens of seconds, can be
 cancelled and waits if a run is in progress so as not to compete for memory.
-From the terminal: `orchestrator assist music "<descripción>"` (with
+From the terminal: `veritmo assist music "<descripción>"` (with
 `--instrumental` it writes only the style) and via the API `POST /api/assist` with
 `"task": "music"` (see `docs/http-api.md`).
 
@@ -362,7 +362,7 @@ and suggests `keep_loaded: false` (or `engine: cli`); the whole run worked with
 
 ## HeartMuLa generator (optional)
 
-[HeartMuLa](https://github.com/HeartMuLa/heartlib) (Apache 2.0 licence) is a second song generator: in exchange for being about ten times slower than ACE-Step, the songs sound much better (vocals, instruments and structure). It is a **.NET service** (`bin/services/heartmula`) that the orchestrator talks to over HTTP, just as it talks to Ollama: if you have it on this machine it uses it, if not you can point it to the one on another machine, and if there is none **the option does not even appear** in the music project.
+[HeartMuLa](https://github.com/HeartMuLa/heartlib) (Apache 2.0 licence) is a second song generator: in exchange for being about ten times slower than ACE-Step, the songs sound much better (vocals, instruments and structure). It is a **.NET service** (`bin/services/heartmula`) that the veritmo talks to over HTTP, just as it talks to Ollama: if you have it on this machine it uses it, if not you can point it to the one on another machine, and if there is none **the option does not even appear** in the music project.
 
 ```yaml
 defaults:
@@ -388,7 +388,7 @@ tracks:
 1. The service, built with `bash scripts/get-services.sh` (the .NET SDK is required).
 2. The weights (about 21 GB): they are installed from the panel (**Models**, **Music** tab, "HeartMuLa" catalogue entry) into `models/music/heartmula/`.
 
-And a GPU with about 10,5 GB free: the orchestrator picks the one with the most free memory (or the one you indicate with `--gpu`) and, if none reaches it, the run fails saying how much each one has. **You start the service yourself** from the **Environment** screen, "Music services" panel (`mo-heartmula`, it listens only on `127.0.0.1`), with the **Start** button and the card you prefer, and it stays up between songs until you stop it with **Stop**: neither a run nor shutting down the server stops it. If you launch a run from the application with the service stopped, it is rejected immediately (422 `engine_not_running`) and the studio warns, with the link to Environment, and disables the create button. With the command line without a server (`orchestrator escenas.yaml`) the behaviour is as always: it starts the service at the beginning of the run and stops it at the end, whether it fails or is cancelled, unless it was already up. Inside, it frees the GPU after each song.
+And a GPU with about 10,5 GB free: the orchestrator picks the one with the most free memory (or the one you indicate with `--gpu`) and, if none reaches it, the run fails saying how much each one has. **You start the service yourself** from the **Environment** screen, "Music services" panel (`vt-heartmula`, it listens only on `127.0.0.1`), with the **Start** button and the card you prefer, and it stays up between songs until you stop it with **Stop**: neither a run nor shutting down the server stops it. If you launch a run from the application with the service stopped, it is rejected immediately (422 `engine_not_running`) and the studio warns, with the link to Environment, and disables the create button. With the command line without a server (`veritmo escenas.yaml`) the behaviour is as always: it starts the service at the beginning of the run and stops it at the end, whether it fails or is cancelled, unless it was already up. Inside, it frees the GPU after each song.
 
 **On another machine.** If the computer does not have enough GPU, run the service on another one (build it there with `scripts/get-services.sh`) and enter its address (and the key, if you protected it with `HEARTMULA_TOKEN`) in **Settings › HeartMuLa music generator**, with "Test" to check it. An address that is not this machine is "external": the lyrics and tags of your songs **are sent there**, and to save it you have to tick that you agree to send them to that address (you are asked once per address). With a saved address that one is always used and the local service is not started; if that address does not respond, the option disappears from the project (the reason is shown in Settings).
 
@@ -400,7 +400,7 @@ And a GPU with about 10,5 GB free: the orchestrator picks the one with the most 
 
 ## DiffRhythm2 generator (optional)
 
-[DiffRhythm2](https://github.com/ASLP-lab/DiffRhythm2) (ASLP-lab, Apache 2.0 licence, 1.000 million parameters; **note: it downloads the MuQ-MuLan and MuQ weights, which are CC-BY-NC 4.0, non-commercial**) is a third song generator, with the same pattern as HeartMuLa: it is a **.NET service** (`bin/services/diffrhythm2`) that the orchestrator talks to over HTTP and it is chosen with `defaults.music.generator`. It makes a complete song with aligned lyrics from the lyrics with structure tags and a few style words, and it is much faster than HeartMuLa.
+[DiffRhythm2](https://github.com/ASLP-lab/DiffRhythm2) (ASLP-lab, Apache 2.0 licence, 1.000 million parameters; **note: it downloads the MuQ-MuLan and MuQ weights, which are CC-BY-NC 4.0, non-commercial**) is a third song generator, with the same pattern as HeartMuLa: it is a **.NET service** (`bin/services/diffrhythm2`) that the veritmo talks to over HTTP and it is chosen with `defaults.music.generator`. It makes a complete song with aligned lyrics from the lyrics with structure tags and a few style words, and it is much faster than HeartMuLa.
 
 ```yaml
 defaults:
@@ -945,7 +945,7 @@ A song dataset is imported with the same format as the scene one (tuples
 `[id, título, lora, prompt]` in JSON, or HTML with `const data = [...]`):
 
 ```bash
-bin/orchestrator import canciones.json --mode music -o scenes.yaml
+bin/veritmo import canciones.json --mode music -o scenes.yaml
 ```
 
 In the panel, the import wizard has an "Video scenes /
@@ -974,13 +974,13 @@ models to be installed. The summary counts imported, instrumental and rejected.
 
 ### Music services (.NET): start, stop and idle memory
 
-**Since 2026-10-22 HeartMuLa, DiffRhythm2 and LAION-CLAP run as .NET services** (C# ports of the original models, Apache-2.0 licensed; `MO_SERVICES_SRC` points to other checkouts of `heartmula`, `diffrhythm2`, `lion-clap` and `musicgen-core`; `scripts/install.sh` offers the .NET SDK and builds the services). **Environment** starts and stops them with the usual buttons; what is launched is a process on this machine. `bash scripts/get-services.sh` builds them and leaves them in `bin/services/<nombre>` (the .NET SDK is required; `--only lionclap` for one, `--cpu` without CUDA); a missing service comes out with the reason `no_service`. Each process runs in its own session and its pid, port and card are kept in `.orchestrator/services/`: restarting the application server does not stop them and the new one finds them. Stopping them ends the whole process group and returns the VRAM. Starting lasts until the service says "listo" (ready) (it loads its model): meanwhile the state is "arrancando" (starting) and a run is rejected as if it were stopped. HeartMuLa puts the model on the chosen card and the codec on the other one with the most free memory (together they do not fit in 12 GB; with a single 12 GB card it is not yet measured). The DiffRhythm2 weights for the service are the converted ones (`decoder.safetensors`, `mulan_text.safetensors`, `mulan_text_tokenizer.json`), in the same folder as the downloaded checkpoint.
+**Since 2026-10-22 HeartMuLa, DiffRhythm2 and LAION-CLAP run as .NET services** (C# ports of the original models, Apache-2.0 licensed; `VERITMO_SERVICES_SRC` points to other checkouts of `heartmula`, `diffrhythm2`, `lion-clap` and `musicgen-core`; `scripts/install.sh` offers the .NET SDK and builds the services). **Environment** starts and stops them with the usual buttons; what is launched is a process on this machine. `bash scripts/get-services.sh` builds them and leaves them in `bin/services/<nombre>` (the .NET SDK is required; `--only lionclap` for one, `--cpu` without CUDA); a missing service comes out with the reason `no_service`. Each process runs in its own session and its pid, port and card are kept in `.orchestrator/services/`: restarting the application server does not stop them and the new one finds them. Stopping them ends the whole process group and returns the VRAM. Starting lasts until the service says "listo" (ready) (it loads its model): meanwhile the state is "arrancando" (starting) and a run is rejected as if it were stopped. HeartMuLa puts the model on the chosen card and the codec on the other one with the most free memory (together they do not fit in 12 GB; with a single 12 GB card it is not yet measured). The DiffRhythm2 weights for the service are the converted ones (`decoder.safetensors`, `mulan_text.safetensors`, `mulan_text_tokenizer.json`), in the same folder as the downloaded checkpoint.
 
 ### Music services: start, stop and idle memory
 
-The HeartMuLa (`mo-heartmula`) and DiffRhythm2 (`mo-diffrhythm2`) services can be **up at the same time**: each one listens on its own free port of `127.0.0.1`, so they do not collide. They are started and stopped from **Environment** (or with `POST /api/music/engines/{heartmula|diffrhythm2|clap}/start` and `/stop`, see `docs/http-api.md`); starting waits in the background for the service to say "listo" (ready) and, if it does not, the service is stopped and the panel shows why. They do not stop by themselves when the application server is closed and do not carry `--restart`: after rebooting the machine they are stopped.
+The HeartMuLa (`vt-heartmula`) and DiffRhythm2 (`vt-diffrhythm2`) services can be **up at the same time**: each one listens on its own free port of `127.0.0.1`, so they do not collide. They are started and stopped from **Environment** (or with `POST /api/music/engines/{heartmula|diffrhythm2|clap}/start` and `/stop`, see `docs/http-api.md`); starting waits in the background for the service to say "listo" (ready) and, if it does not, the service is stopped and the panel shows why. They do not stop by themselves when the application server is closed and do not carry `--restart`: after rebooting the machine they are stopped.
 
-In the same panel there is a third row, **LAION-CLAP** (`mo-clap`), which is not a generator: a model that compares audio with text, stopped until you start it. With 5 songs of known style it did not distinguish the genres well (all scores between 0,5 and 0,67); even so it is one of the options for recognising a song (see "Take it from a video or audio"). The service is built with `scripts/get-services.sh --only lionclap` and the weights (about 600 MB) go in `models/music/clap`; it offers `GET /health` and `POST /classify`.
+In the same panel there is a third row, **LAION-CLAP** (`vt-clap`), which is not a generator: a model that compares audio with text, stopped until you start it. With 5 songs of known style it did not distinguish the genres well (all scores between 0,5 and 0,67); even so it is one of the options for recognising a song (see "Take it from a video or audio"). The service is built with `scripts/get-services.sh --only lionclap` and the weights (about 600 MB) go in `models/music/clap`; it offers `GET /health` and `POST /classify`.
 
 If you want both at once, put HeartMuLa (it needs about 8 GB at full work) on the 16 GB card and DiffRhythm2 (about 5,6 GB) on the 12 GB one.
 

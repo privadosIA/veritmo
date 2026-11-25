@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/settings"
 )
 
 // Errors of routing a task to a provider.

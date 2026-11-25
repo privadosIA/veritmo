@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/workspace"
 )
 
 func newTestServer(t *testing.T) *Server {

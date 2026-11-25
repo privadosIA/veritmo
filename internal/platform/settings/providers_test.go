@@ -140,7 +140,7 @@ func TestKeysArePrivateAndSeparate(t *testing.T) {
 	if err := SetKey("a", key); err != nil {
 		t.Fatal(err)
 	}
-	kp := filepath.Join(dir, "mediaorquestator", "keys.json")
+	kp := filepath.Join(dir, "veritmo", "keys.json")
 	fi, err := os.Stat(kp)
 	if err != nil || fi.Mode().Perm() != 0o600 {
 		t.Fatalf("keys.json must exist with mode 0600: %v %v", err, fi)
@@ -149,7 +149,7 @@ func TestKeysArePrivateAndSeparate(t *testing.T) {
 	if di.Mode().Perm() != 0o700 {
 		t.Errorf("dir mode %v, want 0700", di.Mode().Perm())
 	}
-	sp, _ := os.ReadFile(filepath.Join(dir, "mediaorquestator", "settings.json"))
+	sp, _ := os.ReadFile(filepath.Join(dir, "veritmo", "settings.json"))
 	if strings.Contains(string(sp), key) {
 		t.Fatalf("the key must never be in settings.json: %s", sp)
 	}

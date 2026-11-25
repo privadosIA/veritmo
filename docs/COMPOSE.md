@@ -37,6 +37,8 @@ An optional piece is a profile of the same file. Start one with `--profile name`
 |---|---|
 | `music` | the two song generators, `heartmula` and `diffrhythm2` (Python services of `docker/`) |
 | `music-weights` | the one-shot downloads of their weights (see below); not services that stay up |
+| `model3d` | the 3D model generator (TripoSR, optionally Stable Fast 3D), a Python service of `docker/model3d` |
+| `model3d-weights` | the one-shot download of its weights; not a service that stays up |
 | `local-llm` | Ollama, the language model of the assistant |
 | `logs` | Loki and Alloy: the logs of every container, searchable in Grafana |
 | `redis` | a Redis for the test of the Monitoring card |
@@ -55,6 +57,15 @@ docker compose --profile music up -d
 The weights go to `MODELS_PATH/music/heartmula` and `MODELS_PATH/music/diffrhythm2` (folders of this machine) and are mounted read-only into the services. Each generator takes the card `HEARTMULA_GPU` / `DIFFRHYTHM2_GPU` (0 by default): with two cards, give each its own. They share one token (`MUSIC_TOKEN`) with the server, passed as a file. The songs are made through the server like any other (`GET /api/music/engines` lists both as available once their weights are there).
 
 A music run still asks for the programs of the default music engine (`ace-synth`), which the installation step builds by default (`acestep`); its models come from the Models screen.
+
+### `model3d`: the 3D model generator
+
+```bash
+docker compose --profile model3d-weights run --rm model3d-weights    # about 1.9 GB, once (TripoSR: no account)
+docker compose --profile model3d up -d
+```
+
+The weights go to `MODELS_PATH/model3d` and are mounted read-only; the service takes the card `MODEL3D_GPU` (0 by default) and shares the music token. The server knows it by `MODEL3D_HOST` (`GET /api/models3d/engines` lists the engines): it uses the service as it is and does not start, stop or install it (those routes answer `409` and say where it is managed). Stable Fast 3D is not in the image unless it is built with `SF3D=1` and needs the Hugging Face key of an account that has accepted its licence: `docker compose --profile model3d-weights run --rm -e HF_TOKEN model3d-weights sf3d`. See `docs/MODEL_GENERATION.md`.
 
 ### `local-llm`: Ollama
 
@@ -90,7 +101,7 @@ Everything that is a file is a **folder of this machine**, given in `.env` and m
 | `VOICES_PATH` | the voices | `/app/voices` |
 | `HYPERFRAMES_PATH` | the HyperFrames blocks | `/app/hyperframes` |
 | `INSTALL_PATH` | `bin/` (the programs) and `third_party/` | `/app/bin`, `/app/third_party` |
-| `CONFIG_PATH` | the keys and the library (characters, backgrounds, references, motions) | `/config/mediaorquestator` |
+| `CONFIG_PATH` | the keys and the library (characters, backgrounds, references, motions) | `/config/veritmo` |
 
 Each can be on its own disk (the defaults are folders under `./compose-data`, which git ignores). Every service that writes to them runs as `UID:GID` of `.env`, so nothing in them is owned by root. Stopping the stack (`docker compose down`) loses nothing; `down -v` also deletes the volumes, that is the database.
 
@@ -121,18 +132,18 @@ and write the origin the dashboard is served from in `DASHBOARD_ORIGIN`: it beco
 
 ## The stack without the server
 
-`compose.services.yaml` is the same stack **minus the server**: MySQL, Prometheus and Grafana and the profiles (`music`, `local-llm`, `logs`, `redis`) as Compose services, with the server running on this machine (`bin/orchestrator`, started with `scripts/serve.sh`). It leaves out what only exists to run the server inside an image: the server, the migration and the installer (the programs are installed with `scripts/install.sh`). Use one file or the other, not both at once: they have the same project name, the same volumes and the same subnet. `compose.yaml` is kept as it is.
+`compose.services.yaml` is the same stack **minus the server**: MySQL, Prometheus and Grafana and the profiles (`music`, `local-llm`, `logs`, `redis`) as Compose services, with the server running on this machine (`bin/veritmo`, started with `scripts/serve.sh`). It leaves out what only exists to run the server inside an image: the server, the migration and the installer (the programs are installed with `scripts/install.sh`). Use one file or the other, not both at once: they have the same project name, the same volumes and the same subnet. `compose.yaml` is kept as it is.
 
 ```bash
 docker compose -f compose.services.yaml up -d            # add --profile music, local-llm, logs, redis as in the other file
-MO_DB_PASSWORD="$(grep ^MO_DB_PASSWORD= .env | cut -d= -f2-)" bin/orchestrator data migrate \
-  --driver mysql --host 127.0.0.1 --database mediaorquestator --user mo   # the schema: the server never migrates
+VERITMO_DB_PASSWORD="$(grep ^VERITMO_DB_PASSWORD= .env | cut -d= -f2-)" bin/veritmo data migrate \
+  --driver mysql --host 127.0.0.1 --database veritmo --user mo   # the schema: the server never migrates
 scripts/serve.sh                                         # the server, reachable by Prometheus (0.0.0.0:4666)
 ```
 
-Every piece is published on `BIND` (`127.0.0.1` by default) so the server finds it: MySQL `3306`, HeartMuLa `8787`, DiffRhythm2 `8788`, Ollama `11435` (not `11434`, which an Ollama installed on this machine usually has), Redis `6379`, Loki `3100`, Grafana `3000` and Prometheus inside the stack. The ports are variables of `.env` (`MYSQL_PORT`, `HEARTMULA_PORT`, `DIFFRHYTHM2_PORT`, `OLLAMA_PORT`, `REDIS_PORT`, `LOKI_PORT`). In the Settings of the server, or by environment, point it at them (`MO_DB_*` with the host `127.0.0.1`, `HEARTMULA_HOST=http://127.0.0.1:8787`, `DIFFRHYTHM2_HOST=http://127.0.0.1:8788`, `OLLAMA_HOST=http://127.0.0.1:11435`, with `MUSIC_TOKEN` as the token of the generators).
+Every piece is published on `BIND` (`127.0.0.1` by default) so the server finds it: MySQL `3306`, HeartMuLa `8787`, DiffRhythm2 `8788`, Ollama `11435` (not `11434`, which an Ollama installed on this machine usually has), Redis `6379`, Loki `3100`, Grafana `3000` and Prometheus inside the stack. The ports are variables of `.env` (`MYSQL_PORT`, `HEARTMULA_PORT`, `DIFFRHYTHM2_PORT`, `MODEL3D_PORT`, `OLLAMA_PORT`, `REDIS_PORT`, `LOKI_PORT`). In the Settings of the server, or by environment, point it at them (`VERITMO_DB_*` with the host `127.0.0.1`, `HEARTMULA_HOST=http://127.0.0.1:8787`, `DIFFRHYTHM2_HOST=http://127.0.0.1:8788`, `OLLAMA_HOST=http://127.0.0.1:11435`, with `MUSIC_TOKEN` as the token of the generators).
 
-Prometheus reaches the server through `host.docker.internal` (its file is `deploy/compose/prometheus.services.yml`), so the server has to listen on an address the containers can reach: `scripts/serve.sh` does, `orchestrator serve --addr 127.0.0.1:4666` does not.
+Prometheus reaches the server through `host.docker.internal` (its file is `deploy/compose/prometheus.services.yml`), so the server has to listen on an address the containers can reach: `scripts/serve.sh` does, `veritmo serve --addr 127.0.0.1:4666` does not.
 
 ## Prometheus and Grafana
 
@@ -142,14 +153,14 @@ Prometheus reads the metrics of the server (`/api/metrics`) with its token. Graf
 
 | Variable | What it is |
 |---|---|
-| `MYSQL_ROOT_PASSWORD`, `MO_DB_PASSWORD`, `GRAFANA_DB_PASSWORD`, `GRAFANA_RO_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`, `REDIS_PASSWORD` | the passwords of the database, Grafana and Redis |
+| `MYSQL_ROOT_PASSWORD`, `VERITMO_DB_PASSWORD`, `GRAFANA_DB_PASSWORD`, `GRAFANA_RO_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`, `REDIS_PASSWORD` | the passwords of the database, Grafana and Redis |
 | `ORCHESTRATOR_TOKEN` | the token of the server: the dashboard and Prometheus use it |
 | `MUSIC_TOKEN` | the token the server gives the music generators and they ask for |
 | `UID`, `GID` | who writes the host folders (set by `compose-init.sh`) |
 | `PROJECTS_PATH`, `MEDIA_PATH`, `MEDIA_DIR`, `MODELS_PATH`, `VOICES_PATH`, `HYPERFRAMES_PATH`, `INSTALL_PATH`, `CONFIG_PATH` | the host folders (above) |
 | `OLLAMA_PATH` | the models of the Ollama of the `local-llm` profile |
 | `OLLAMA_HOST` | the address of the Ollama the server uses; empty: the one of the profile |
-| `HEARTMULA_GPU`, `DIFFRHYTHM2_GPU` | the card each music generator runs on |
+| `HEARTMULA_GPU`, `DIFFRHYTHM2_GPU`, `MODEL3D_GPU` | the card each music generator and the 3D generator run on |
 | `BIND`, `SERVER_PORT`, `GRAFANA_PORT` | where the server and Grafana are published |
 | `MYSQL_PORT`, `HEARTMULA_PORT`, `DIFFRHYTHM2_PORT`, `OLLAMA_PORT`, `REDIS_PORT`, `LOKI_PORT` | only `compose.services.yaml`: the ports the pieces are published on for the server on this machine |
 | `DASHBOARD_ORIGIN` | the browser origin of the dashboard |
@@ -157,7 +168,7 @@ Prometheus reads the metrics of the server (`/api/metrics`) with its token. Graf
 | `SERVER_MEM_LIMIT` | the most RAM the server and what it launches may use |
 | `EDITION_TAG` | the Go build tag of the edition built into the image; empty for the default edition |
 | `INSTALL_COMPONENTS` | what the installation step installs; empty: the default ones |
-| `MO_DB_NAME`, `MO_DB_USER` | the name of the database and its user |
+| `VERITMO_DB_NAME`, `VERITMO_DB_USER` | the name of the database and its user |
 | `COMPOSE_PROFILES` | the profiles started on every `up` |
 | `VERSION`, `PROMETHEUS_RETENTION` | the tag of the images and how long Prometheus keeps its data (defaults `dev` and `30d`) |
 

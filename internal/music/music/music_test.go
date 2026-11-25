@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 func f64(v float64) *float64 { return &v }

@@ -5,12 +5,12 @@
 This page covers four things that use a local or remote language model: the [prompt assistant](#prompt-assistant), [songs: style, tags and lyrics for each generator](#songs-style-tags-and-lyrics-for-each-generator), [describing a picture or a clip](#describing-a-picture-or-a-clip) to get a prompt from a reference, and [other providers](#other-providers) (another Ollama, or any OpenAI-compatible server) for any of them.
 
 
-`orchestrator assist <image|motion|music> "<text>"` writes a prompt in English from a scene (or song) description in any language and prints only the result, so it works over SSH:
+`veritmo assist <image|motion|music> "<text>"` writes a prompt in English from a scene (or song) description in any language and prints only the result, so it works over SSH:
 
 ```bash
-bin/orchestrator assist image "Una mujer lee un libro en una cafetería soleada por la mañana"
-bin/orchestrator assist motion "una mujer lee un libro en una cafetería"
-bin/orchestrator assist music "Una balada triste sobre volver a casa una noche de lluvia, con piano"
+bin/veritmo assist image "Una mujer lee un libro en una cafetería soleada por la mañana"
+bin/veritmo assist motion "una mujer lee un libro en una cafetería"
+bin/veritmo assist music "Una balada triste sobre volver a casa una noche de lluvia, con piano"
 ```
 
 `image` gives one photographic prompt (~70-100 words: subject, setting, light, camera, mood) for Krea 2 or SDXL; `motion` gives ≤25 words of subtle scene and camera movement for an `animate: true` scene; `music` gives a `STYLE:` line (English) and `LYRICS:` with `[Verse]`/`[Chorus]` tags in the language of your description (`--instrumental` for the style only). The same is available to the server as `POST /api/assist` (see `docs/http-api.md`), which also has a `tags` task: the music studio uses it, when the HeartMuLa generator is chosen, to write the style tags of a track (4 to 8 short English words separated by commas) from its style text. With a `generator` (`heartmula` or `diffrhythm2`) the `music` task also writes the tags and the structure tags those engines read (`[intro]`, `[verse]`, `[chorus]`, `[outro]`, `[inst]`, `[solo]`… in lower case), so applying the proposal leaves the track ready to create. A fourth task, `lyrics-from-transcript`, puts the transcription of a song (read from an audio or a video by Whisper, see the music mode) into sections and proposes its style and tags: it keeps the words as they were heard (the server checks that the answer has no word the transcription lacks, and otherwise keeps the transcription as it was), and drops from the style and the tags any instrument that neither you nor the picture mentioned.
@@ -20,7 +20,7 @@ It uses a local [Ollama](https://ollama.com) model and **never touches the GPUs*
 
 ## Songs: style, tags and lyrics for each generator
 
-The `music` task (`orchestrator assist music`, `POST /api/assist` and, from the Create page, `POST /api/assist/request`) writes for the generator that will make the song, because each reads different words:
+The `music` task (`veritmo assist music`, `POST /api/assist` and, from the Create page, `POST /api/assist/request`) writes for the generator that will make the song, because each reads different words:
 
 | Generator | Style | Lyrics |
 |---|---|---|
@@ -46,7 +46,13 @@ The `music` task (`orchestrator assist music`, `POST /api/assist` and, from the 
 
 ## A whole dataset from one sentence
 
-`POST /api/assist/dataset {mode, text, language?, engine?, negative?, look?, images?: {variants}, generator?, examples?, model?, provider?}` writes several entries in the tuple shape `POST /api/import/preview` reads (`[id, title, lora_info, text]`): the scenes of a storyboard (`mode: video`), animated graphics (`motion`: a part of the catalog with its `Param` lines, or a described graphic) or songs (`music`: a style, `Lyrics:` and the `generator`'s `Tags:`, one more model call per track, at most 6). At most 12 entries. The model writes only what is its job (the narration, the movement, the picture line, the brief of a song); the lines the request fixes are written by the server (`Negative:`, `Variants:`, the `look` at the end of each picture line), and every entry goes through the import's own mapping before it is returned, so what comes back previews and an entry that fails is left out with a warning. It has the guards of the plan. A server with it lists `dataset` in the `features` of the catalog.
+`POST /api/assist/dataset {mode, text, language?, engine?, negative?, look?, images?: {variants}, generator?, picture?, project?, examples?, model?, provider?}` writes several entries in the tuple shape `POST /api/import/preview` reads (`[id, title, lora_info, text]`): the scenes of a storyboard (`mode: video`), animated graphics (`motion`: a part of the catalog with its `Param` lines, or a described graphic) or songs (`music`: a style, `Lyrics:` and the `generator`'s `Tags:`, one more model call per track, at most 6) or 3D models (`models3d`, below). At most 12 entries. The model writes only what is its job (the narration, the movement, the picture line, the brief of a song); the lines the request fixes are written by the server (`Negative:`, `Variants:`, the `look` at the end of each picture line), and every entry goes through the import's own mapping before it is returned, so what comes back previews and an entry that fails is left out with a warning. It has the guards of the plan. With `picture: "blender"` (video mode) every scene is a 3D scene: the server writes the description of each with the writer and checks of `blender/descriptions` (up to 3 attempts), writes a `Blender: <id>.scene.json` line instead of `Motion:`, `Negative:` and `Variants:`, and answers the descriptions in `descriptions` for `POST /api/import/preview` and `/confirm`; at most 6 scenes per call and a scene whose description does not pass is left out with a warning. `project` (optional, an existing project) gives the design, tempo and frame the descriptions are written for. A server with it lists `dataset` in the `features` of the catalog, and `blender` when it writes 3D scenes.
+
+## 3D models
+
+`POST /api/assist/dataset` with **`mode: "models3d"`** writes up to 12 entries from one sentence ("ten objects for a roller derby team room"), each the prompt of **one object alone**: its shape, material, colour and finish, in English, up to 200 characters, with no scene, no people, no text to read and no background (the engines make a model from one picture of one object, and the server completes the prompt with the background wording when it draws the picture). `Engine:`, `Detail:` and `Variants:` lines appear only when the sentence asks for them; `Seed:`, `Image:` and `Adult:` are the person's to give and are dropped if the model writes them. The answer is checked by the import of the mode before it is returned, like the other modes, so what comes back previews with nothing left out. An entry that names people, a crowd, a landscape or a scene is written again once as one object (`kind: model3d` task) and left out with a warning if it still does; `picture` and `project` are `400` for this mode, and `examples` are the presets of the kind `model3d` the caller sends (see [PROMPT_PRESETS.md](PROMPT_PRESETS.md)).
+
+`POST /api/assist/request` with **`kind: "model3d"`** answers `{kind, kind_source: "user", title, model_prompt, language?, warnings}`: `model_prompt` is an English prompt of one object alone written from the request in any language (`"un patín de ruedas retro, rosa y brillante"` gives a description of one roller skate). The kind is the caller's alone: the model never decides it between the kinds, and an attached picture does not make a request one. When the prompt cannot be written the answer carries the kind and the title and a warning, with `model_prompt` empty; the guards are those of the other kinds.
 
 ## Examples of style
 
@@ -54,10 +60,10 @@ The `music` task (`orchestrator assist music`, `POST /api/assist` and, from the 
 
 ## Describing a picture or a clip
 
-`orchestrator describe [--model name] <file>` reads a picture (png, jpg, webp) or a clip (mp4, mov, webm, mkv, avi) with a local vision model and prints the prompt that would draw it (a second line `MOTION: …` for a clip); the model used goes to stderr:
+`veritmo describe [--model name] <file>` reads a picture (png, jpg, webp) or a clip (mp4, mov, webm, mkv, avi) with a local vision model and prints the prompt that would draw it (a second line `MOTION: …` for a clip); the model used goes to stderr:
 
 ```bash
-bin/orchestrator describe photo.png
+bin/veritmo describe photo.png
 ```
 
 In the editor it is "Describe a reference" next to the prompt (see the dashboard tutorial, in `dashboards-lab`); the server exposes `POST /api/describe` (see `docs/http-api.md`).
@@ -81,7 +87,7 @@ The connection is a setting like the others (the dashboard's Settings): `GET` an
 
 ## Other providers
 
-The assistant, describe and the quality check can run on another provider than the built-in Ollama: another Ollama, or any OpenAI-compatible server with an API key (register them in Settings, then choose one per task in the **Tasks** card). `orchestrator assist`, `describe` and `check` follow the same routing, and each accepts `--provider <id>` to use another one for that run (`check` also takes `--check-provider` on a run with `--check`).
+The assistant, describe and the quality check can run on another provider than the built-in Ollama: another Ollama, or any OpenAI-compatible server with an API key (register them in Settings, then choose one per task in the **Tasks** card). `veritmo assist`, `describe` and `check` follow the same routing, and each accepts `--provider <id>` to use another one for that run (`check` also takes `--check-provider` on a run with `--check`).
 
 - **Presets.** Claude and Gemini (also OpenRouter and OpenAI) come ready: `POST /api/providers {"preset": "anthropic", "key": "…"}` fills the address and suggested models (`GET /api/providers/presets` lists them with where each key comes from). Anthropic: `https://api.anthropic.com/v1/`, key from the Claude console, models `claude-sonnet-5-5` or `claude-opus-5-5`; its OpenAI-compatible layer is meant for testing, does not honour `response_format` (the writers tolerate JSON inside prose), has thinking off and does not list models. Gemini: `https://generativelanguage.googleapis.com/v1beta/openai/`, key from Google AI Studio, models `gemini-pro-latest` and `gemini-flash-latest` (aliases Google keeps on its current Pro and Flash; the exact names, such as `gemini-2.5-pro` or a 3.x one, come from the provider's list and can be typed instead); its list names carry a `models/` prefix that is removed. The names were checked on 2026-11-16 and are suggestions: edit them. **Test** sends one short chat and times it (`chat_ms`), so a key without credit or a model that is gone fails there, not later; the model list is only a convenience. Once a preset provider tests well, `GET /api/routing` shows it as `suggested` for `motion_graphics` and `quality`; nothing is routed until you do it. Cost: a model that thinks (Gemini Pro) bills the thinking as output, so a 15-scene batch with two attempts costs several euros with `gemini-pro-latest` (the one measured on 2026-11-16 used up a cap of about 10 € together with a wasted first batch) and a fraction of that with `gemini-flash-latest`; set a spending cap in the provider's console before running one. The public edition accepts only the preset hosts.
 - **Consent.** A provider that is not this computer receives your pictures, clips or texts. Routing a task to one needs your explicit acceptance in Settings, tied to its address; the terminal cannot give it, so `--provider` with a remote provider you never accepted stops with a message that says to accept it in Settings.

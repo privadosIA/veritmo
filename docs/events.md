@@ -1,6 +1,6 @@
 # Pipeline events (JSON-lines contract)
 
-When `orchestrator` is run with `--json`, it writes exactly one JSON object per line on stdout for every pipeline event — this is the JSON-lines contract defined by the `events` capability spec (`openspec/changes/add-script-to-video-pipeline/specs/events/spec.md`). Without `--json`, the same events are rendered as human-readable text instead; the two modes carry the same information.
+When `veritmo` is run with `--json`, it writes exactly one JSON object per line on stdout for every pipeline event — this is the JSON-lines contract defined by the `events` capability spec (`openspec/changes/add-script-to-video-pipeline/specs/events/spec.md`). Without `--json`, the same events are rendered as human-readable text instead; the two modes carry the same information.
 
 A front-end may rely on the following verbatim:
 

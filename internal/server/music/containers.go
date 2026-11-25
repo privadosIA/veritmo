@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // The engines whose container the user starts and stops.

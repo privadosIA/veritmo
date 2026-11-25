@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"mediaOrquestator/internal/video/motion"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"veritmo/internal/video/motion"
 )
 
 func fixture(t *testing.T) string {

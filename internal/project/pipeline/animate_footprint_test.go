@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/project/config"
 )
 
 // sparse creates a file that reports size bytes without using the disk.

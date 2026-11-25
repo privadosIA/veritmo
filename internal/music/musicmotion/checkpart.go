@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"strings"
 
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/video/motion"
 )
 
 // This file is the one place that says what a part has to pass: the parts that come with the program (their test)

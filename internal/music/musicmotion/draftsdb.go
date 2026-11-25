@@ -16,7 +16,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // draftRow is a draft as the database keeps it.

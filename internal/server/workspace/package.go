@@ -10,19 +10,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/server/modelcat"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
+	"veritmo/internal/server/modelcat"
 
-	"mediaOrquestator/internal/platform/media"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/importer"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/media"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/importer"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 // WriteProjectPackage writes the package of the project in projectDir: its

@@ -12,8 +12,8 @@ import (
 	"net/url"
 	"os"
 
-	"mediaOrquestator/internal/project/importer"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/project/importer"
+	"veritmo/internal/server/api"
 )
 
 // GET /api/projects/{id}/export?format=dataset|zip&lang=es|en (lang: the language of the recipe inside the zip)

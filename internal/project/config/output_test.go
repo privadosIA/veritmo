@@ -40,7 +40,7 @@ func TestOutput_ModeDefaultingAndAlias(t *testing.T) {
 				Output:  Output{Mode: "audio", File: "out.mp4"},
 				Scenes:  []Scene{{ID: "s1", Prompt: "a", TTSText: "b"}},
 			},
-			wantErr: `must be "video", "images", "music" or "video_edit"`,
+			wantErr: `must be "video", "images", "music", "video_edit" or "models3d"`,
 		},
 		{
 			name: "alias-only maps to output.file with deprecation warning",

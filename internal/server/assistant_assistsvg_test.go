@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/server/api"
 )
 
 const svgTestDrawing = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><circle id="ring" cx="960" cy="300" r="120"/></svg>`

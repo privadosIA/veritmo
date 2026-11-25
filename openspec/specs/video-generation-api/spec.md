@@ -277,3 +277,43 @@ The record of a generation, a picture edit or a video edit made in one call (its
 
 - **WHEN** the list is asked with `limit=20&offset=20`
 - **THEN** the generations 21 to 40 come back with the total in `X-Total-Count`
+
+### Requirement: Blender is one more way of making a video
+
+`GET /api/generation/options` SHALL list an option `blender` among the video options, with its `engine` and a `duration` range of its own. It SHALL be `available: false` with a `reason` (the one Blender's report gives, and how to fix it) when Blender is missing or too old, and `available: true` otherwise, and it SHALL never be the default option. Its `inputs` SHALL say `scene: true`, `start_image: false`, `end_image: false` and no references; the other options SHALL describe `scene` as `false` or leave it out. Choosing `blender` with an unavailable Blender SHALL be `503` as any unavailable option is.
+
+#### Scenario: Blender is usable
+- **WHEN** the options are read on a machine where Blender runs
+- **THEN** the option `blender` is there with `available: true`, `default: false` and `inputs.scene: true`
+
+#### Scenario: Blender is not installed
+- **WHEN** the options are read on a machine without Blender
+- **THEN** the option `blender` is there with `available: false` and a `reason` that says how to install it, and the other options are as they were
+
+### Requirement: A video can be a 3D scene
+
+`POST /api/generations` with `option: "blender"` SHALL take `blender: {description}` in the request (the JSON body, or the `request` part when the request is multipart), where `description` is the JSON of a 3D scene. The description SHALL be checked as a hand-written one is, for a scene as long as `duration` and with no design and no tempo (keys in seconds), and a failure SHALL be `422` with each problem naming its place in the JSON and nothing created. When it passes it SHALL be stored in the hidden project's `sources/` and the project SHALL have one scene `blender: {build}` whose length is `duration`, whose frame follows `aspect_ratio` and whose resolution and samples follow `quality`. A prompt SHALL NOT be needed. `blender` SHALL be refused (`422`) with another option, and the option `blender` SHALL be refused without a description unless `reuse_inputs_of` brings one; `start_image`, `end_image` and references SHALL be refused with it. The `duration` SHALL be inside the range the option announces. The description SHALL NOT be copied into the `request` the generation reports: it is an input.
+
+#### Scenario: A scene becomes a video
+- **WHEN** the request is `{option: "blender", duration: 5, aspect_ratio: "16:9", blender: {description: {...}}}` with a description that passes
+- **THEN** the answer is `202` with a generation whose project has `sources/<id>.scene.json` and one scene rendered by Blender for 5 seconds
+
+#### Scenario: The scene has a fault
+- **WHEN** a key of the description is beyond the 5 seconds of the request
+- **THEN** the call is `422` naming the key, and no generation, project or run exists
+
+#### Scenario: A description for another option
+- **WHEN** the request sends `blender` with an option that is not `blender`
+- **THEN** it is refused with `422` saying that only the option `blender` takes a scene
+
+### Requirement: The scene is an input that is reported and reused
+
+A generation made with the option `blender` SHALL report its description in `inputs` with `kind: "scene"`, its `name` (`<id>.scene.json`) and an `address` that answers the JSON of the description with the same access as the video. `reuse_inputs_of` SHALL copy the description of a generation into the new project when the option is `blender`, and SHALL be refused with `422` saying what is wrong when the option does not take a scene. When the request carries `blender.description` and also `reuse_inputs_of`, the description sent SHALL win: the reused one is not copied and the generation reports the new one.
+
+#### Scenario: Repeating a generation as it was
+- **WHEN** a request with `option: "blender"` and `reuse_inputs_of` naming a generation that used a description is sent without `blender`
+- **THEN** the new generation uses a copy of that description and reports it as its input
+
+#### Scenario: Repeating with a changed scene
+- **WHEN** the same request also carries `blender.description`
+- **THEN** the description sent is the one stored and reported, and the first generation is untouched

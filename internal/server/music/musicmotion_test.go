@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/workspace"
 	"net/http"
 	"os"
 	"os/exec"
@@ -15,11 +13,13 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/workspace"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/video/motion"
 )
 
 // mmServer is a server with a music project whose song is real audio (a 20 s tone), runs that finish at once and a

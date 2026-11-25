@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"mediaOrquestator/internal/platform/edition"
+	"veritmo/internal/platform/edition"
 )
 
 // ErrRefused marks an answer in which the model declined to write the text.

@@ -6,7 +6,7 @@ package music
 import (
 	"path/filepath"
 
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/video/videovision"
 )
 
 func (h *Handler) videoVisionWeightsDir() string {

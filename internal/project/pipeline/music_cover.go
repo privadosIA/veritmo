@@ -7,12 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/render"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/render"
 )
 
 // coverNegative is what a cover must not have: text, logos and frames, which image models draw badly. The models of

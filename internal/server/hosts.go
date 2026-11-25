@@ -5,27 +5,27 @@ package server
 
 import (
 	"context"
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/prompts"
-	"mediaOrquestator/internal/server/assistant"
-	"mediaOrquestator/internal/server/generation"
-	"mediaOrquestator/internal/server/modelcat"
-	"mediaOrquestator/internal/server/models"
-	"mediaOrquestator/internal/server/workspace"
-	"mediaOrquestator/internal/video/motion"
-	"mediaOrquestator/internal/video/videoedit"
 	"time"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/prompts"
+	"veritmo/internal/server/assistant"
+	"veritmo/internal/server/generation"
+	"veritmo/internal/server/modelcat"
+	"veritmo/internal/server/models"
+	"veritmo/internal/server/workspace"
+	"veritmo/internal/video/motion"
+	"veritmo/internal/video/videoedit"
 
 	"net/http"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // assistantHost is what the assistant family sees of the server.
@@ -170,3 +170,15 @@ type promptsHost struct{ s *Server }
 
 func (h promptsHost) ShowsAdult() bool       { return h.s.content == ContentAll }
 func (h promptsHost) Presets() prompts.Store { return prompts.NewDB(h.s.store) }
+
+// model3dHost is what the 3D models handler asks of the server (see library3d.Host).
+type model3dHost struct{ s *Server }
+
+func (h model3dHost) ShowsAdult() bool { return h.s.content == ContentAll }
+func (h model3dHost) RefuseAdultConfig(w http.ResponseWriter, adult *bool) bool {
+	return h.s.refuseAdultConfig(w, adult)
+}
+func (h model3dHost) ProjectVisible(id string) bool { return h.s.projectVisible(id) }
+func (h model3dHost) PictureDefaults() (config.Defaults, error) {
+	return h.s.generation.PictureDefaults()
+}

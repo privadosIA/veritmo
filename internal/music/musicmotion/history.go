@@ -12,7 +12,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // HistoryStore keeps the ratios between the time a render took and what the uncorrected forecast said, the last historyKeep of them.

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/media"
+	"veritmo/internal/platform/media"
 )
 
 // newMediaServer is a projects server whose projects are kept in a temporary media directory (never the real media directory).

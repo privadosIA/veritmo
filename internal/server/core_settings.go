@@ -1,7 +1,7 @@
 package server
 
 // core_settings.go: the server's own settings (for now the address of Ollama), kept in
-// ~/.config/mediaorquestator/settings.json by internal/platform/settings and taking effect
+// ~/.config/veritmo/settings.json by internal/platform/settings and taking effect
 // without a restart. See specs/ollama-settings.
 
 import (
@@ -9,17 +9,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/server/music"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+	"veritmo/internal/server/music"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 type ollamaSettingsView struct {
@@ -92,7 +92,7 @@ func (s *Server) handleSettingsGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) settingsBody() map[string]any {
-	return map[string]any{"ollama": currentOllamaSettings(), "remote": map[string]int{"max_calls": settings.MaxCalls()}, "browser": currentBrowserSettings(), "motion_model": s.currentMotionModel(), "heartmula": music.CurrentHeartMulaSettings(), "diffrhythm2": music.CurrentDiffRhythm2Settings(), "music_motion": map[string]bool{"review_drafts": settings.ReviewDrafts()}}
+	return map[string]any{"ollama": currentOllamaSettings(), "remote": map[string]int{"max_calls": settings.MaxCalls()}, "browser": currentBrowserSettings(), "motion_model": s.currentMotionModel(), "heartmula": music.CurrentHeartMulaSettings(), "diffrhythm2": music.CurrentDiffRhythm2Settings(), "music_motion": map[string]bool{"review_drafts": settings.ReviewDrafts()}, "model3d": map[string]string{"backend": settings.Model3DBackend(), "backend_source": settings.Model3DBackendSource()}}
 }
 
 // PUT /api/settings {"ollama_host"?: "192.168.1.50:11434", "browser"?: "/usr/bin/chromium"}
@@ -117,6 +117,8 @@ func (s *Server) handleSettingsPut(w http.ResponseWriter, r *http.Request) {
 		// The backend of each generator on this machine: "dotnet" (the service) or "docker" (its container); '' removes the setting (the .NET service).
 		HeartMulaBackend   *string `json:"heartmula_backend"`
 		DiffRhythm2Backend *string `json:"diffrhythm2_backend"`
+		// Model3DBackend is the same for TripoSR, the 3D generator ("dotnet" or "docker"; '' removes the setting).
+		Model3DBackend *string `json:"model3d_backend"`
 		// MusicMotion holds the settings of the music-motion pieces: review_drafts grades every part draft with the vision model.
 		MusicMotion *struct {
 			ReviewDrafts *bool `json:"review_drafts"`
@@ -126,7 +128,7 @@ func (s *Server) handleSettingsPut(w http.ResponseWriter, r *http.Request) {
 		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("invalid JSON body: %v", err))
 		return
 	}
-	if req.OllamaHost == nil && req.Browser == nil && req.MotionModel == nil && req.HeartMulaHost == nil && req.HeartMulaToken == nil && !req.HeartMulaAccept && req.DiffRhythm2Host == nil && req.DiffRhythm2Token == nil && !req.DiffRhythm2Accept && req.HeartMulaBackend == nil && req.DiffRhythm2Backend == nil && (req.MusicMotion == nil || req.MusicMotion.ReviewDrafts == nil) {
+	if req.OllamaHost == nil && req.Browser == nil && req.MotionModel == nil && req.HeartMulaHost == nil && req.HeartMulaToken == nil && !req.HeartMulaAccept && req.DiffRhythm2Host == nil && req.DiffRhythm2Token == nil && !req.DiffRhythm2Accept && req.HeartMulaBackend == nil && req.DiffRhythm2Backend == nil && req.Model3DBackend == nil && (req.MusicMotion == nil || req.MusicMotion.ReviewDrafts == nil) {
 		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, "ollama_host, browser, motion_model, heartmula_host or diffrhythm2_host is required (a value, or an empty text to remove the setting)")
 		return
 	}
@@ -199,6 +201,28 @@ func (s *Server) handleSettingsPut(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		chosen[name] = b
+	}
+	model3dBackend, setModel3D := "", false
+	if req.Model3DBackend != nil {
+		if strings.TrimSpace(*req.Model3DBackend) != "" {
+			v, err := settings.ValidateMusicBackend(*req.Model3DBackend)
+			if err != nil {
+				api.WriteJSON(w, http.StatusUnprocessableEntity, api.APIError{Error: api.APIErrorBody{Code: api.CodeValidation, Message: "model3d_backend: " + err.Error()}})
+				return
+			}
+			model3dBackend = v
+		}
+		if berr := s.models3d.PrepareBackend(r.Context(), model3dBackend); berr != nil {
+			code := api.CodeValidation
+			if berr.Status == http.StatusConflict {
+				code = api.CodeConflict
+			} else if berr.Status >= 500 {
+				code = api.CodeInternal
+			}
+			api.WriteJSON(w, berr.Status, api.APIError{Error: api.APIErrorBody{Code: code, Message: berr.Msg, Reason: berr.Reason}})
+			return
+		}
+		setModel3D = true
 	}
 	f := settings.Load()
 	if req.OllamaHost != nil {
@@ -284,6 +308,12 @@ func (s *Server) handleSettingsPut(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(chosen) > 0 {
 		s.music.BumpEngines()
+	}
+	if setModel3D {
+		if err := settings.SetModel3DBackend(model3dBackend); err != nil {
+			api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, fmt.Sprintf("cannot save the settings: %v", err))
+			return
+		}
 	}
 	api.WriteJSON(w, http.StatusOK, s.settingsBody())
 }

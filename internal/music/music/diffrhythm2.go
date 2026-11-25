@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/music/diffrhythm2"
+	"veritmo/internal/music/diffrhythm2"
 )
 
 // DiffRhythm2Engine makes the songs with the DiffRhythm2 service. It has no compose phase (the service writes the

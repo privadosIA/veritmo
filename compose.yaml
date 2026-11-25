@@ -1,4 +1,4 @@
-# mediaOrquestator as one Compose file: the server and everything it works with.
+# Veritmo as one Compose file: the server and everything it works with.
 #
 #   bash scripts/compose-init.sh                  # makes .env with generated secrets and checks Docker and the NVIDIA runtime
 #   docker compose --profile install run --rm installer     # installs the programs into the host folders (once)
@@ -16,7 +16,7 @@
 #
 # Every piece starts already pointing at the others (see the `environment` of the server): nothing is typed in a screen. docs/COMPOSE.md has the rest.
 
-name: mediaorquestator
+name: veritmo
 
 x-gpu: &gpu
   deploy:
@@ -34,7 +34,7 @@ x-user: &user "${UID:-1000}:${GID:-1000}"
 # environment has these empty on purpose; scripts/compose-init.sh fills them with generated values.
 x-required:
   mysql_root_password: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
-  mo_db_password: ${MO_DB_PASSWORD:?set MO_DB_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
+  veritmo_db_password: ${VERITMO_DB_PASSWORD:?set VERITMO_DB_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
   grafana_db_password: ${GRAFANA_DB_PASSWORD:?set GRAFANA_DB_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
   grafana_ro_password: ${GRAFANA_RO_PASSWORD:?set GRAFANA_RO_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
   grafana_admin_password: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
@@ -43,7 +43,7 @@ x-required:
   orchestrator_token: ${ORCHESTRATOR_TOKEN:?set ORCHESTRATOR_TOKEN in .env (bash scripts/compose-init.sh makes it)}
 
 x-server-image: &server-image
-  image: mediaorquestator/server:${VERSION:-dev}
+  image: veritmo/server:${VERSION:-dev}
   build:
     context: .
     target: runtime
@@ -51,12 +51,12 @@ x-server-image: &server-image
       EDITION_TAG: ${EDITION_TAG:-}
 
 x-database-env: &database-env
-  MO_DB_DRIVER: mysql
-  MO_DB_HOST: mysql
-  MO_DB_PORT: "3306"
-  MO_DB_NAME: ${MO_DB_NAME:-mediaorquestator}
-  MO_DB_USER: ${MO_DB_USER:-mo}
-  MO_DB_PASSWORD_FILE: /run/secrets/mo_db_password
+  VERITMO_DB_DRIVER: mysql
+  VERITMO_DB_HOST: mysql
+  VERITMO_DB_PORT: "3306"
+  VERITMO_DB_NAME: ${VERITMO_DB_NAME:-veritmo}
+  VERITMO_DB_USER: ${VERITMO_DB_USER:-veritmo}
+  VERITMO_DB_PASSWORD_FILE: /run/secrets/veritmo_db_password
 
 services:
   # ─── The database: the one database server of the stack ─────────────────
@@ -66,10 +66,10 @@ services:
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
-      MYSQL_DATABASE: ${MO_DB_NAME:-mediaorquestator}
-      MYSQL_USER: ${MO_DB_USER:-mo}
-      MYSQL_PASSWORD_FILE: /run/secrets/mo_db_password
-    secrets: [mysql_root_password, mo_db_password]
+      MYSQL_DATABASE: ${VERITMO_DB_NAME:-veritmo}
+      MYSQL_USER: ${VERITMO_DB_USER:-veritmo}
+      MYSQL_PASSWORD_FILE: /run/secrets/veritmo_db_password
+    secrets: [mysql_root_password, veritmo_db_password]
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -88,7 +88,7 @@ services:
     depends_on:
       mysql: {condition: service_healthy}
     environment:
-      MO_DB_NAME: ${MO_DB_NAME:-mediaorquestator}
+      VERITMO_DB_NAME: ${VERITMO_DB_NAME:-veritmo}
     secrets: [mysql_root_password, grafana_db_password, grafana_ro_password]
     volumes:
       - ./deploy/compose/mysql/users.sh:/users.sh:ro
@@ -103,9 +103,9 @@ services:
     depends_on:
       mysql: {condition: service_healthy}
     environment: *database-env
-    secrets: [mo_db_password]
+    secrets: [veritmo_db_password]
     volumes:
-      - ${CONFIG_PATH:-./compose-data/config}:/config/mediaorquestator
+      - ${CONFIG_PATH:-./compose-data/config}:/config/veritmo
 
   # ─── The server ─────────────────────────────────────────────────────────
   server:
@@ -125,6 +125,8 @@ services:
       HEARTMULA_TOKEN_FILE: /run/secrets/music_token
       DIFFRHYTHM2_HOST: http://diffrhythm2:8788
       DIFFRHYTHM2_TOKEN_FILE: /run/secrets/music_token
+      MODEL3D_HOST: http://model3d:8790
+      MODEL3D_TOKEN_FILE: /run/secrets/music_token
       MONITORING_PROMETHEUS_ADDRESS: http://prometheus:9090
       MONITORING_GRAFANA_ADDRESS: http://grafana:3000
       MONITORING_GRAFANA_USER: admin
@@ -133,7 +135,7 @@ services:
       MONITORING_REDIS_ADDRESS: redis:6379
       MONITORING_REDIS_SECRET_FILE: /run/secrets/redis_password
       MEDIA_DIR: ${MEDIA_DIR:-}
-    secrets: [mo_db_password, orchestrator_token, music_token, grafana_admin_password, redis_password]
+    secrets: [veritmo_db_password, orchestrator_token, music_token, grafana_admin_password, redis_password]
     ports:
       - "${BIND:-127.0.0.1}:${SERVER_PORT:-4666}:4666"
     volumes:
@@ -144,7 +146,7 @@ services:
       - ${HYPERFRAMES_PATH:-./compose-data/hyperframes}:/app/hyperframes
       - ${INSTALL_PATH:-./compose-data/install}/bin:/app/bin
       - ${INSTALL_PATH:-./compose-data/install}/third_party:/app/third_party
-      - ${CONFIG_PATH:-./compose-data/config}:/config/mediaorquestator
+      - ${CONFIG_PATH:-./compose-data/config}:/config/veritmo
     tmpfs:
       - /app/.orchestrator
       # with exec: yt-dlp unpacks itself here and runs from it
@@ -170,7 +172,7 @@ services:
   installer:
     <<: *gpu
     profiles: [install]
-    image: mediaorquestator/tools:${VERSION:-dev}
+    image: veritmo/tools:${VERSION:-dev}
     build:
       context: .
       target: tools
@@ -197,7 +199,7 @@ services:
   # Each takes the card HEARTMULA_GPU / DIFFRHYTHM2_GPU (0 by default): with two cards, give each its own.
   heartmula:
     profiles: [music]
-    image: mediaorquestator/heartmula:${VERSION:-dev}
+    image: veritmo/heartmula:${VERSION:-dev}
     build:
       context: ./docker/heartmula
     restart: "no"
@@ -231,7 +233,7 @@ services:
 
   diffrhythm2:
     profiles: [music]
-    image: mediaorquestator/diffrhythm2:${VERSION:-dev}
+    image: veritmo/diffrhythm2:${VERSION:-dev}
     build:
       context: ./docker/diffrhythm2
     restart: "no"
@@ -265,7 +267,7 @@ services:
   # The one-shot downloads of the weights (profile `music-weights`): the only thing of these images that touches the network, and they run on request.
   heartmula-weights:
     profiles: [music-weights]
-    image: mediaorquestator/heartmula:${VERSION:-dev}
+    image: veritmo/heartmula:${VERSION:-dev}
     user: *user
     environment: {HOME: /tmp}
     entrypoint: ["python", "/opt/fetch.py"]
@@ -273,12 +275,61 @@ services:
       - ${MODELS_PATH:-./compose-data/models}/music/heartmula:/ckpt
   diffrhythm2-weights:
     profiles: [music-weights]
-    image: mediaorquestator/diffrhythm2:${VERSION:-dev}
+    image: veritmo/diffrhythm2:${VERSION:-dev}
     user: *user
     environment: {HOME: /tmp}
     entrypoint: ["python", "/opt/fetch.py"]
     volumes:
       - ${MODELS_PATH:-./compose-data/models}/music/diffrhythm2:/ckpt
+
+  # ─── Profile `model3d`: the 3D model generator ──────────────────────────
+  # TripoSR (MIT) makes a 3D model from a picture; Stable Fast 3D is only in the image when it is built with SF3D=1 (see docker/model3d/README.md). The
+  # weights are a folder of this machine (MODELS_PATH/model3d), mounted read-only. The server finds the service by MODEL3D_HOST and asks for the music token.
+  #   docker compose --profile model3d-weights run --rm model3d-weights            # about 1.9 GB, once (TripoSR, no account)
+  #   docker compose --profile model3d up -d
+  # It takes the card MODEL3D_GPU (0 by default).
+  model3d:
+    profiles: [model3d]
+    image: veritmo/model3d:${VERSION:-dev}
+    build:
+      context: ./docker/model3d
+    restart: "no"
+    user: *user
+    environment:
+      MODEL3D_TOKEN_FILE: /run/secrets/music_token
+      HOME: /tmp
+      # the user of the host has no entry in the image's passwd and torch asks for the user's name
+      USER: app
+    secrets: [music_token]
+    volumes:
+      - ${MODELS_PATH:-./compose-data/models}/model3d:/ckpt:ro
+    tmpfs:
+      - /tmp:exec,mode=1777
+    shm_size: 1g
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${MODEL3D_GPU:-0}"]
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; r = u.Request('http://127.0.0.1:8790/health', headers={'Authorization': 'Bearer ' + open('/run/secrets/music_token').read().strip()}); import sys; sys.exit(0 if u.urlopen(r, timeout=4).status == 200 else 1)"]
+      interval: 20s
+      timeout: 6s
+      retries: 10
+      start_period: 60s
+    security_opt: ["no-new-privileges:true"]
+  # The one-shot download of its weights (profile `model3d-weights`): it touches the network, only when asked. `sf3d` needs the Hugging Face key of an
+  # account that has accepted its licence: docker compose --profile model3d-weights run --rm -e HF_TOKEN model3d-weights sf3d
+  model3d-weights:
+    profiles: [model3d-weights]
+    image: veritmo/model3d:${VERSION:-dev}
+    user: *user
+    environment: {HOME: /tmp}
+    entrypoint: ["python", "/opt/fetch.py"]
+    volumes:
+      - ${MODELS_PATH:-./compose-data/models}/model3d:/ckpt
 
   # ─── Profile `local-llm`: Ollama ────────────────────────────────────────
   # The language model of the assistant (prompts, descriptions, scene writer). Its models are a folder of this machine (OLLAMA_PATH), so they survive
@@ -397,7 +448,7 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
-      MO_DB_NAME: ${MO_DB_NAME:-mediaorquestator}
+      VERITMO_DB_NAME: ${VERITMO_DB_NAME:-veritmo}
       GRAFANA_RO_PASSWORD_FILE: /run/secrets/grafana_ro_password
     secrets: [grafana_db_password, grafana_admin_password, grafana_ro_password]
     ports:
@@ -435,8 +486,8 @@ secrets:
   # Given by the person in .env (compose-init.sh makes them) and handed to the services as files under /run/secrets; they stay on this machine.
   mysql_root_password:
     environment: MYSQL_ROOT_PASSWORD
-  mo_db_password:
-    environment: MO_DB_PASSWORD
+  veritmo_db_password:
+    environment: VERITMO_DB_PASSWORD
   grafana_db_password:
     environment: GRAFANA_DB_PASSWORD
   grafana_ro_password:

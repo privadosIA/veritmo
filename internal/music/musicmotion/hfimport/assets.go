@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 const (

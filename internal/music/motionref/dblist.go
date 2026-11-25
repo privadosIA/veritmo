@@ -10,8 +10,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/store"
 )
 
 // ReferencesListSpec, LearningsListSpec and PresetsListSpec say what each list can be sorted and searched by.

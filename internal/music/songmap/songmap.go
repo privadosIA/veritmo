@@ -15,10 +15,10 @@ import (
 	"strings"
 	"unicode"
 
-	"mediaOrquestator/internal/music/beatgrid"
-	"mediaOrquestator/internal/music/separate"
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/music/videoclip"
+	"veritmo/internal/music/beatgrid"
+	"veritmo/internal/music/separate"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/music/videoclip"
 )
 
 // Version is the format of a stored map; a map of another version is built again, except the one before it, which Load

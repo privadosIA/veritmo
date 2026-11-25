@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 const idLTX = "video-ltx-2-3-distilled-q4"

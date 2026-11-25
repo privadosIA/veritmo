@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/platform/edition"
+	"veritmo/internal/platform/edition"
 )
 
 // OpenAI is a Provider for any server that speaks the OpenAI chat completions

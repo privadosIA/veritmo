@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/video/motion"
 )
 
 // pageHost is the address blocks are served under: the page is index.html and its relative files (assets/x.js, lib/y.js)

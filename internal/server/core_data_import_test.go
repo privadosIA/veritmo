@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/workspace"
 )
 
 type startImporter struct{ ran int }

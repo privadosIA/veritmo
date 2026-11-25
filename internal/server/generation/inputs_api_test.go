@@ -15,8 +15,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/videoedit"
 )
 
 // inputsCatalog has the three bundles: first/last frame, references and LTX (and the rest).

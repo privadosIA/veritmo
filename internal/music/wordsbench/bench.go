@@ -3,7 +3,7 @@
 // mix, which is how they were timed before; the time of each token on the mix; the time of each token on the separated voice, with
 // and without moving the words onto the attacks of the voice) and compares each result with the attacks of the separated voice
 // (where a syllable starts: about one every 280 ms of voice) and with the beats. The report keeps every word and the attacks, so
-// it can be measured again without the audio (Recompute). It is a command (orchestrator words bench) and not a test because it
+// it can be measured again without the audio (Recompute). It is a command (veritmo words bench) and not a test because it
 // needs Whisper, the separator and real songs.
 package wordsbench
 
@@ -23,12 +23,12 @@ import (
 	"time"
 	"unicode"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/music/separate"
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/music/separate"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/export"
 )
 
 // The ways a song is heard, in the order they are reported.

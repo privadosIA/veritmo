@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/settings"
 )
 
 func TestMonitoring_SavesWithoutShowingTheKeyAndKeepsItForTheSameAddress(t *testing.T) {

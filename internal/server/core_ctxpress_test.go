@@ -78,10 +78,10 @@ func TestCtxpressSettings_DefaultThenSaveTokenNeverReturnedThenReset(t *testing.
 		t.Fatal("the token is in GET")
 	}
 	// settings.json has no token; the key store does
-	if raw, _ := os.ReadFile(dir + "/mediaorquestator/settings.json"); strings.Contains(string(raw), "super-secret-token") {
+	if raw, _ := os.ReadFile(dir + "/veritmo/settings.json"); strings.Contains(string(raw), "super-secret-token") {
 		t.Fatal("the token is in settings.json")
 	}
-	if raw, _ := os.ReadFile(dir + "/mediaorquestator/keys.json"); !strings.Contains(string(raw), "super-secret-token") {
+	if raw, _ := os.ReadFile(dir + "/veritmo/keys.json"); !strings.Contains(string(raw), "super-secret-token") {
 		t.Fatal("the token is not in the key store")
 	}
 	// the generic settings answer and the environment report do not carry it either

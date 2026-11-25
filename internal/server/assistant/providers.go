@@ -16,11 +16,11 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/providers"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/providers"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
 )
 
 // ProviderView is what the API says about a provider: never its key, only whether one is set.

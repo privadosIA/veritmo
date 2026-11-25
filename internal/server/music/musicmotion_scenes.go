@@ -11,18 +11,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mediaOrquestator/internal/platform/store"
 	"net/http"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+	"veritmo/internal/platform/store"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 // The states of a batch.
@@ -328,6 +328,10 @@ func (h *Handler) handleScenesStart(w http.ResponseWriter, r *http.Request) {
 		found := false
 		for _, p := range script.Pieces {
 			found = found || p.ID == id
+			if p.ID == id && p.Blender != nil {
+				api.Refuse(w, "script piece %q is a 3D scene (blender): a scene part is not written for it", id)
+				return
+			}
 		}
 		if !found {
 			api.WriteError(w, http.StatusNotFound, api.CodeNotFound, fmt.Sprintf("script piece %q not found in the script of piece %s", id, info.ID))
@@ -357,8 +361,8 @@ func (h *Handler) handleScenesStart(w http.ResponseWriter, r *http.Request) {
 	batch := SceneBatch{State: SceneBatchWriting, BriefMode: req.BriefMode, Model: req.Model, Provider: req.Provider, Review: ask, StartedAt: time.Now().UTC(),
 		Drafts: []SceneDraftState{}, Fingerprints: map[string]string{}}
 	for _, p := range script.Pieces {
-		if len(chosen) > 0 && !chosen[p.ID] {
-			continue
+		if p.Blender != nil || (len(chosen) > 0 && !chosen[p.ID]) {
+			continue // a 3D piece is not made from a part
 		}
 		batch.Drafts = append(batch.Drafts, SceneDraftState{ScriptPiece: p.ID, State: "pending"})
 		batch.Fingerprints[p.ID] = fingerprint(p)
@@ -578,7 +582,7 @@ func (h *Handler) handleScenesApprove(w http.ResponseWriter, r *http.Request) {
 			if len(committed) == 0 {
 				return nil
 			}
-			if err := script.ValidateAll(cat, h.mmLibrary(), m, st.Design, info.Width, info.Height); err != nil {
+			if err := script.WithSources(h.pieceSources(info.ID)).ValidateAll(cat, h.mmLibrary(), m, st.Design, info.Width, info.Height); err != nil {
 				invalid = err
 				return err
 			}

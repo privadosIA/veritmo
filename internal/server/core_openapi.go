@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/server/api"
 )
 
 // openapiYAML is the hand-written OpenAPI description of every route

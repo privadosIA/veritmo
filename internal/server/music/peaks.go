@@ -8,17 +8,17 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"mediaOrquestator/internal/music/beatgrid"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/workspace"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+	"veritmo/internal/music/beatgrid"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/workspace"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 const (

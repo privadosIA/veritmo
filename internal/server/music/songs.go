@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/export"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/export"
+	"veritmo/internal/server/api"
 )
 
 // DELETE /api/projects/{id}/songs/{track}/{variant}   (variant is 0-based)

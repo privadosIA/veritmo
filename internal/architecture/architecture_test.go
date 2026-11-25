@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-const module = "mediaOrquestator/"
+const module = "veritmo/"
 
 // rule says which internal folders a folder may import (besides itself). A folder that is not listed is free.
 var rule = map[string][]string{
@@ -102,6 +102,7 @@ func TestServerPackages(t *testing.T) {
 		"models":     {"api", "modelcat", "workspace"},
 		"generation": {"api", "modelcat", "assistant", "workspace", "models"},
 		"music":      {"api", "modelcat", "assistant", "workspace", "models", "generation"},
+		"library3d":  {"api", "workspace"},
 	}
 	entries, err := filepath.Glob(filepath.Join("..", "server", "*"))
 	if err != nil {

@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,9 +12,11 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
 )
 
 // fakeLook pretends every pipeline binary exists.

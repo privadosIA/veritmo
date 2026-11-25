@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/export"
 )
 
 // ctxRunner makes a FakeRunner honour context cancellation like the real

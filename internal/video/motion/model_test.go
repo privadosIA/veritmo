@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/settings"
 )
 
 // ollamaWith serves /api/tags with the given models and points the built-in Ollama at it.
@@ -66,10 +66,10 @@ func TestResolveModel_TheSavedModelWinsAndDefaultModelIgnoresIt(t *testing.T) {
 	cfg := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", cfg)
 	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "assistant:8b")
-	if err := os.MkdirAll(filepath.Join(cfg, "mediaorquestator"), 0o700); err != nil {
+	if err := os.MkdirAll(filepath.Join(cfg, "veritmo"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(cfg, "mediaorquestator", "settings.json"), []byte(`{"motion_model":"coder:30b"}`), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(cfg, "veritmo", "settings.json"), []byte(`{"motion_model":"coder:30b"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	ollamaWith(t, "gemma4:26b")

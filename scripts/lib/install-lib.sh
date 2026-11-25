@@ -12,7 +12,18 @@
 IL_ROOT="${IL_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 IL_OS_RELEASE="${IL_OS_RELEASE:-/etc/os-release}"
 IL_MEMINFO="${IL_MEMINFO:-/proc/meminfo}"
-IL_LOG_DIR="${IL_LOG_DIR:-${HOME:-/tmp}/.cache/mediaorquestator}"
+# The cache directory of the former name (mediaorquestator) moves once to the new one: a rename, nothing is copied or deleted (the binary does the same).
+il_adopt_old_dir() {
+    local base="$1"
+    [ -d "$base/mediaorquestator" ] || return 0
+    if [ ! -e "$base/veritmo" ]; then
+        mv "$base/mediaorquestator" "$base/veritmo" && echo "moved $base/mediaorquestator to $base/veritmo"
+    else
+        echo "warning: $base/mediaorquestator is ignored ($base/veritmo exists); it may be deleted" >&2
+    fi
+}
+[ -n "${IL_LOG_DIR:-}" ] || il_adopt_old_dir "${HOME:-/tmp}/.cache"
+IL_LOG_DIR="${IL_LOG_DIR:-${HOME:-/tmp}/.cache/veritmo}"
 IL_LOG="${IL_LOG:-$IL_LOG_DIR/install.log}"
 
 # Minimum versions (see docs/INSTALL.md).
@@ -25,7 +36,7 @@ IL_MIN_BLENDER="4.2"   # internal/video/blender (MinMajor.MinMinor)
 IL_ASSISTANT_MODEL="qwen3:8b"
 
 # Components, in install order.
-IL_COMPONENTS=(git cmake cc make curl ffmpeg go cuda sd piper voice acestep dotnet services ytdlp gsap hflibs upscalers browser blender model orchestrator hfblocks node hfruntime ollama)
+IL_COMPONENTS=(git cmake cc make curl ffmpeg go cuda sd piper voice acestep dotnet services ytdlp gsap hflibs upscalers browser blender model veritmo hfblocks node hfruntime ollama)
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -123,6 +134,40 @@ il_recommended_tier() {
 # il_services_tier: the tier in force: the one chosen (SERVICES_TIER) or the recommended one.
 il_services_tier() { echo "${SERVICES_TIER:-$(il_recommended_tier)}"; }
 
+# Tiers of the 3D services (one picture to a 3D model), apart from the music ones because they answer to other things: the card.
+#   none      nothing
+#   triposr   TripoSR
+#   all       TripoSR and Stable Fast 3D (its weights are gated: the service builds without the licence, the weights need the
+#             licence accepted on Hugging Face and the key in the Models screen; without them it says so when asked for a model)
+il_tier3d_services() { # tier: the services it builds, comma separated ("" for none)
+    case "$1" in
+        none) echo "" ;;
+        triposr) echo "triposr" ;;
+        all) echo "triposr,stable-fast-3d" ;;
+        *) return 1 ;;
+    esac
+}
+
+# il_recommended_3d: Stable Fast 3D was measured at 8 GB of VRAM, so "all" from a card of 8 GB or more and nothing without one
+# (a 3D model on the CPU is not a thing worth building for).
+il_recommended_3d() {
+    il_has_gpu || { echo none; return; }
+    local g mem max=0
+    for g in "${IL_GPUS[@]}"; do
+        mem="${g##*|}"; mem="${mem%%.*}"
+        [[ "$mem" =~ ^[0-9]+$ ]] && (( mem > max )) && max=$mem
+    done
+    if (( max >= 8000 )); then echo all; else echo none; fi
+}
+
+il_services_3d() { echo "${SERVICES_3D:-$(il_recommended_3d)}"; }
+
+# il_services_list: every service the tiers in force build, comma separated.
+il_services_list() {
+    local a b; a="$(il_tier_services "$(il_services_tier)")"; b="$(il_tier3d_services "$(il_services_3d)")"
+    if [[ -n "$a" && -n "$b" ]]; then echo "$a,$b"; else echo "$a$b"; fi
+}
+
 # ---------------------------------------------------------------------------
 # component metadata
 # ---------------------------------------------------------------------------
@@ -153,7 +198,7 @@ il_title() {
         browser) echo "Chrome or Chromium (motion graphics)" ;;
         blender) echo "Blender (3D scenes)" ;;
         model) echo "an image model (models/)" ;;
-        orchestrator) echo "bin/orchestrator" ;;
+        veritmo) echo "bin/veritmo" ;;
         ollama) echo "Ollama (prompt assistant)" ;;
     esac
 }
@@ -188,7 +233,7 @@ il_anchor() {
         browser) echo "docs/INSTALL.md#chrome-or-chromium" ;;
         blender) echo "docs/INSTALL.md#blender" ;;
         model) echo "docs/INSTALL.md#models" ;;
-        orchestrator) echo "docs/INSTALL.md#the-orchestrator-binary" ;;
+        veritmo) echo "docs/INSTALL.md#the-veritmo-binary" ;;
         ollama) echo "docs/INSTALL.md#ollama-prompt-assistant" ;;
     esac
 }
@@ -288,8 +333,8 @@ il_check() {
         services)
             # ok when every service of the tier in force is built (tier "none": nothing is asked for)
             local n have=0 miss="" want tier
-            tier="$(il_services_tier)"
-            want="$(il_tier_services "$tier" | tr ',' ' ')"
+            tier="$(il_services_tier)"; [[ "$(il_services_3d)" == none ]] || tier="$tier + 3D $(il_services_3d)"
+            want="$(il_services_list | tr ',' ' ')"
             for n in $want; do
                 if [[ -d "$IL_ROOT/bin/services/$n" ]] && ls "$IL_ROOT/bin/services/$n"/*.dll >/dev/null 2>&1; then have=$((have+1)); else miss+="$n "; fi
             done
@@ -338,8 +383,8 @@ il_check() {
             for m in "$IL_ROOT"/models/*.safetensors "$IL_ROOT"/models/*.gguf "$IL_ROOT"/models/*.ckpt; do
                 [[ -f "$m" ]] && { IL_STATE=ok; IL_VER="$(basename "$m")"; break; }
             done ;;
-        orchestrator)
-            il_runs "$IL_ROOT/bin/orchestrator" --help && IL_STATE=ok ;;
+        veritmo)
+            il_runs "$IL_ROOT/bin/veritmo" --help && IL_STATE=ok ;;
         ollama)
             if il_have ollama; then
                 IL_STATE=ok; IL_VER="$(ollama --version 2>&1 | il_first_version)"

@@ -7,7 +7,7 @@ set -eu
 root=$(cat /run/secrets/mysql_root_password)
 gdb=$(cat /run/secrets/grafana_db_password)
 gro=$(cat /run/secrets/grafana_ro_password)
-db=${MO_DB_NAME:-mediaorquestator}
+db=${VERITMO_DB_NAME:-veritmo}
 for v in "$gdb" "$gro" "$db"; do
     case "$v" in
         *[\'\"\\\`\;\ ]*|"") echo "users.sh: a password or name is empty or has a quote, a backslash, a backtick, a semicolon or a space" >&2; exit 1 ;;

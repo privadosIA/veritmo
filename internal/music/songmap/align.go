@@ -10,9 +10,9 @@ import (
 	"strings"
 	"unicode"
 
-	"mediaOrquestator/internal/music/separate"
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/music/videoclip"
+	"veritmo/internal/music/separate"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/music/videoclip"
 )
 
 // Written is a word of the lyrics and the number of its line (over the whole lyrics, in order).

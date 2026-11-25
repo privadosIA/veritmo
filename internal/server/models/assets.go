@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mediaOrquestator/internal/music/diffrhythm2"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/modelcat"
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/music/diffrhythm2"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/modelcat"
+	"veritmo/internal/server/workspace"
 )
 
 // AssetKind describes one managed asset kind: where it lives and which

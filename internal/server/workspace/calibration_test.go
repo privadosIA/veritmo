@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 func closeTo(t *testing.T, what string, got, want float64) {

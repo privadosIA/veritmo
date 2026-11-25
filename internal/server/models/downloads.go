@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/server/workspace"
 	"net"
 	"net/http"
 	"net/url"
@@ -24,10 +23,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"veritmo/internal/server/workspace"
 
-	"mediaOrquestator/internal/models/convrot"
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/models/convrot"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/server/api"
 )
 
 // Download states.
@@ -613,7 +613,7 @@ func (m *downloadManager) transfer(ctx context.Context, j *dlJob, f dlFile, part
 	if err != nil {
 		return 0, 0, err
 	}
-	req.Header.Set("User-Agent", "mediaOrquestator-model-manager")
+	req.Header.Set("User-Agent", "veritmo-model-manager")
 	// Go drops Authorization on redirects to other domains, so the token
 	// only ever travels to huggingface.co itself.
 	if tok := m.hfToken(); tok != "" && m.isHF(req.URL.Hostname()) {

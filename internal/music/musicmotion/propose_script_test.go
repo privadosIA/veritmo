@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/music/transcribe"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/music/transcribe"
 )
 
 func longMap() songmap.Map {

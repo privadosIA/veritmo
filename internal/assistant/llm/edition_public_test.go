@@ -9,8 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/settings"
 )
 
 func TestPublicEditionDoesNotCallDeniedModels(t *testing.T) {

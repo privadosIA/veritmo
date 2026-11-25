@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/llm"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/llm"
 )
 
 // Session is a vision model chosen once for a job of many closed questions about pictures (the shots of a reference): it

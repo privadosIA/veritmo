@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/video/motion"
 )
 
 const motionYAML = `project: demo

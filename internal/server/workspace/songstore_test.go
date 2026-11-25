@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/export"
 )
 
 func memSongs(t *testing.T) *songStore {

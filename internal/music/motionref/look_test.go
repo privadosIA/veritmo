@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/describe"
+	"veritmo/internal/assistant/describe"
 )
 
 func analyseWith(t *testing.T, looker Looker) (*Analysis, string) {

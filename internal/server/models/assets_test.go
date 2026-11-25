@@ -2,15 +2,15 @@ package models
 
 import (
 	"encoding/json"
-	"mediaOrquestator/internal/server/workspace"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"veritmo/internal/server/workspace"
 
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/server/api"
 )
 
 // newAssetServer returns a server whose assets root is a fresh temp dir.

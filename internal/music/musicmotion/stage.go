@@ -236,6 +236,9 @@ func AddStages(s *Script, lib Library, d Design) {
 	secBG := map[string]int{}
 	for i := range s.Pieces {
 		p := &s.Pieces[i]
+		if p.Blender != nil {
+			continue // a 3D piece has no stage
+		}
 		p.Part, p.Params = "blank", nil
 		bi, ok := secBG[p.Section]
 		if !ok {

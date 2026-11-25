@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/server/api"
 )
 
 func writeArtifact(t *testing.T, projects, project, rel string, data []byte) string {

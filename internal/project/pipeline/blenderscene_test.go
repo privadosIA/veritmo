@@ -3,6 +3,7 @@ package pipeline
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,11 +12,11 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/blender"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/blender"
 )
 
 type blenderCall struct {
@@ -440,5 +441,63 @@ func TestBlenderScene_TheKeyFollowsTheTempoAndTheDesignFonts(t *testing.T) {
 	plain := hash(120, "playfair-display")
 	if hash(90, "inter") != plain {
 		t.Error("a tempo and fonts the scene does not use must not change its key")
+	}
+}
+
+func TestBlenderScene_TheKeyFollowsTheContentOfTheModelsAndTheirPictures(t *testing.T) {
+	imageSetup(t)
+	glb := func(js string) []byte {
+		for len(js)%4 != 0 {
+			js += " "
+		}
+		out := []byte("glTF")
+		out = binary.LittleEndian.AppendUint32(out, 2)
+		out = binary.LittleEndian.AppendUint32(out, uint32(20+len(js)))
+		out = binary.LittleEndian.AppendUint32(out, uint32(len(js)))
+		out = binary.LittleEndian.AppendUint32(out, 0x4E4F534A)
+		return append(out, js...)
+	}
+	write := func(name string, data []byte) { os.WriteFile(filepath.Join("sources", name), data, 0o644) }
+	write("c.glb", glb(`{"animations":[{"name":"run"}],"images":[{"uri":"Textures/map.png"}]}`))
+	write("map.png", []byte("one"))
+	write("t.scene.json", []byte(`{"version":1,"camera":{"keys":[{"t":0},{"t":1}]},"objects":[{"id":"a","type":"model","file":"c.glb","size":1,"animation":{"clip":"run"}}]}`))
+	blenderBuildStubs(t, nil)
+	s := builtScene("a")
+	hash := func() string { return BlenderImageHash(motionCfg(120, "inter", s), s, "", "") }
+	base := hash()
+	if hash() != base {
+		t.Fatal("the key must be stable")
+	}
+	write("other.glb", glb(`{}`))
+	if hash() != base {
+		t.Error("a file of the sources that the scene does not use must not change its key")
+	}
+	write("map.png", []byte("two"))
+	if hash() == base {
+		t.Error("a texture replaced by another renders the scene again")
+	}
+	write("map.png", []byte("one"))
+	if hash() != base {
+		t.Fatal("back to the first texture, back to the first key")
+	}
+	write("c.glb", glb(`{"animations":[{"name":"run"},{"name":"walk"}],"images":[{"uri":"Textures/map.png"}]}`))
+	if hash() == base {
+		t.Error("a model replaced by another with the same name renders the scene again")
+	}
+}
+
+func TestBlenderEnv_ARunInPlaceHasSourcesAndAScenePlacedOnItsOwnHasNone(t *testing.T) {
+	cfg := &config.Config{}
+	if blenderEnv(cfg, "").NoFiles {
+		t.Error("the command line runs a scenes.yaml in the current folder: its sources are there (found by running the models example)")
+	}
+	if blenderEnv(cfg, "/p").NoFiles {
+		t.Error("a project's folder has sources")
+	}
+	if !BlenderEnv(cfg, "").NoFiles {
+		t.Error("with no folder the exported env is the one of a scene with no project")
+	}
+	if BlenderEnv(cfg, "/p").NoFiles {
+		t.Error("a project's folder has sources")
 	}
 }

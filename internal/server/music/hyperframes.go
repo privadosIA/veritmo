@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/music/hyperframes"
-	pstore "mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/hyperframes"
+	pstore "veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motion"
 )
 
 // hfStore is the catalog of the blocks: their records are rows of the database and their files are in the folder of the blocks (HYPERFRAMES_DIR or

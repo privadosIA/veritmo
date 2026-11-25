@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"mediaOrquestator/internal/platform/media"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -23,16 +22,17 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"veritmo/internal/platform/media"
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/quality"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/quality"
+	"veritmo/internal/server/api"
 )
 
 // Review states.

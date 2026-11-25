@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	pstore "mediaOrquestator/internal/platform/store"
-	store "mediaOrquestator/internal/prompts"
+	pstore "veritmo/internal/platform/store"
+	store "veritmo/internal/prompts"
 )
 
 // marker is text that sits in a column no source names: it must never reach any output.

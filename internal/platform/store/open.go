@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/settings"
 )
 
 // sqlitePragmas are the settings every SQLite connection is opened with: WAL lets the server and the command line read

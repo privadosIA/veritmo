@@ -14,8 +14,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/store"
 )
 
 // The ids the secrets of the settings are kept under in the keys file.
@@ -125,6 +125,7 @@ var fields = []field{
 	{"diffrhythm2_host", func(f settings.File) any { return nonEmpty(f.DiffRhythm2Host) }},
 	{"heartmula_backend", func(f settings.File) any { return nonEmpty(f.HeartMulaBackend) }},
 	{"diffrhythm2_backend", func(f settings.File) any { return nonEmpty(f.DiffRhythm2Backend) }},
+	{"model3d_backend", func(f settings.File) any { return nonEmpty(f.Model3DBackend) }},
 	{"monitoring", func(f settings.File) any {
 		if len(f.Monitoring) == 0 {
 			return nil

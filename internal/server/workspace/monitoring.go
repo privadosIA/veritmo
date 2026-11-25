@@ -18,8 +18,8 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
 )
 
 // monitoringTimeout bounds a test: a tool that is off must answer "not here" quickly.

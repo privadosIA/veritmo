@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 func get(t *testing.T, s *Server, path string) string {

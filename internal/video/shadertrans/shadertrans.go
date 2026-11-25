@@ -15,7 +15,7 @@ import (
 	"strings"
 	"sync"
 
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/video/motion"
 )
 
 //go:embed shaders.json

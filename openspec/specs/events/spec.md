@@ -48,7 +48,7 @@ Fields that do not apply to a given event (e.g. `duration_ms` or `artifact` on a
 
 ### Requirement: Skipped phases are silent
 
-In `images` output mode the `Emitter` (package `mediaOrquestator/internal/platform/events`) SHALL emit no `phase_start`, `phase_end`, or error events for the phases `tts`, `probe`, `clip`, or `concat`. The resulting JSON-lines stream SHALL remain a valid sequence under the existing contract documented in `docs/events.md`: every emitted `phase_start` event SHALL be paired with a subsequent `phase_end` or error event for the same `scene_id` and `phase`, and no event field, type, or ordering rule SHALL change. A consumer that validates the stream against the current `docs/events.md` schema (field names, types, pairing invariant) SHALL parse an images-mode stream without error, regardless of which phases are absent.
+In `images` output mode the `Emitter` (package `veritmo/internal/platform/events`) SHALL emit no `phase_start`, `phase_end`, or error events for the phases `tts`, `probe`, `clip`, or `concat`. The resulting JSON-lines stream SHALL remain a valid sequence under the existing contract documented in `docs/events.md`: every emitted `phase_start` event SHALL be paired with a subsequent `phase_end` or error event for the same `scene_id` and `phase`, and no event field, type, or ordering rule SHALL change. A consumer that validates the stream against the current `docs/events.md` schema (field names, types, pairing invariant) SHALL parse an images-mode stream without error, regardless of which phases are absent.
 
 #### Scenario: Images-mode run emits only render and export phase pairs per scene
 

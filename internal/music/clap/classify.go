@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"mediaOrquestator/internal/platform/musicsvc"
+	"veritmo/internal/platform/musicsvc"
 )
 
 // Template is the sentence each tag is put into before it is compared with the sound.

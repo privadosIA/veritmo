@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"mediaOrquestator/internal/platform/fsutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
+	"veritmo/internal/platform/fsutil"
 )
 
 // The two networks the better engines of `scale` and `interpolate` run, as programs of their own (ncnn on Vulkan: any

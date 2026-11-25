@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/server/api"
 )
 
 // isolateSettings points the config dir at a temp dir and clears OLLAMA_HOST.
@@ -96,7 +96,7 @@ func TestSettings_FileIsPrivate(t *testing.T) {
 	dir := isolateSettings(t)
 	s, _ := newProjectsServer(t)
 	doJSON(t, s.Handler(), http.MethodPut, "/api/settings", map[string]string{"ollama_host": "10.1.1.1"})
-	fi, err := os.Stat(filepath.Join(dir, "mediaorquestator", "settings.json"))
+	fi, err := os.Stat(filepath.Join(dir, "veritmo", "settings.json"))
 	if err != nil || fi.Mode().Perm() != 0o600 {
 		t.Fatalf("settings.json must exist with mode 0600: %v %v", err, fi)
 	}
@@ -345,5 +345,37 @@ func TestSettings_TheDockerBackendIsRefusedWhenDockerDoesNotAnswer(t *testing.T)
 	// the .NET service needs no docker
 	if rec := doJSON(t, h, http.MethodPut, "/api/settings", map[string]any{"heartmula_backend": "dotnet"}); rec.Code != http.StatusOK {
 		t.Errorf("dotnet: %d %s", rec.Code, rec.Body)
+	}
+}
+
+// The backend of the 3D generator (TripoSR) is a setting like the music ones: saved, shown in the model3d block with its source, removable,
+// and the container is refused with 422 when Docker does not answer.
+func TestSettings_TheModel3DBackendIsSavedShownAndValidated(t *testing.T) {
+	isolateSettings(t)
+	s := newTestServer(t)
+	h := s.Handler()
+	s.models3d.Service().Runner = dockerAnswering(true)
+
+	if b, src := backendOf(t, doJSON(t, h, http.MethodGet, "/api/settings", nil).Body.Bytes(), "model3d"); b != "dotnet" || src != "default" {
+		t.Errorf("by default: %s %s", b, src)
+	}
+	rec := doJSON(t, h, http.MethodPut, "/api/settings", map[string]any{"model3d_backend": "docker"})
+	if b, src := backendOf(t, rec.Body.Bytes(), "model3d"); rec.Code != http.StatusOK || b != "docker" || src != "setting" {
+		t.Errorf("saved: %d %s %s", rec.Code, b, src)
+	}
+	if rec := doJSON(t, h, http.MethodPut, "/api/settings", map[string]any{"model3d_backend": "podman"}); rec.Code != http.StatusUnprocessableEntity {
+		t.Errorf("another value: %d %s", rec.Code, rec.Body)
+	}
+	rec = doJSON(t, h, http.MethodPut, "/api/settings", map[string]any{"model3d_backend": ""})
+	if b, src := backendOf(t, rec.Body.Bytes(), "model3d"); rec.Code != http.StatusOK || b != "dotnet" || src != "default" {
+		t.Errorf("removed: %d %s %s", rec.Code, b, src)
+	}
+	s.models3d.Service().Runner = dockerAnswering(false)
+	rec = doJSON(t, h, http.MethodPut, "/api/settings", map[string]any{"model3d_backend": "docker"})
+	if rec.Code != http.StatusUnprocessableEntity || !strings.Contains(rec.Body.String(), `"reason":"no_docker"`) {
+		t.Fatalf("docker does not answer: %d %s", rec.Code, rec.Body)
+	}
+	if b, _ := backendOf(t, doJSON(t, h, http.MethodGet, "/api/settings", nil).Body.Bytes(), "model3d"); b != "dotnet" {
+		t.Errorf("nothing was saved: %s", b)
 	}
 }

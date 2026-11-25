@@ -8,19 +8,20 @@ import (
 	"context"
 	"net/http"
 	"time"
+	"veritmo/internal/assets3d"
 
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/assistant"
-	"mediaOrquestator/internal/server/generation"
-	"mediaOrquestator/internal/server/models"
-	"mediaOrquestator/internal/server/workspace"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/assistant"
+	"veritmo/internal/server/generation"
+	"veritmo/internal/server/models"
+	"veritmo/internal/server/workspace"
+	"veritmo/internal/video/motion"
 )
 
 // Host is what the family needs from the server beyond the families below it.
@@ -56,6 +57,8 @@ type Host interface {
 // Handler serves the endpoints of the family. The exported function fields are test seams: nil uses the real thing.
 type Handler struct {
 	host Host
+	// models3d is the library of 3D model packs (nil until the server gives it): a model of it can be added to a piece.
+	models3d *assets3d.Library
 	// whisperDir is the folder of the Whisper models (see SetWhisperDir).
 	whisperDir string
 	// demucsDir is the folder of the weights of the voice separator (see SetDemucsDir).
@@ -137,6 +140,12 @@ func (h *Handler) Register(handle api.HandleFunc) {
 	handle("GET /api/music-motion/pieces/{id}", h.handleMusicMotionGet)
 	handle("PUT /api/music-motion/pieces/{id}/design", h.handleMusicMotionSetDesign)
 	handle("PUT /api/music-motion/pieces/{id}/script", h.handleMusicMotionSetScript)
+	handle("POST /api/music-motion/pieces/{id}/script/{piece}/blender", h.handlePieceBlenderWrite)
+	handle("POST /api/music-motion/pieces/{id}/script/{piece}/blender/frame", h.handlePieceBlenderFrame)
+	handle("GET /api/music-motion/pieces/{id}/models", h.handlePieceModelsList)
+	handle("POST /api/music-motion/pieces/{id}/models", h.handlePieceModelAdd)
+	handle("PUT /api/music-motion/pieces/{id}/models/{name}", h.handlePieceModelPut)
+	handle("DELETE /api/music-motion/pieces/{id}/models/{name}", h.handlePieceModelDelete)
 	handle("POST /api/music-motion/pieces/{id}/preview", h.handleMusicMotionPreview)
 	handle("GET /api/music-motion/pieces/{id}/frame", h.handleMusicMotionFrame)
 	handle("GET /api/music-motion/library/characters", h.handleLibraryCharacters)

@@ -85,7 +85,7 @@ func SavedDatabase() Database {
 	return b.Database
 }
 
-// GetDatabase returns the database the program uses: the saved one, else the one the MO_DB_* variables describe (see env.go), else an empty one (SQLite).
+// GetDatabase returns the database the program uses: the saved one, else the one the VERITMO_DB_* variables describe (see env.go), else an empty one (SQLite).
 // A description in the environment that is not valid is ignored here; CheckEnvDatabase says what is wrong.
 func GetDatabase() Database {
 	if d := SavedDatabase(); d != (Database{}) {

@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
 )
 
 // Version is the version of the service this program is made for.
@@ -22,7 +22,7 @@ const Version = "1"
 // What the engine is made of.
 const (
 	// Container is the name the program keeps the service's state under (there is no container: it is a process).
-	Container = "mo-videovision"
+	Container = "vt-videovision"
 	// WeightsDir is where the model files live, relative to the project root.
 	WeightsDir = "models/video"
 	// MinFreeMB is the memory of a card the engine asks for. The networks run on the CPU; the card is only the one the

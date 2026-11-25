@@ -13,9 +13,9 @@ import (
 	"strings"
 	"sync"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/video/motion"
 )
 
 // Parts is the engine as the catalog of parts the configuration checks against (config.PartCatalog) and the builder of the
@@ -151,6 +151,12 @@ func CheckScenePart(cat Catalog, name string, params map[string]any) error {
 // DesignFromConfig is the design a project's defaults.motion.design describes.
 func DesignFromConfig(d config.MotionDesign) Design {
 	return Design{Dark: d.Dark, Light: d.Light, Accent: d.Accent, Display: d.Display, Body: d.Body, DefaultMode: d.DefaultMode,
+		Modes: d.Modes, Concept: d.Concept, VerseStyle: d.VerseStyle, HitStyle: d.HitStyle}
+}
+
+// ToConfig is the design as a project's defaults.motion.design writes it.
+func (d Design) ToConfig() *config.MotionDesign {
+	return &config.MotionDesign{Dark: d.Dark, Light: d.Light, Accent: d.Accent, Display: d.Display, Body: d.Body, DefaultMode: d.DefaultMode,
 		Modes: d.Modes, Concept: d.Concept, VerseStyle: d.VerseStyle, HitStyle: d.HitStyle}
 }
 

@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 // legacyAudioHash and legacyImageHash replicate the pre-change hash

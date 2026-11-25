@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/store"
 )
 
 func listDir(dir string) []os.DirEntry {

@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"gorm.io/gorm"
-	"mediaOrquestator/internal/platform/store"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"veritmo/internal/platform/store"
 )
 
 // draftStores are the two implementations of the draft store: the same assertions run on both.

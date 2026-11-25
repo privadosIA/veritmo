@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/export"
 )
 
 // libraryFolders writes, in dir, two music projects with songs on disk (and one in the manifest whose audio is gone) and the file of stars and playlists.

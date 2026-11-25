@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // The kinds of input a generation reports.
@@ -28,6 +28,7 @@ const (
 	inputRefImage   = "reference_image"
 	inputRefVideo   = "reference_video"
 	inputRefAudio   = "reference_audio"
+	inputScene      = "scene"
 )
 
 // The multipart parts that carry them.

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion" // the catalog of parts: it checks the parts a dataset names
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/music/musicmotion" // the catalog of parts: it checks the parts a dataset names
+	"veritmo/internal/project/config"
 )
 
 func TestMapMotion_APartWithItsParametersTextAndTempo(t *testing.T) {

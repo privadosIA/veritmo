@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/transcribe"
+	"veritmo/internal/music/transcribe"
 )
 
 func hw(text string, start, end float64) transcribe.Word {

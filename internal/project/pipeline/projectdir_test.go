@@ -8,14 +8,14 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 // TestRunVideo_ProjectDirPathsResolveAgainstChildCwd is the regression for
-// the concat failure seen when running through `orchestrator serve`: the
+// the concat failure seen when running through `veritmo serve`: the
 // pipeline runs with a project directory (Options.Dir), every subprocess
 // gets that directory as its cwd, so each path handed to a subprocess must
 // be project-relative. The concat list used to be passed as

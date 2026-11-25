@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // Folders are the folders the state of the music motion engine was kept in before the database: what the importers read.

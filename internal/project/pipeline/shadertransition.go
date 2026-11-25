@@ -12,11 +12,11 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/assemble"
-	"mediaOrquestator/internal/video/render"
-	"mediaOrquestator/internal/video/shadertrans"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/assemble"
+	"veritmo/internal/video/render"
+	"veritmo/internal/video/shadertrans"
 )
 
 // renderShaderJoins draws the shader transitions of the join list and sets their videos. tmpDir is project-relative; the clips are too (ffmpeg runs

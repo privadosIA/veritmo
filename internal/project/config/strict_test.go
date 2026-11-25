@@ -29,12 +29,12 @@ func TestStrict_TheDeprecatedAliasAndKnownFieldsStillLoad(t *testing.T) {
 	}
 }
 
-// TestRealProjectsStillLoad loads the scenes.yaml of every project under $MO_REAL_PROJECTS (skipped when unset) and
+// TestRealProjectsStillLoad loads the scenes.yaml of every project under $VERITMO_REAL_PROJECTS (skipped when unset) and
 // checks that the strict parsing and the path and bound rules accept them. Run it before merging a rule change.
 func TestRealProjectsStillLoad(t *testing.T) {
-	root := os.Getenv("MO_REAL_PROJECTS")
+	root := os.Getenv("VERITMO_REAL_PROJECTS")
 	if root == "" {
-		t.Skip("set MO_REAL_PROJECTS to the projects folder to check the real projects")
+		t.Skip("set VERITMO_REAL_PROJECTS to the projects folder to check the real projects")
 	}
 	files, _ := filepath.Glob(filepath.Join(root, "*", "scenes.yaml"))
 	if len(files) == 0 {

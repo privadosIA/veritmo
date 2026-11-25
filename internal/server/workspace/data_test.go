@@ -13,8 +13,8 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/store"
 )
 
 // dataImporter is an entity whose state is the .json files of a folder; a file that starts with "bad" cannot be read.

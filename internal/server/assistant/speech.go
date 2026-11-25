@@ -12,9 +12,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/speech/tts"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/server/api"
+	"veritmo/internal/speech/tts"
 )
 
 // MaxSpeechChars bounds a voice preview: it is a listen-before-you-run check, not the narration.
@@ -72,7 +72,7 @@ func (h *Handler) HandleSpeechPreview(w http.ResponseWriter, r *http.Request) {
 		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("speaker must be between 0 and %d for %s", n-1, voice))
 		return
 	}
-	out, err := os.CreateTemp("", "mo-speech-*.wav")
+	out, err := os.CreateTemp("", "vt-speech-*.wav")
 	if err != nil {
 		api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, err.Error())
 		return

@@ -6,6 +6,7 @@ package musicmotion
 // rest. Nothing here loads a model.
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -13,9 +14,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/motion"
+	yamlv3 "gopkg.in/yaml.v3"
+
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/motion"
 )
 
 // ProjectSpec is what the project of a piece is made from.
@@ -51,10 +54,15 @@ type SceneFiles struct {
 	Part     string  `json:"part"`
 	Seconds  float64 `json:"seconds"`
 	PagePath string  `json:"page"`
+	// Blender is the description file of a 3D piece (in sources/), which has no part and no page.
+	Blender string `json:"blender,omitempty"`
 }
 
 // sceneFor makes the scene of a piece, in the piece's own time.
 func sceneFor(p Piece, spec ProjectSpec) (Scene, Part, error) {
+	if p.Blender != nil {
+		return Scene{}, Part{}, fmt.Errorf("piece %q is a 3D scene (blender): it has no page", p.ID)
+	}
 	part, ok := spec.Cat.Get(p.Part)
 	if !ok {
 		return Scene{}, Part{}, fmt.Errorf("piece %q: the part %q is not in the catalog", p.ID, p.Part)
@@ -178,21 +186,25 @@ type PieceMotion struct {
 // only names the pieces to make; empty makes all, and a name that is not a piece of the script is an error. The render
 // and the preview both come from here, so they cannot differ.
 func BuildPages(spec ProjectSpec, only []string) ([]PieceMotion, error) {
-	known := map[string]bool{}
+	known := map[string]Piece{}
 	for _, p := range spec.Script.Pieces {
-		known[p.ID] = true
+		known[p.ID] = p
 	}
 	want := map[string]bool{}
 	for _, id := range only {
-		if !known[id] {
+		p, ok := known[id]
+		if !ok {
 			return nil, fmt.Errorf("piece %s: not in the script", id)
+		}
+		if p.Blender != nil {
+			return nil, fmt.Errorf("piece %s is a 3D scene (blender): it has no page", id)
 		}
 		want[id] = true
 	}
 	var out []PieceMotion
 	for _, p := range spec.Script.Pieces {
-		if len(want) > 0 && !want[p.ID] {
-			continue
+		if p.Blender != nil || (len(want) > 0 && !want[p.ID]) {
+			continue // a 3D piece is drawn by Blender: it has no page
 		}
 		sc, part, err := sceneFor(p, spec)
 		if err != nil {
@@ -234,29 +246,64 @@ func WriteProject(spec ProjectSpec) ([]SceneFiles, error) {
 	if spec.Client != "" {
 		fmt.Fprintf(&yaml, "client: %s\n", spec.Client)
 	}
-	fmt.Fprintf(&yaml, "project: %s\noutput: {mode: video, file: out/%s.mp4}\ndefaults:\n  resolution: %dx%d\n  fps: %d\nbgm: {file: %s, volume: 1, ducking: false, fade_seconds: 0}\nscenes:\n",
-		spec.Name, spec.Name, spec.Width, spec.Height, spec.FPS, songName)
+	blenderPieces := 0
+	for _, p := range spec.Script.Pieces {
+		if p.Blender != nil {
+			blenderPieces++
+		}
+	}
+	fmt.Fprintf(&yaml, "project: %s\noutput: {mode: video, file: out/%s.mp4}\ndefaults:\n  resolution: %dx%d\n  fps: %d\n", spec.Name, spec.Name, spec.Width, spec.Height, spec.FPS)
+	if blenderPieces > 0 {
+		// A 3D piece takes its beats from the song's tempo and its colours and fonts from the song's design.
+		motionYAML, err := yamlv3.Marshal(map[string]any{"motion": BlenderConfig(spec.Map, spec.Design, 0, 0, 0).Defaults.Motion})
+		if err != nil {
+			return nil, err
+		}
+		for _, line := range strings.Split(strings.TrimRight(string(motionYAML), "\n"), "\n") {
+			fmt.Fprintf(&yaml, "  %s\n", line)
+		}
+	}
+	fmt.Fprintf(&yaml, "bgm: {file: %s, volume: 1, ducking: false, fade_seconds: 0}\nscenes:\n", songName)
 	pages, err := BuildPages(spec, nil)
 	if err != nil {
 		return nil, err
+	}
+	pageOf := map[string]PieceMotion{}
+	for _, pg := range pages {
+		pageOf[pg.ID] = pg
 	}
 	fades := Crossfades(spec.Script, spec.Design)
 	crossfading := false
 	for _, f := range fades {
 		crossfading = crossfading || f > 0
 	}
-	for i, pg := range pages {
+	described := map[string]bool{}
+	for i, p := range spec.Script.Pieces {
+		// With crossfades, the end of a piece and the start of the next overlap, so each piece is drawn as long as the fade into the
+		// next one more: the pieces then land on the song as they do with cuts.
+		seconds := round3(p.End - p.Start)
+		if i+1 < len(fades) {
+			seconds = round3(seconds + fades[i+1])
+		}
+		if p.Blender != nil {
+			name := p.ID + config.SceneSpecSuffix
+			if err := writeIfChanged(filepath.Join(spec.Dir, config.SourcesSubdir, name), sceneJSON(p.Blender.Description), ""); err != nil {
+				return nil, err
+			}
+			described[name] = true
+			fmt.Fprintf(&yaml, "  - id: %s\n    blender: {build: %s}\n    silence_seconds: %v\n", p.ID, name, seconds)
+			if crossfading && i > 0 {
+				fmt.Fprintf(&yaml, "    transition_seconds: %v\n", fades[i])
+			}
+			files = append(files, SceneFiles{ID: p.ID, Seconds: round3(p.End - p.Start), Blender: name})
+			continue
+		}
+		pg := pageOf[p.ID]
 		if err := writeIfChanged(motion.PagePath(spec.Dir, pg.ID, false), []byte(pg.HTML), ""); err != nil {
 			return nil, err
 		}
 		if err := writeIfChanged(motion.SongPath(spec.Dir, pg.ID), pg.Song, ""); err != nil {
 			return nil, err
-		}
-		// With crossfades, the end of a piece and the start of the next overlap, so each piece is drawn as long as the fade into the
-		// next one more: the pieces then land on the song as they do with cuts.
-		seconds := pg.Seconds
-		if i+1 < len(fades) {
-			seconds = round3(seconds + fades[i+1])
 		}
 		fmt.Fprintf(&yaml, "  - id: %s\n    motion_graphic: %q\n    silence_seconds: %v\n", pg.ID, "music piece: "+pg.Part+" ("+pg.Section+")", seconds)
 		if crossfading && i > 0 {
@@ -264,6 +311,7 @@ func WriteProject(spec ProjectSpec) ([]SceneFiles, error) {
 		}
 		files = append(files, SceneFiles{ID: pg.ID, Part: pg.Part, Seconds: pg.Seconds, PagePath: filepath.Join(motion.Dir, pg.ID+".html")})
 	}
+	removeStaleDescriptions(filepath.Join(spec.Dir, config.SourcesSubdir), described)
 	if err := writeIfChanged(filepath.Join(spec.Dir, "scenes.yaml"), []byte(yaml.String()), ""); err != nil {
 		return nil, err
 	}
@@ -307,4 +355,23 @@ func Crossfades(s Script, d Design) []float64 {
 func SceneOfPiece(p Piece, spec ProjectSpec) (Scene, error) {
 	sc, _, err := sceneFor(p, spec)
 	return sc, err
+}
+
+// sceneJSON is a description as it is stored in the sources: indented, with a final line break.
+func sceneJSON(raw []byte) []byte {
+	var b bytes.Buffer
+	if err := json.Indent(&b, raw, "", "  "); err != nil {
+		return raw
+	}
+	return append(b.Bytes(), '\n')
+}
+
+// removeStaleDescriptions deletes the descriptions of the sources that no 3D piece of the script names any more.
+func removeStaleDescriptions(sources string, keep map[string]bool) {
+	entries, _ := os.ReadDir(sources)
+	for _, e := range entries {
+		if e.Type().IsRegular() && config.ValidSceneSpecName(e.Name()) && !keep[e.Name()] {
+			_ = os.Remove(filepath.Join(sources, e.Name()))
+		}
+	}
 }

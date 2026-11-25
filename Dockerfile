@@ -2,15 +2,15 @@
 #
 # The image of the server of the Compose stack (see compose.yaml and docs/COMPOSE.md). Two targets:
 #
-#   runtime  what the server runs in: orchestrator, ffmpeg, the CUDA runtime libraries, and a pinned Chrome for the motion graphics.
+#   runtime  what the server runs in: veritmo, ffmpeg, the CUDA runtime libraries, and a pinned Chrome for the motion graphics.
 #            It holds nothing the person installs or creates: the programs the installer builds (bin/, third_party/), the models, the
 #            voices, the HyperFrames blocks and the projects are folders of the host, mounted under /app.
 #   tools    the same base with the CUDA toolkit and the build chain. It runs the pinned install scripts of the repository (the ones
 #            scripts/install.sh uses) and writes what they build into those host folders, so the programs are built against the
 #            libraries of the image that runs them.
 #
-#   docker build --target runtime -t mediaorquestator/server .
-#   docker build --target tools   -t mediaorquestator/tools  .
+#   docker build --target runtime -t veritmo/server .
+#   docker build --target tools   -t veritmo/tools  .
 #
 # EDITION_TAG is the Go build tag of the edition (empty: the default edition).
 
@@ -26,7 +26,7 @@ RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
 # CGO is off: the SQLite driver is pure Go, so the program is one static file that runs on any base.
-RUN CGO_ENABLED=0 go build ${EDITION_TAG:+-tags "$EDITION_TAG"} -trimpath -ldflags "-s -w" -o /out/orchestrator ./cmd/orchestrator
+RUN CGO_ENABLED=0 go build ${EDITION_TAG:+-tags "$EDITION_TAG"} -trimpath -ldflags "-s -w" -o /out/orchestrator ./cmd/veritmo
 
 # ─── What the server runs in ────────────────────────────────────────────────
 FROM nvidia/cuda:${CUDA_VERSION}-runtime-ubuntu24.04 AS runtime
@@ -47,8 +47,8 @@ RUN curl -fsSL -o /tmp/chrome.zip "https://storage.googleapis.com/chrome-for-tes
     && chmod 755 /usr/local/bin/chromium
 
 
-COPY --from=gobuild /out/orchestrator /usr/local/bin/orchestrator
-RUN ln -s orchestrator /usr/local/bin/orchestrator-api
+COPY --from=gobuild /out/orchestrator /usr/local/bin/veritmo
+RUN ln -s veritmo /usr/local/bin/veritmo-api
 COPY deploy/compose/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # The layout the server expects, under /app: the host folders are mounted over bin/, models/, voices/, third_party/, hyperframes/, projects/.

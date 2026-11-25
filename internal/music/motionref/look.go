@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"mediaOrquestator/internal/assistant/describe"
+	"veritmo/internal/assistant/describe"
 )
 
 // lookFrames is how many key frames the vision model reads to describe the look.

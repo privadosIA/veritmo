@@ -13,8 +13,8 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/project/config"
 )
 
 // --- the machine ---------------------------------------------------------------------------------

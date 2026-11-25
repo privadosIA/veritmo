@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 func TestBuildAmbientArgs_ForwardPartWithFadeOut(t *testing.T) {

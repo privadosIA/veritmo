@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 // fakeAssistant answers the choice of parts of a style and the ideas of parts.

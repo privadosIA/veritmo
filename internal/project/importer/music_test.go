@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 func songEntry(id, prompt string) Entry { return Entry{ID: id, Title: "t", FullPrompt: prompt} }

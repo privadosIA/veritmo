@@ -12,9 +12,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // GET /api/projects/{id}: the project as the list shows it.

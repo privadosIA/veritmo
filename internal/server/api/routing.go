@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/describe"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/describe"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/settings"
 )
 
 // WriteRoutingError answers the errors of resolving a provider (no consent, no model,

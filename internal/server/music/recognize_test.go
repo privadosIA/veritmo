@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/clap"
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/music/clap"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
 )
 
 // clapServer is listenSetup plus a CLAP service that is running and answers /classify with fixed tags. It
@@ -63,7 +63,7 @@ func clapServer(t *testing.T, running bool) (*testServer, *[]string, *clap.Resul
 	s.heartMulaRunner = fr
 	if running {
 		// A service started by hand, listening on the fake CLAP's port: the program only needs its state.
-		t.Setenv("MO_FAKE_SERVICE", "silent")
+		t.Setenv("VERITMO_FAKE_SERVICE", "silent")
 		startFake(t, s, clap.Spec(), port)
 	}
 	s.clapWeights = t.TempDir()

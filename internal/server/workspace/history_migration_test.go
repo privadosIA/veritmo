@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 func TestTheHistoryMigrationGivesTheTablesOfTheModels(t *testing.T) {

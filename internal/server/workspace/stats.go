@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/platform/fsutil"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/fsutil"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 const (
@@ -543,8 +543,8 @@ func (h *Handler) handleStats(w http.ResponseWriter, r *http.Request) {
 		if m = strings.TrimSpace(m); m == "" {
 			continue
 		}
-		if mode := config.OutputMode(m); mode != config.ModeVideo && mode != config.ModeImages && mode != config.ModeMusic && mode != ModeAnimation {
-			api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("invalid mode %q: use video, images, music or animation (comma separated)", m))
+		if !validRunMode(m) {
+			api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("invalid mode %q: use %s (comma separated)", m, RunModesText))
 			return
 		}
 		modes = append(modes, m)

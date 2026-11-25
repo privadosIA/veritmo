@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/server/api"
 )
 
 func TestParseYouTubeURL(t *testing.T) {

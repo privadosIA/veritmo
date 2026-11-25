@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"mediaOrquestator/internal/music/separate"
-	"mediaOrquestator/internal/music/transcribe"
+	"veritmo/internal/music/separate"
+	"veritmo/internal/music/transcribe"
 )
 
 // voiceOn is an envelope with the voice heard in the given [from, to) spans and silence elsewhere, up to total seconds.

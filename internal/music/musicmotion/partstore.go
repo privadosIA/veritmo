@@ -12,7 +12,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // ErrPartExists is a part that cannot be created because one of the user's has its name.

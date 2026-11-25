@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"mediaOrquestator/internal/platform/providers"
+	"veritmo/internal/platform/providers"
 )
 
 // Name is "public" or "private".

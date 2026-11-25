@@ -48,7 +48,7 @@ mkdir -p models; echo x >models/m.safetensors'
     # go build creates what the checks look for
     stub go 'case "$1" in
   version) echo "go version go1.22.3 linux/amd64" ;;
-  build) echo "go $*" >>"$CALLS"; printf "#!/usr/bin/env bash\necho \"Usage of orchestrator\"\n" >bin/orchestrator; chmod +x bin/orchestrator ;;
+  build) echo "go $*" >>"$CALLS"; printf "#!/usr/bin/env bash\necho \"Usage of veritmo\"\n" >bin/veritmo; chmod +x bin/veritmo ;;
 esac'
     stub sudo 'echo "sudo $*" >>"$CALLS"; if [ "$1" = "-n" ]; then exit 0; fi; exec "$@"'
 }
@@ -132,14 +132,14 @@ cleanup_sandbox
 
 # --- --yes installs everything installable, in order ----------------------------
 sandbox; complete_machine; recording_repo
-rm "$IL_ROOT/bin/sd" "$IL_ROOT/bin/piper" "$IL_ROOT/voices/v.onnx" "$IL_ROOT/bin/ace-lm" "$IL_ROOT/bin/yt-dlp" "$IL_ROOT/models/m.safetensors" "$IL_ROOT/bin/orchestrator" "$IL_ROOT/third_party/gsap/gsap.min.js" "$IL_ROOT/third_party/hyperframes-libs/h/a.js" "$IL_ROOT/hyperframes/blocks/x/block.json" "$IL_ROOT/third_party/hyperframes-runtime/hyperframe.runtime.iife.js"
+rm "$IL_ROOT/bin/sd" "$IL_ROOT/bin/piper" "$IL_ROOT/voices/v.onnx" "$IL_ROOT/bin/ace-lm" "$IL_ROOT/bin/yt-dlp" "$IL_ROOT/models/m.safetensors" "$IL_ROOT/bin/veritmo" "$IL_ROOT/third_party/gsap/gsap.min.js" "$IL_ROOT/third_party/hyperframes-libs/h/a.js" "$IL_ROOT/hyperframes/blocks/x/block.json" "$IL_ROOT/third_party/hyperframes-runtime/hyperframe.runtime.iife.js"
 rm -rf "$IL_ROOT/bin/realesrgan" "$IL_ROOT/bin/rife"
 run_install --yes
 assert_status "yes run" 0 "$st"
 order="$(calls | tr '\n' ' ')"
 assert_contains "sd, piper, acestep, ytdlp, gsap, hflibs, upscalers, models" "$order" "build-sd SD_CUDA= get-piper build-acestep get-ytdlp get-gsap get-hflibs get-upscalers get-models"
-assert_contains "orchestrator, built without a UI tag" "$order" "go build -o bin/orchestrator ./cmd/orchestrator"
-assert_contains "hfblocks after the orchestrator" "$order" "go build -o bin/orchestrator ./cmd/orchestrator get-hfblocks"
+assert_contains "veritmo, built without a UI tag" "$order" "go build -o bin/veritmo ./cmd/veritmo"
+assert_contains "hfblocks after the veritmo" "$order" "go build -o bin/veritmo ./cmd/veritmo get-hfblocks"
 assert_not_contains "no Node steps" "$order" "npm"
 assert_contains "final report says ok" "$out" "every required component is ok"
 cleanup_sandbox

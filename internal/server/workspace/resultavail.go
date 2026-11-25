@@ -11,7 +11,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 // RunView is a run as the API shows it.
@@ -56,10 +56,11 @@ func (c *resultCheck) mode(project string) config.OutputMode {
 var (
 	pictureExts = map[string]bool{".png": true, ".jpg": true, ".jpeg": true, ".webp": true}
 	songExts    = map[string]bool{".mp3": true, ".wav": true, ".flac": true, ".ogg": true}
+	modelExts   = map[string]bool{".glb": true}
 )
 
 // available says whether the run's project still holds a result of the run's kind: the final
-// video or a scene clip (video mode), a picture (images mode) or a song (music mode).
+// video or a scene clip (video mode), a picture (images mode) a song (music mode) or a model (models3d mode).
 func (c *resultCheck) available(r Run) bool {
 	mode := c.mode(r.Project)
 	if mode == "" || r.State != "succeeded" || r.Artifact == "" {
@@ -81,6 +82,8 @@ func (c *resultCheck) available(r Run) bool {
 		return hasFileWith(outputDirOf(dir, r.Artifact), pictureExts)
 	case config.ModeMusic:
 		return hasFileWith(outputDirOf(dir, r.Artifact), songExts)
+	case config.ModeModels3D:
+		return hasFileWith(outputDirOf(dir, r.Artifact), modelExts)
 	}
 	return false
 }

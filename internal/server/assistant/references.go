@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mediaOrquestator/internal/platform/store"
 	"mime"
 	"net/http"
 	"os"
@@ -21,11 +20,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"veritmo/internal/platform/store"
 
-	"mediaOrquestator/internal/assistant/describe"
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/describe"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
 )
 
 const (

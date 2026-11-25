@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 // tmpSceneSuffixes are the endings of the per-scene artifacts kept in tmp/, longest first.

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/settings"
 )
 
 // The writer goes through the provider routed to the motion-graphics task: here the
@@ -58,10 +58,10 @@ func TestWriterUsesTheModelSavedForTheTask(t *testing.T) {
 	cfg := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", cfg)
 	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "assistant-model:8b")
-	if err := os.MkdirAll(filepath.Join(cfg, "mediaorquestator"), 0o700); err != nil {
+	if err := os.MkdirAll(filepath.Join(cfg, "veritmo"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(cfg, "mediaorquestator", "settings.json"), []byte(`{"motion_model":"coder:30b"}`), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(cfg, "veritmo", "settings.json"), []byte(`{"motion_model":"coder:30b"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	var got map[string]any

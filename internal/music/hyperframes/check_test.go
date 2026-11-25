@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/video/motion"
 )
 
 func chromeDrawer(t *testing.T, html string) (Drawer, string) {

@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/server/api"
 )
 
 // ticketTTL is the lifetime of a header-less access ticket.
@@ -34,6 +34,7 @@ var ticketRoutes = []*regexp.Regexp{
 	regexp.MustCompile(`^/api/motions/[^/]+/preview$`),                        // the preview of a motion of the library, in a <video>
 	regexp.MustCompile(`^/api/music-motion/references/[^/]+/frames/[^/]+$`),   // a key frame of a reference, in an <img>
 	regexp.MustCompile(`^/api/music-motion/part-drafts/[^/]+/preview/[^/]+$`), // a preview frame of a draft of a part, in an <img>
+	regexp.MustCompile(`^/api/models3d/models/[^/]+/[^/]+/thumbnail$`),        // the picture of a model of the library, in an <img>
 }
 
 // authenticator guards /api/* with an optional shared Bearer token and

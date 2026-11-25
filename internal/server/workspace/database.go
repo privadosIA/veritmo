@@ -15,9 +15,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
 )
 
 // DatabaseView is a database as the page sees it: never the password.
@@ -43,7 +43,7 @@ type DatabaseAnswer struct {
 	Saved           DatabaseView `json:"saved"`
 	Active          DatabaseView `json:"active"`
 	RestartRequired bool         `json:"restart_required"`
-	// Source says where `saved` comes from: setting (the settings file), env (the MO_DB_* variables, used while nothing is saved) or default (the SQLite file).
+	// Source says where `saved` comes from: setting (the settings file), env (the VERITMO_DB_* variables, used while nothing is saved) or default (the SQLite file).
 	Source string `json:"source"`
 	// ServerName is how this server is called in the history; Servers are the names the history knows.
 	ServerName string   `json:"server_name"`

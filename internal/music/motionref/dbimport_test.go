@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 func importInto(t *testing.T, dirs Folders, entity string) (store.ImportRecord, *store.Store) {

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/video/motion"
 )
 
 func previewOf(t *testing.T, s *testServer, id, query string, body any) (int, PiecePreview, string) {

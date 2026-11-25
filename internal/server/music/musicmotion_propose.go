@@ -13,13 +13,13 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/assistant"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/assistant"
+	"veritmo/internal/video/motion"
 )
 
 // The states of a proposal in the background.
@@ -285,7 +285,7 @@ func (h *Handler) scriptStep(ch writerChoice, info *pieceInfo, m songmap.Map, st
 	if info.Style == musicmotion.StyleIllustrated {
 		musicmotion.AddStages(&prop.Script, h.mmLibrary(), st.Design)
 	}
-	if err := prop.Script.ValidateAll(h.mmCatalog(), h.mmLibrary(), m, st.Design, info.Width, info.Height); err != nil {
+	if err := prop.Script.WithSources(h.pieceSources(info.ID)).ValidateAll(h.mmCatalog(), h.mmLibrary(), m, st.Design, info.Width, info.Height); err != nil {
 		return prop, refusal("%v", err)
 	}
 	if err := musicmotion.SaveScriptAt(h.place(info.ID), prop.Script); err != nil {

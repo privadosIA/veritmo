@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/server/api"
 )
 
 // runStatePayload is the body of `run-state` notifications.

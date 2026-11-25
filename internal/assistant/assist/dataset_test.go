@@ -46,3 +46,37 @@ func TestExamplesBlock(t *testing.T) {
 		}
 	}
 }
+
+func TestDatasetModels3DAsksForOneObjectAlone(t *testing.T) {
+	sys := datasetSystem(DatasetInput{Mode: DatasetModels3D})
+	for _, want := range []string{"3D models", "single object alone", "no people", "NO label", "At most 12"} {
+		if !strings.Contains(strings.ToLower(sys), strings.ToLower(want)) {
+			t.Errorf("the system prompt lacks %q:\n%s", want, sys)
+		}
+	}
+	if user := datasetUser(DatasetInput{Mode: DatasetModels3D, Text: "props", Engine: "x", Look: "y"}); strings.Contains(user, "Video generator") || strings.Contains(user, "Look of") {
+		t.Errorf("the video's lines are not the models': %s", user)
+	}
+	a := &Assistant{}
+	if _, err := a.Dataset(context.Background(), DatasetInput{Mode: "audio", Text: "x"}); !errors.Is(err, ErrInvalidInput) || !strings.Contains(err.Error(), "models3d") {
+		t.Errorf("a wrong mode lists the accepted ones: %v", err)
+	}
+}
+
+func TestKindModel3DIsTheCallersAndTheTaskIsNotOffered(t *testing.T) {
+	if k, err := ParseKind(" Model3D "); err != nil || k != KindModel3D {
+		t.Errorf("%v %v", k, err)
+	}
+	if g := ParseKindReply("KIND=model3d; LANG=es; TITLE=Un patin"); g.Understood || g.Kind != "" {
+		t.Errorf("the model does not choose it: %+v", g)
+	}
+	if g := ParseKindReply("KIND=image; TITLE=x"); !g.Understood || g.Kind != KindImage {
+		t.Errorf("the others still are read: %+v", g)
+	}
+	if _, err := ParseTask("model3d"); err == nil {
+		t.Error("the task of the request planner is not offered through ParseTask")
+	}
+	if _, ok := tasks[TaskModel3D]; !ok || !strings.Contains(tasks[TaskModel3D].system, "ONE object") {
+		t.Errorf("the task: %+v", tasks[TaskModel3D])
+	}
+}

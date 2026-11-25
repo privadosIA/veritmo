@@ -8,9 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"mediaOrquestator/internal/platform/media"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,9 +15,12 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"veritmo/internal/platform/media"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
 )
 
 // Parts of a project, in the order they are shown.

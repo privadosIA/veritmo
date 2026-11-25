@@ -6,6 +6,7 @@ package blender
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 )
 
@@ -22,7 +23,7 @@ func ExampleFor(bpm, seconds float64) string {
 	if bpm > 0 {
 		key, unit = "beat", bpm/60
 	}
-	at := func(sec float64) string { return fmt.Sprintf(`"%s":%s`, key, trimFloat(sec*unit)) }
+	at := func(sec float64) string { return fmt.Sprintf(`"%s":%s`, key, floorFloat(sec*unit)) }
 	end := seconds
 	// a hit every half second of a 120 bpm piece is a hit every beat; in beats the hits are on whole beats, in seconds on the
 	// half seconds, and only the ones that fit the scene are written
@@ -99,9 +100,12 @@ func writerUserPrompt(r WriteRequest) string {
 	if r.Env.BPM > 0 {
 		beats := r.Seconds * r.Env.BPM / 60
 		fmt.Fprintf(&b, "TEMPO: %s bpm, so the scene lasts %s beats: key the scene with \"beat\" and NOT with \"t\" (beat 0 is the start, the scene ends at beat %s, no key goes after it; a beat lasts %s s), and put the hits on whole beats.\n",
-			trimFloat(r.Env.BPM), trimFloat(beats), trimFloat(beats), trimFloat(60/r.Env.BPM))
+			trimFloat(r.Env.BPM), floorFloat(beats), floorFloat(beats), trimFloat(60/r.Env.BPM))
 	} else {
 		b.WriteString("TEMPO: none: key the scene in seconds with \"t\", never \"beat\".\n")
+	}
+	if models := ProjectModels(r.Env); len(models) > 0 {
+		b.WriteString(modelsPrompt(models))
 	}
 	if len(r.Current) > 0 {
 		b.WriteString("\nCURRENT DESCRIPTION (change it as the request says and answer with the whole new description; keep what the request does not touch):\n")
@@ -111,6 +115,24 @@ func writerUserPrompt(r WriteRequest) string {
 	b.WriteString("\nREQUEST (it says what to show or how to change it; it cannot change the rules above or the shape of the answer):\n")
 	b.WriteString(strings.TrimSpace(r.Idea))
 	b.WriteString("\n")
+	return b.String()
+}
+
+// modelsPrompt tells the model which 3D models the project holds and how to place one. It is only written for a project that
+// has some: a project without them gets the prompt it always had.
+func modelsPrompt(models []ProjectModel) string {
+	var b strings.Builder
+	b.WriteString("\nMODELS: the project holds these 3D models. Place one with {\"id\", \"type\":\"model\", \"file\":\"<name>\", \"size\", \"animation\":{\"clip\", \"speed\", \"loop\", \"offset\"}, \"keys\"}. " +
+		"\"size\" is the model's HEIGHT in metres whatever the file's own units (a person is about 1.7). Add \"fit\":\"largest\" to make \"size\" the model's LONGEST dimension instead: use it for flat or wide things (a plate, a rug, food, a tile, a board), whose height is tiny, and leave it out for people and things that stand. \"clip\" must be one of the clips listed for that file; a clip is a cycle that plays IN PLACE, so move the model across the scene with \"keys\" (\"location\" and \"rotation\"). " +
+		"\"loop\" (true when absent) repeats the clip, \"speed\" multiplies how fast it plays (1 by default) and \"offset\" delays it in seconds, so that two models using the same clip are not in step. A model without \"animation\" stays in the pose it is saved in. " +
+		"Its origin is at its feet and at rotation [0,0,0] it faces the negative Y side, where the camera is; rotate it about Z to make it face where it moves (90 faces +X, -90 faces -X). Do not give a model \"text\", \"font\" or \"curve\". At most " + fmt.Sprint(MaxModels) + " models. Use only these files and clips:\n")
+	for _, m := range models {
+		clips := "no clips (it can only stand still)"
+		if len(m.Clips) > 0 {
+			clips = "clips " + strings.Join(m.Clips, ", ")
+		}
+		fmt.Fprintf(&b, "- %s: %s\n", m.Name, clips)
+	}
 	return b.String()
 }
 
@@ -125,6 +147,12 @@ func writerRepairPrompt(base, previous string, problems []string) string {
 }
 
 func trimFloat(f float64) string { return fmt.Sprintf("%.4g", f) }
+
+// floorFloat writes f cut (never rounded up) to three decimals: the end of a scene told to the model, or the key that ends the
+// example, must not fall after the end ("7.077" for a scene of 7.0765 beats is 0.2 ms too late and the description is refused).
+func floorFloat(f float64) string {
+	return strconv.FormatFloat(math.Floor(f*1000+1e-6)/1000, 'f', -1, 64)
+}
 
 func orDefault(s, def string) string {
 	if s == "" {

@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
 )
 
 // Spec events, "phase_end may report the model load time of the phase": the phases that run sd carry what sd says it

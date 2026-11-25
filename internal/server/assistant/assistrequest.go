@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/server/api"
 )
 
 // requestAttachments says which kinds of file the user attached to a request. The files themselves are
@@ -25,7 +25,7 @@ type requestPlanBody struct {
 	Text string `json:"text"`
 	// Language is the language of the request when the caller knows it (an ISO 639-1 code).
 	Language string `json:"language,omitempty"`
-	// Kind fixes video, image or music; the model is then not asked to decide it.
+	// Kind fixes video, image, music or model3d; the model is then not asked to decide it (and never decides model3d).
 	Kind      string `json:"kind,omitempty"`
 	Generator string `json:"generator,omitempty"`
 	// Instrumental fixes whether a song has a voice when the caller already knows (a new suggestion for the
@@ -47,6 +47,8 @@ type requestPlan struct {
 	// ImagePrompt is for an image or a video that starts from no picture; MotionPrompt for a video.
 	ImagePrompt  string `json:"image_prompt,omitempty"`
 	MotionPrompt string `json:"motion_prompt,omitempty"`
+	// ModelPrompt is for a 3D model: an English description of one object alone.
+	ModelPrompt string `json:"model_prompt,omitempty"`
 	// Speech is what a video has to say, taken from the request without a model call.
 	Speech string `json:"speech,omitempty"`
 	// Caption, Lyrics and Tags are the music task's: a style, lyrics (empty when instrumental) and, for
@@ -59,7 +61,7 @@ type requestPlan struct {
 	Warnings     []string `json:"warnings"`
 }
 
-// POST /api/assist/request {"text", "language"?, "kind"?, "generator"?, "attachments"?} -> requestPlan
+// POST /api/assist/request {"text", "language"?, "kind"?, "generator"?, "attachments"?} -> requestPlan (kind model3d: model_prompt)
 //
 // Turns a free-form request into what the generator needs: the kind (decided by the caller, the model,
 // the attachments or by default, in that order), a title and the texts of that kind, written by the
@@ -172,6 +174,16 @@ func (h *Handler) handleAssistRequest(w http.ResponseWriter, r *http.Request) {
 			warn("image prompt", err)
 		}
 	}
+	if kind == assist.KindModel3D {
+		// the picture of a prompt is drawn when the model is made, with the background wording the engines need: the prompt is the object alone
+		if out, err := h.runTask(ctx, assist.TaskModel3D, text, req.Model); err == nil {
+			plan.ModelPrompt = out
+		} else if ctx.Err() != nil {
+			return
+		} else {
+			warn("model prompt", err)
+		}
+	}
 	if kind == assist.KindVideo {
 		scene := text
 		if picture {
@@ -210,7 +222,7 @@ func (h *Handler) handleAssistRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	// A refusal of the model is not hidden behind a warning when nothing at all could be written: the
 	// kind alone is of no use to someone whose request was refused.
-	if refusal != nil && plan.ImagePrompt == "" && plan.MotionPrompt == "" && plan.Caption == "" {
+	if refusal != nil && plan.ImagePrompt == "" && plan.MotionPrompt == "" && plan.Caption == "" && plan.ModelPrompt == "" {
 		api.WriteAssistError(w, refusal)
 		return
 	}

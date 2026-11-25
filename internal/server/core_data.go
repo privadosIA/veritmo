@@ -4,16 +4,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/settingsdb"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/prompts"
-	"mediaOrquestator/internal/server/music"
-	"mediaOrquestator/internal/server/workspace"
-	"mediaOrquestator/internal/video/motionlib"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/settingsdb"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/prompts"
+	"veritmo/internal/server/music"
+	"veritmo/internal/server/workspace"
+	"veritmo/internal/video/motionlib"
 )
 
 // DataRegistry is what the database of the program is told: the tables, the migrations and the importers of every area, asked for one by one

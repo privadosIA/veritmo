@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/music/heartmula"
+	"veritmo/internal/music/heartmula"
 )
 
 // HeartMulaMargin is how much longer than the requested duration a HeartMuLa song may be: the model stops by

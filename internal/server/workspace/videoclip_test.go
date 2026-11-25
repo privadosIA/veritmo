@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/project/export"
 )
 
 const songsYAML = `project: songs

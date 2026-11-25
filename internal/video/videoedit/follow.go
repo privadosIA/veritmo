@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/video/videovision"
 )
 
 // The window of a crop follows the people by the boxes the person mask gives at a few frames per second, smoothed by

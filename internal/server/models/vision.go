@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"strings"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/video/videovision"
 )
 
 // Vision is the vision service as the video-edit tools use it: it checks the engine without starting it and,

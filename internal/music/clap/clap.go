@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
 )
 
 // Version is the version of the service this program is made for.
@@ -18,7 +18,7 @@ const Version = "1"
 // What the local engine is made of.
 const (
 	// Container is the name the service is known by (its state and log files carry it).
-	Container = "mo-clap"
+	Container = "vt-clap"
 	// WeightsDir is where the weights live, relative to the project root.
 	WeightsDir = "models/music/clap"
 	// MinFreeMB is the video memory the model needs: about 1 GB, and a little room.

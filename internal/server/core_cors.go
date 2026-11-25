@@ -3,7 +3,7 @@ package server
 // core_cors.go decides which browser origins may call the API from another origin (spec cors-settings): the origins given
 // with --cors-origin, plus the exact origins and the networks of the settings. The settings are followed live: they are read
 // again when the settings file changes (its modification time or size) and, whatever happens to the file, every 5 seconds, which
-// is how a change that `orchestrator cors` made in the database reaches a running server. Settings that cannot be read leave
+// is how a change that `veritmo cors` made in the database reaches a running server. Settings that cannot be read leave
 // the last good lists in force, so a typo or a database that is down never opens access wider.
 
 import (
@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/settings"
 )
 
 // maxWarnedOrigins bounds the origins remembered for the "rejected" line.
@@ -168,7 +168,7 @@ func (p *corsPolicy) rejected(origin string, r *http.Request) {
 		return
 	}
 	p.warned[n] = true
-	p.logf("cors: the browser origin %s is not allowed (the API answers it without CORS headers, so the page sees \"Failed to fetch\"); allow it with: orchestrator cors add %s   or its network: orchestrator cors add --network <range>", n, n)
+	p.logf("cors: the browser origin %s is not allowed (the API answers it without CORS headers, so the page sees \"Failed to fetch\"); allow it with: veritmo cors add %s   or its network: veritmo cors add --network <range>", n, n)
 }
 
 // CORSCounts is how many exact origins and networks the API allows from a browser right now.

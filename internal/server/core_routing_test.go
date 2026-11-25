@@ -15,8 +15,8 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/describe"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/assistant/describe"
+	"veritmo/internal/platform/settings"
 )
 
 type routingBody struct {

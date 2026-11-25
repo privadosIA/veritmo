@@ -12,10 +12,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/server/api"
 )
 
 // piecesListSpec says what the list of pieces can be sorted and searched by.

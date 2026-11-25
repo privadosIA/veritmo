@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/video/motion"
 )
 
 // blockStoreWith writes a block into a new store, points the layers at it and gives the libraries a folder with every pinned

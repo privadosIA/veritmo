@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/diffrhythm2"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/music/diffrhythm2"
+	"veritmo/internal/project/config"
 )
 
 func TestBuildRequest_DiffRhythm2CarriesTheStyleNotTheAceStepFields(t *testing.T) {

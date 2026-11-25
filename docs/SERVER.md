@@ -3,7 +3,7 @@
 [← Back to the README](../README.md)
 
 
-`orchestrator serve` starts a local REST + SSE server (default
+`veritmo serve` starts a local REST + SSE server (default
 `127.0.0.1:4666`) for managing projects, launching/monitoring runs,
 browsing artifacts and checking the environment — the backend of the
 Angular management frontend. It reuses the same pipeline packages and
@@ -11,13 +11,13 @@ re-emits the `docs/events.md` event stream verbatim over SSE; the CLI's
 flags and behavior are unchanged.
 
 ```bash
-bin/orchestrator serve --addr 127.0.0.1:4666 --projects-dir projects
+bin/veritmo serve --addr 127.0.0.1:4666 --projects-dir projects
 ```
 
-**One-command launcher.** `./serve.sh` (in the repo root) starts the server (after `bin/orchestrator data migrate` has created or updated its database: the server never changes the schema and refuses to start while migrations are pending, see [DATA_STORE.md](DATA_STORE.md)), and only the server: it builds,
+**One-command launcher.** `./serve.sh` (in the repo root) starts the server (after `bin/veritmo data migrate` has created or updated its database: the server never changes the schema and refuses to start while migrations are pending, see [DATA_STORE.md](DATA_STORE.md)), and only the server: it builds,
 looks for and serves no front end. It listens on `0.0.0.0:4666` and is protected by a bearer token. The token is created
-on first run and stored in `~/.config/mediaorquestator/token`; it is not printed on the screen unless you start with `./serve.sh --show-token` (read it with `cat ~/.config/mediaorquestator/token`). Paste it in the **Connection** of
-the dashboard you use. It builds the binary (`bin/orchestrator-api`) on every start. To serve a front end from the
+on first run and stored in `~/.config/veritmo/token`; it is not printed on the screen unless you start with `./serve.sh --show-token` (read it with `cat ~/.config/veritmo/token`). Paste it in the **Connection** of
+the dashboard you use. It builds the binary (`bin/veritmo-api`) on every start. To serve a front end from the
 same process, start the binary yourself with `--web-dir` (see below).
 
 ```bash
@@ -27,25 +27,25 @@ same process, start the binary yourself with `--web-dir` (see below).
 ```
 
 Environment overrides: `ADDR` (wins over `--local`), `PROJECTS_DIR`, `MEDIA_DIR` (see below),
-`NO_BUILD=1` (start the binary as it is) — the server is otherwise rebuilt on every start, which takes a second or two when nothing changed and `MEM_MAX` (memory cap through systemd-run, **24G by default** so a large model cannot hang the machine; use `MEM_MAX=0` for no cap or another size such as `MEM_MAX=40G`).
+`NO_BUILD=1` (start the binary as it is) — the server is otherwise rebuilt on every start, which takes a second or two when nothing changed and `MEM_MAX` (memory cap through systemd-run, **85% of the RAM by default** (about 26G on 32 GB, 52G on 64 GB) so a large model cannot hang the machine; use `MEM_MAX=0` for no cap or another size such as `MEM_MAX=24G`, the value for a 32 GB machine with a desktop: see [INSTALL.md](INSTALL.md#machines-with-32-gb-of-ram)).
 `./serve.sh --help` lists them.
 
-**Content for adults.** A project can be marked in its `scenes.yaml` with `adult: true` (for people of 18 or older), `adult: false` (looked at, fine for everyone) or nothing (not looked at); the editor and the new-project dialog set it. The server starts **censored**: a project marked `adult: true` does not exist for it. It is left out of the project list, the gallery, the runs and their history, the statistics, the storage report and the music library, and any request that names it answers `404`; nothing can be created, imported, duplicated or saved with `adult: true`. `orchestrator serve --strict` (or `STRICT=1 ./serve.sh`) is stricter: it also hides every project that was not marked `adult: false`. The mode is chosen when the server starts and cannot be changed while it runs; `GET /api/environment` reports it as `content_mode` and the Environment screen shows it.
+**Content for adults.** A project can be marked in its `scenes.yaml` with `adult: true` (for people of 18 or older), `adult: false` (looked at, fine for everyone) or nothing (not looked at); the editor and the new-project dialog set it. The server starts **censored**: a project marked `adult: true` does not exist for it. It is left out of the project list, the gallery, the runs and their history, the statistics, the storage report and the music library, and any request that names it answers `404`; nothing can be created, imported, duplicated or saved with `adult: true`. `veritmo serve --strict` (or `STRICT=1 ./serve.sh`) is stricter: it also hides every project that was not marked `adult: false`. The mode is chosen when the server starts and cannot be changed while it runs; `GET /api/environment` reports it as `content_mode` and the Environment screen shows it.
 
-Projects are rows of the database (see [DATA_STORE.md](DATA_STORE.md#the-projects-in-the-database)) and live as subdirectories of `--projects-dir` (each holding its sources, its `tmp/` and `out/` and the working copy of its `scenes.yaml`, which the server writes before a run and takes back after it: **editing that file by hand has no effect**, change a definition with `PUT /api/projects/{id}/config` or `orchestrator project push`; with a media directory those are links, see below), run history is kept in SQLite at
+Projects are rows of the database (see [DATA_STORE.md](DATA_STORE.md#the-projects-in-the-database)) and live as subdirectories of `--projects-dir` (each holding its sources, its `tmp/` and `out/` and the working copy of its `scenes.yaml`, which the server writes before a run and takes back after it: **editing that file by hand has no effect**, change a definition with `PUT /api/projects/{id}/config` or `veritmo project push`; with a media directory those are links, see below), run history is kept in SQLite at
 `.orchestrator/orchestrator.db`, and a front end is served at `/` from the folder given with
 `--web-dir` (see below). See `docs/http-api.md` for every
 endpoint, the SSE event types, and the error shape.
 
-**Front end.** `--web-dir DIR` (or `WEB_DIR`; `./serve.sh` takes it from `WEB_DIR` or, if that is not set, from the path written in `~/.config/mediaorquestator/web-dir`; `WEB_DIR=off` ignores the file) serves a built front end, for example `dashboards-lab/dist/dashboard-full/browser`, at the root of the same port. A Tailscale or tunnel address that points at the server then shows the dashboard with no CORS to set up; without it the root is a plain note and the server is only the API.
+**Front end.** `--web-dir DIR` (or `WEB_DIR`; `./serve.sh` takes it from `WEB_DIR` or, if that is not set, from the path written in `~/.config/veritmo/web-dir`; `WEB_DIR=off` ignores the file) serves a built front end, for example `dashboards-lab/dist/dashboard-full/browser`, at the root of the same port. A Tailscale or tunnel address that points at the server then shows the dashboard with no CORS to set up; without it the root is a plain note and the server is only the API.
 
-**Media directory.** `--media-dir DIR` (or `MEDIA_DIR`; `./serve.sh` takes it from `MEDIA_DIR` or, if that is not set, from the path written in `~/.config/mediaorquestator/media-dir`; with neither, and with `MEDIA_DIR=off`, projects stay whole in `--projects-dir`) is where the projects really live, so the disk of the server holds only the server. Each project is a folder `DIR/<id>/` with `config/` (`scenes.yaml`, its `scenes.yaml.*` backups, `sources/`, `.reviews/`, `motion/`), `out/` and `tmp/`. In `projects/<id>/` the same names are symbolic links into it (plus the `models` and `voices` links of the install), so every path in a manifest, a run or the API (`out/<id>/manifest.json`) keeps working and nothing else needs to know. Anything that copies `projects/` must follow links (`rsync -L`), or copy `DIR` instead. The server creates and checks the directory at start and refuses to start if it cannot be written; if the disk goes away later, a run is refused (`503`) and nothing is written to the local disk. Projects made before are moved with the server stopped: `bin/orchestrator-api media migrate --dry-run` lists what would move and the space it needs, and without `--dry-run` it copies, checks every file and size, and only then replaces the originals by links; it can be repeated. `GET /api/storage` gives `media.dir` and the free space of that disk, for a client that writes there too.
+**Media directory.** `--media-dir DIR` (or `MEDIA_DIR`; `./serve.sh` takes it from `MEDIA_DIR` or, if that is not set, from the path written in `~/.config/veritmo/media-dir`; with neither, and with `MEDIA_DIR=off`, projects stay whole in `--projects-dir`) is where the projects really live, so the disk of the server holds only the server. Each project is a folder `DIR/<id>/` with `config/` (`scenes.yaml`, its `scenes.yaml.*` backups, `sources/`, `.reviews/`, `motion/`), `out/` and `tmp/`. In `projects/<id>/` the same names are symbolic links into it (plus the `models` and `voices` links of the install), so every path in a manifest, a run or the API (`out/<id>/manifest.json`) keeps working and nothing else needs to know. Anything that copies `projects/` must follow links (`rsync -L`), or copy `DIR` instead. The server creates and checks the directory at start and refuses to start if it cannot be written; if the disk goes away later, a run is refused (`503`) and nothing is written to the local disk. Projects made before are moved with the server stopped: `bin/veritmo-api media migrate --dry-run` lists what would move and the space it needs, and without `--dry-run` it copies, checks every file and size, and only then replaces the originals by links; it can be repeated. `GET /api/storage` gives `media.dir` and the free space of that disk, for a client that writes there too.
 
 **The environment as the default.** A connection (the database, Ollama, the ctxpress service, the two music services, the monitoring tools, the browser origins) can be given by environment variables, as a default under what is saved in Settings; the variables, the rule and the `source` of each answer are in [DATA_STORE.md](DATA_STORE.md#the-environment-as-the-default-of-a-connection). The [Compose stack](COMPOSE.md) sets all of them for the pieces it starts (the database, Ollama, the music generators, Prometheus, Grafana, Loki and Redis), so nothing is typed in Settings.
 
-**Which browser pages may call the API (CORS).** The token decides who may use the API; this decides which web pages a browser lets call it from another origin, and it is the server's decision, on this machine only. Two settings, kept in the database: `cors_origins` (exact origins such as `http://192.168.1.50:4200`) and `cors_networks` (CIDR ranges such as `192.168.1.0/24` or the tailnet `100.64.0.0/10`; a page whose host is an IP inside one is allowed on any port; a host *name* is allowed only by `cors_origins`). Change them with `orchestrator cors add <origin>`, `orchestrator cors add --network <range>`, `orchestrator cors remove ...` and `orchestrator cors list`, (they write the database the server uses): a running server follows the change within 5 seconds, no restart (settings that cannot be read keep the lists it had; a hand edit of `settings.json` has no effect, see [DATA_STORE.md](DATA_STORE.md)). `--cors-origin` still works and adds to them. No API endpoint reads or changes these lists, so a dashboard cannot widen its own access. Nothing configured means same-origin only; never `*`, never credentials. A range opens browser access to every machine in it (the token is still required). A page that is not allowed does not get an HTTP error: the browser blocks the answer and the page sees "Failed to fetch"; the server writes one line to its log the first time it sees each refused origin, with the command that would allow it.
+**Which browser pages may call the API (CORS).** The token decides who may use the API; this decides which web pages a browser lets call it from another origin, and it is the server's decision, on this machine only. Two settings, kept in the database: `cors_origins` (exact origins such as `http://192.168.1.50:4200`) and `cors_networks` (CIDR ranges such as `192.168.1.0/24` or the tailnet `100.64.0.0/10`; a page whose host is an IP inside one is allowed on any port; a host *name* is allowed only by `cors_origins`). Change them with `veritmo cors add <origin>`, `veritmo cors add --network <range>`, `veritmo cors remove ...` and `veritmo cors list`, (they write the database the server uses): a running server follows the change within 5 seconds, no restart (settings that cannot be read keep the lists it had; a hand edit of `settings.json` has no effect, see [DATA_STORE.md](DATA_STORE.md)). `--cors-origin` still works and adds to them. No API endpoint reads or changes these lists, so a dashboard cannot widen its own access. Nothing configured means same-origin only; never `*`, never credentials. A range opens browser access to every machine in it (the token is still required). A page that is not allowed does not get an HTTP error: the browser blocks the answer and the page sees "Failed to fetch"; the server writes one line to its log the first time it sees each refused origin, with the command that would allow it.
 
-**Models directory.** The model files (`models/`, hundreds of GB) can live on another disk too: `--models-dir DIR`, or `MODELS_DIR`, or the path written in `~/.config/mediaorquestator/models-dir` (`MODELS_DIR=off` ignores the file; with none of them nothing changes). `models` in the repository root is then a symbolic link to `DIR`, so every `models/<file>` in a `scenes.yaml`, the engines, the installer and the music services keep working, and installing a model writes to `DIR`. Move what is there with the server stopped: `bin/orchestrator-api models migrate --dry-run` says what it would copy and the space it needs; without `--dry-run` it copies (skipping what is already there with the same size, so a cut run resumes), checks every name and size, renames `models` to `models.migrated`, makes the link and only then deletes the old copy. `voices/` and weights kept outside the repository are not moved. At start the server warns if `models` is not yet that link or the directory is not there; while the disk is not mounted nothing is installed (it never writes a model to the local disk) and `GET /api/environment` and `GET /api/storage` give `models_dir` / `models` with `available: false`. Both give the path and the free space of that disk, read on every request, so a dashboard can show how much is left when the models and the projects are on separate disks.
+**Models directory.** The model files (`models/`, hundreds of GB) can live on another disk too: `--models-dir DIR`, or `MODELS_DIR`, or the path written in `~/.config/veritmo/models-dir` (`MODELS_DIR=off` ignores the file; with none of them nothing changes). `models` in the repository root is then a symbolic link to `DIR`, so every `models/<file>` in a `scenes.yaml`, the engines, the installer and the music services keep working, and installing a model writes to `DIR`. Move what is there with the server stopped: `bin/veritmo-api models migrate --dry-run` says what it would copy and the space it needs; without `--dry-run` it copies (skipping what is already there with the same size, so a cut run resumes), checks every name and size, renames `models` to `models.migrated`, makes the link and only then deletes the old copy. `voices/` and weights kept outside the repository are not moved. At start the server warns if `models` is not yet that link or the directory is not there; while the disk is not mounted nothing is installed (it never writes a model to the local disk) and `GET /api/environment` and `GET /api/storage` give `models_dir` / `models` with `available: false`. Both give the path and the free space of that disk, read on every request, so a dashboard can show how much is left when the models and the projects are on separate disks.
 
 **API reference.** The **API** screen (menu, after Environment) shows every endpoint with Swagger UI, bundled with the dashboard, and lets you try requests against the connected server using the token you set in «Connection». The description itself is `GET /api/openapi.json`, behind the same token as the rest of the API.
 
@@ -74,7 +74,7 @@ screen (`/settings`), from `OLLAMA_HOST` and from the default
 `http://127.0.0.1:11434`. The screen shows the address in use and which of the three it
 is, tests an address (version, models and which of them read pictures) before saving it,
 and a saved one applies **without restarting** the server. It is stored in
-the server's database (the settings were in `~/.config/mediaorquestator/settings.json` before; [DATA_STORE.md](DATA_STORE.md) says what stays there); use "Use the environment's" to go back to `OLLAMA_HOST`. The command line (`assist`,
+the server's database (the settings were in `~/.config/veritmo/settings.json` before; [DATA_STORE.md](DATA_STORE.md) says what stays there); use "Use the environment's" to go back to `OLLAMA_HOST`. The command line (`assist`,
 `describe`, `check`) reads the same settings.
 
 When the address is not this computer (anything but `localhost`/`127.0.0.1`/`::1`) the
@@ -83,7 +83,7 @@ for it. Details in `docs/http-api.md`.
 
 ### Providers and API keys
 
-Besides Ollama, the **Providers** card of the Settings screen registers other model providers: another Ollama (a machine of your network) or any server that speaks the OpenAI protocol (OpenAI, OpenRouter, Together, Groq, vLLM, LM Studio, llama.cpp). Each has a name, an address, a text model and a vision model, and a **Test** button that lists the models it offers. The providers are saved in `settings.json`; their **API keys** go to a separate file, `~/.config/mediaorquestator/keys.json` (mode 600), are write-only (the screen never shows them again; an empty key field while editing leaves the saved one, and a button removes it) and are never sent over plain http to another machine. Which provider runs each task is chosen in the **Tasks** card, below. Details in `docs/http-api.md`.
+Besides Ollama, the **Providers** card of the Settings screen registers other model providers: another Ollama (a machine of your network) or any server that speaks the OpenAI protocol (OpenAI, OpenRouter, Together, Groq, vLLM, LM Studio, llama.cpp). Each has a name, an address, a text model and a vision model, and a **Test** button that lists the models it offers. The providers are saved in `settings.json`; their **API keys** go to a separate file, `~/.config/veritmo/keys.json` (mode 600), are write-only (the screen never shows them again; an empty key field while editing leaves the saved one, and a button removes it) and are never sent over plain http to another machine. Which provider runs each task is chosen in the **Tasks** card, below. Details in `docs/http-api.md`.
 
 ### Tasks: which provider runs what
 
@@ -93,7 +93,7 @@ The **Tasks** card of Settings has one row per task (the prompt assistant, descr
 
 By default the run history, the statistics, the reviews and the speed measurements are kept in a SQLite file (`.orchestrator/orchestrator.db`). The **Database** card in Settings lets it live instead in a **MySQL** or **Postgres** server, so that several servers share it and it can be reached from another machine:
 
-1. In the database server create a database and a user of their own (for MySQL: `CREATE DATABASE mediaorquestator CHARACTER SET utf8mb4; CREATE USER 'mediaorquestator'@'%' IDENTIFIED BY '…'; GRANT ALL PRIVILEGES ON mediaorquestator.* TO 'mediaorquestator'@'%';`). The tables are created by the server; nothing else in that server is touched.
+1. In the database server create a database and a user of their own (for MySQL: `CREATE DATABASE veritmo CHARACTER SET utf8mb4; CREATE USER 'veritmo'@'%' IDENTIFIED BY '…'; GRANT ALL PRIVILEGES ON veritmo.* TO 'veritmo'@'%';`). The tables are created by the server; nothing else in that server is touched.
 2. In Settings choose the engine, fill the server, port (3306 / 5432 by default), database, user and password, press **Test connection** (it opens the connection and asks the version; it creates and changes nothing) and **Save**. The password is kept in the settings file (mode 0600, like the other keys) and is never shown again; leaving it empty when saving again keeps the saved one.
 3. **Copy the current history to that database** moves the SQLite history to the new one (it can be repeated: what is already there is left as it is, and it is all done in one transaction).
 4. **Restart the server**: the engine is read only when it starts. Until then the card says what is in use and what is saved.
@@ -116,23 +116,23 @@ A longer video repeats the same motion: the engines make a clip of about 2 to 4 
 
 ## Metrics for Prometheus
 
-`GET /api/metrics` gives the state of this server in the text format Prometheus reads: the runs by state, client and kind (`video`, `edit` or `project`) and how long the successful ones took (a histogram with the same labels), the database, the RAM, the free disk, each GPU (video memory, use, temperature, power; only when `nvidia-smi` is there) and whether each music service runs or is loading its model. It is worked out when it is asked and says nothing of other servers (when several share a history, each one counts its own runs). It never names a project in a label, so a project hidden by the content mode is not given away. The `client` label is the name each dashboard gave itself in the generation API (`embedded` for the ordinary projects, `unknown` when none was given); only the 20 clients with most runs are named and the rest add up under `other`. If you built Grafana queries that compare the exact set of labels of `mediaorquestator_runs` or of the histogram, review them: the ones that add up by `state` or by `le` keep working. It needs the same access token as the rest of `/api`.
+`GET /api/metrics` gives the state of this server in the text format Prometheus reads: the runs by state, client and kind (`video`, `edit`, `models3d` or `project`) and how long the successful ones took (a histogram with the same labels), the database, the RAM, the free disk, each GPU (video memory, use, temperature, power; only when `nvidia-smi` is there) and whether each music service runs or is loading its model. It is worked out when it is asked and says nothing of other servers (when several share a history, each one counts its own runs). It never names a project in a label, so a project hidden by the content mode is not given away. The `client` label is the name each dashboard gave itself in the generation API (`embedded` for the ordinary projects, `unknown` when none was given); only the 20 clients with most runs are named and the rest add up under `other`. If you built Grafana queries that compare the exact set of labels of `veritmo_runs` or of the histogram, review them: the ones that add up by `state` or by `le` keep working. It needs the same access token as the rest of `/api`.
 
-To have Prometheus read it, put the token (the content of `~/.config/mediaorquestator/token`) in a file on the machine that runs Prometheus, readable only by it, and add a job:
+To have Prometheus read it, put the token (the content of `~/.config/veritmo/token`) in a file on the machine that runs Prometheus, readable only by it, and add a job:
 
 ```yaml
 scrape_configs:
-  - job_name: mediaorquestator
+  - job_name: veritmo
     metrics_path: /api/metrics
     scrape_interval: 30s
     authorization:
-      credentials_file: /etc/prometheus/mediaorquestator.token
+      credentials_file: /etc/prometheus/veritmo.token
     static_configs:
       - targets: ['<address of the server>:4666']
         labels: { }
 ```
 
-Then reload Prometheus. Import [grafana/mediaorquestator-machine.json](grafana/mediaorquestator-machine.json) in Grafana (data source: that Prometheus) for the machine panel; [grafana/README.md](grafana/README.md) explains it and the other one, over the history.
+Then reload Prometheus. Import [grafana/veritmo-machine.json](grafana/veritmo-machine.json) in Grafana (data source: that Prometheus) for the machine panel; [grafana/README.md](grafana/README.md) explains it and the other one, over the history.
 
 ## Limits
 
@@ -158,7 +158,7 @@ refused):
 
 ```bash
 export ORCHESTRATOR_TOKEN="$(openssl rand -hex 24)"
-bin/orchestrator serve --addr 0.0.0.0:4666 --cors-origin http://my-laptop:4200
+bin/veritmo serve --addr 0.0.0.0:4666 --cors-origin http://my-laptop:4200
 ```
 
 The server warns when little disk space is left (the Environment screen, the
@@ -178,7 +178,7 @@ A browser only lets a page use the microphone on a secure origin: `https://` or 
 
 ```bash
 export ORCHESTRATOR_TOKEN="$(openssl rand -hex 24)"
-bin/orchestrator serve --addr 127.0.0.1:4666        # the token is read from ORCHESTRATOR_TOKEN
+bin/veritmo serve --addr 127.0.0.1:4666        # the token is read from ORCHESTRATOR_TOKEN
 tailscale serve --bg --https=443 http://127.0.0.1:4666
 tailscale serve status                               # shows the https://<machine>.<tailnet>.ts.net address
 ```
@@ -219,8 +219,8 @@ through its OpenAPI contract and are built there. The binary has no front end in
 front end and it serves that folder at `/`:
 
 ```bash
-bin/orchestrator serve --web-dir ../dashboards-lab/dist/dashboard-full/browser
-# or: ORCHESTRATOR_WEB_DIR=/path/to/build bin/orchestrator serve
+bin/veritmo serve --web-dir ../dashboards-lab/dist/dashboard-full/browser
+# or: ORCHESTRATOR_WEB_DIR=/path/to/build bin/veritmo serve
 ```
 
 It is the same origin as the API, so the dashboard needs no `--cors-origin`, and the HTTPS and install-as-app notes above
@@ -233,4 +233,4 @@ root answers a plain-text note that the server has no front end and where the AP
 
 ## Who made a project, and the projects of the generation API in the listings
 
-`GET /api/projects`, `/api/clips`, `/api/library` and `/api/storage` say who made each item in `client`: the `client:` of the project's `scenes.yaml` (`POST /api/projects` can set it with an optional `client`), else `embedded` for an ordinary project and `unknown` for one made by the generation API without a name. By default the projects of that API (`api-gen-`, `api-edit-`, `api-vid-`) are not listed; `?managed=include` lists them as one more project with their `client` and `kind`, and `?client=a,b` keeps only those clients, so a dashboard can show everything the server holds and filter it by the dashboard that made it. The animations of the music motion engine are never listed. A project of the generation API is deleted with its own endpoint (`DELETE /api/generations/{id}`, `/api/image-edits/{id}`, `/api/video-edits/{id}`), not with `DELETE /api/projects/{id}`. The disk totals of `GET /api/storage` are the disk's, so including those projects counts nothing twice.
+`GET /api/projects`, `/api/clips`, `/api/library` and `/api/storage` say who made each item in `client`: the `client:` of the project's `scenes.yaml` (`POST /api/projects` can set it with an optional `client`), else `embedded` for an ordinary project and `unknown` for one made by the generation API without a name. By default the projects of that API (`api-gen-`, `api-edit-`, `api-vid-`, `api-m3d-`) are not listed; `?managed=include` lists them as one more project with their `client` and `kind`, and `?client=a,b` keeps only those clients, so a dashboard can show everything the server holds and filter it by the dashboard that made it. The animations of the music motion engine are never listed. A project of the generation API is deleted with its own endpoint (`DELETE /api/generations/{id}`, `/api/image-edits/{id}`, `/api/video-edits/{id}`, `/api/models3d/generations/{id}`), not with `DELETE /api/projects/{id}`. The disk totals of `GET /api/storage` are the disk's, so including those projects counts nothing twice.

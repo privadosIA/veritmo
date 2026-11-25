@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/platform/runner"
 )
 
 // refServer is a server whose settings folder is the test's own, with yt-dlp and ffprobe scripted and an analysis that
@@ -236,7 +236,7 @@ func TestReferences_DeletingOneThatIsBeingAnalysedStopsIt(t *testing.T) {
 
 func TestReferences_ARestartMarksTheRunningOnesAsFailed(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	st := motionref.NewStore(filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "mediaorquestator", "references"))
+	st := motionref.NewStore(filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "veritmo", "references"))
 	ref, err := st.Create("left", "", nil, "")
 	if err != nil {
 		t.Fatal(err)

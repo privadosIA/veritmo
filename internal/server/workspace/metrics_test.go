@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // metricsServer is a server that reads two fake cards and has runs of two servers.
@@ -93,16 +93,16 @@ func TestMetrics_IsValidExpositionText(t *testing.T) {
 func TestMetrics_CountsOnlyThisServersRunsAndTheirDurations(t *testing.T) {
 	out := scrape(t, metricsServer(t))
 	for _, want := range []string{
-		`mediaorquestator_runs{state="succeeded",client="embedded",kind="project"} 2`,
-		`mediaorquestator_runs{state="failed",client="embedded",kind="project"} 1`,
-		`mediaorquestator_runs{state="running",client="embedded",kind="project"} 0`,
-		`mediaorquestator_run_duration_seconds_bucket{client="embedded",kind="project",le="60"} 1`,   // 45 s
-		`mediaorquestator_run_duration_seconds_bucket{client="embedded",kind="project",le="600"} 2`,  // and 500 s
-		`mediaorquestator_run_duration_seconds_bucket{client="embedded",kind="project",le="+Inf"} 2`, // the other server's 9999 s is not here
-		`mediaorquestator_run_duration_seconds_sum{client="embedded",kind="project"} 545`,
-		`mediaorquestator_run_duration_seconds_count{client="embedded",kind="project"} 2`,
-		`mediaorquestator_info{server="estudio",database="sqlite"} 1`,
-		`mediaorquestator_database_up 1`,
+		`veritmo_runs{state="succeeded",client="embedded",kind="project"} 2`,
+		`veritmo_runs{state="failed",client="embedded",kind="project"} 1`,
+		`veritmo_runs{state="running",client="embedded",kind="project"} 0`,
+		`veritmo_run_duration_seconds_bucket{client="embedded",kind="project",le="60"} 1`,   // 45 s
+		`veritmo_run_duration_seconds_bucket{client="embedded",kind="project",le="600"} 2`,  // and 500 s
+		`veritmo_run_duration_seconds_bucket{client="embedded",kind="project",le="+Inf"} 2`, // the other server's 9999 s is not here
+		`veritmo_run_duration_seconds_sum{client="embedded",kind="project"} 545`,
+		`veritmo_run_duration_seconds_count{client="embedded",kind="project"} 2`,
+		`veritmo_info{server="estudio",database="sqlite"} 1`,
+		`veritmo_database_up 1`,
 	} {
 		if !strings.Contains(out, want+"\n") {
 			t.Errorf("missing %q in\n%s", want, out)
@@ -113,12 +113,12 @@ func TestMetrics_CountsOnlyThisServersRunsAndTheirDurations(t *testing.T) {
 func TestMetrics_GPUsAndNeverAProjectName(t *testing.T) {
 	out := scrape(t, metricsServer(t))
 	for _, want := range []string{
-		`mediaorquestator_gpu_memory_used_bytes{gpu="0",name="NVIDIA GeForce RTX 4070"} 1.572864e+09`,
-		`mediaorquestator_gpu_memory_total_bytes{gpu="1",name="NVIDIA GeForce RTX 5060 Ti"} ` + formatValue(16311*1048576),
-		`mediaorquestator_gpu_utilization_ratio{gpu="0",name="NVIDIA GeForce RTX 4070"} 0.37`,
-		`mediaorquestator_gpu_utilization_ratio{gpu="1",name="NVIDIA GeForce RTX 5060 Ti"} 0`, // [N/A] reads as 0
-		`mediaorquestator_gpu_temperature_celsius{gpu="0",name="NVIDIA GeForce RTX 4070"} 51`,
-		`mediaorquestator_gpu_power_watts{gpu="0",name="NVIDIA GeForce RTX 4070"} 28.5`,
+		`veritmo_gpu_memory_used_bytes{gpu="0",name="NVIDIA GeForce RTX 4070"} 1.572864e+09`,
+		`veritmo_gpu_memory_total_bytes{gpu="1",name="NVIDIA GeForce RTX 5060 Ti"} ` + formatValue(16311*1048576),
+		`veritmo_gpu_utilization_ratio{gpu="0",name="NVIDIA GeForce RTX 4070"} 0.37`,
+		`veritmo_gpu_utilization_ratio{gpu="1",name="NVIDIA GeForce RTX 5060 Ti"} 0`, // [N/A] reads as 0
+		`veritmo_gpu_temperature_celsius{gpu="0",name="NVIDIA GeForce RTX 4070"} 51`,
+		`veritmo_gpu_power_watts{gpu="0",name="NVIDIA GeForce RTX 4070"} 28.5`,
 	} {
 		if !strings.Contains(out, want+"\n") {
 			t.Errorf("missing %q", want)
@@ -127,7 +127,7 @@ func TestMetrics_GPUsAndNeverAProjectName(t *testing.T) {
 	if strings.Contains(out, "mobile-secreto") || strings.Contains(out, "project=") {
 		t.Error("a project must not be named in a label: the content mode hides some")
 	}
-	if !strings.Contains(out, "mediaorquestator_memory_total_bytes ") {
+	if !strings.Contains(out, "veritmo_memory_total_bytes ") {
 		t.Error("the RAM of the machine")
 	}
 }
@@ -136,7 +136,7 @@ func TestMetrics_WithoutNvidiaSmiTheRestStillComes(t *testing.T) {
 	s := metricsServer(t)
 	s.look = func(string) (string, error) { return "", http.ErrMissingFile }
 	out := scrape(t, s)
-	if strings.Contains(out, "mediaorquestator_gpu_") || !strings.Contains(out, "mediaorquestator_runs{") {
+	if strings.Contains(out, "veritmo_gpu_") || !strings.Contains(out, "veritmo_runs{") {
 		t.Errorf("no GPU lines, everything else there:\n%s", out)
 	}
 }

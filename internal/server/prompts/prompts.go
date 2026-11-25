@@ -1,5 +1,5 @@
 // Package prompts is the store of prompt presets: prompts of a house style that people pick from and that the assistant receives as examples. They
-// are rows of the database (see internal/prompts), one per preset, that the command `orchestrator prompts fetch` writes to the same database while the
+// are rows of the database (see internal/prompts), one per preset, that the command `veritmo prompts fetch` writes to the same database while the
 // server runs, so a list asked after it sees them with no restart.
 package prompts
 
@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	pstore "mediaOrquestator/internal/platform/store"
-	store "mediaOrquestator/internal/prompts"
-	"mediaOrquestator/internal/server/api"
+	pstore "veritmo/internal/platform/store"
+	store "veritmo/internal/prompts"
+	"veritmo/internal/server/api"
 )
 
 // Preset is one prompt (see internal/prompts).

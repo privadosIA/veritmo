@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 func mapGraphics(t *testing.T, entries ...Entry) *Result {

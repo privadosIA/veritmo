@@ -7,7 +7,7 @@ package musicmotion
 import (
 	"math"
 
-	"mediaOrquestator/internal/platform/fsutil"
+	"veritmo/internal/platform/fsutil"
 )
 
 // perSceneOverheadSeconds is the browser start and the encode of one scene, measured.
@@ -33,6 +33,10 @@ type Estimate struct {
 	Factor    float64 `json:"factor"`
 }
 
+// DefaultBlenderCostMS is the milliseconds Cycles takes per frame of a 3D piece at 1280x720 with the default samples (measured on
+// 2026-11-24: a 9 s piece, 270 frames, took about 100 s).
+const DefaultBlenderCostMS = 370
+
 // raw is the uncorrected time of a script at a frame rate and size.
 func raw(s Script, parts map[string]Part, fps, width, height int) (seconds float64, frames int) {
 	area := float64(width*height) / float64(1280*720)
@@ -41,6 +45,12 @@ func raw(s Script, parts map[string]Part, fps, width, height int) (seconds float
 	}
 	for _, p := range s.Pieces {
 		n := int(math.Round((p.End - p.Start) * float64(fps)))
+		if p.Blender != nil {
+			// Cycles draws a frame of a 3D piece in a time that does not depend on a part (see DefaultBlenderCostMS).
+			seconds += float64(n)*DefaultBlenderCostMS*area/1000 + perSceneOverheadSeconds
+			frames += n
+			continue
+		}
 		cost := DefaultCostMS
 		if part, ok := parts[p.Part]; ok && part.CostMS > 0 {
 			cost = part.CostMS

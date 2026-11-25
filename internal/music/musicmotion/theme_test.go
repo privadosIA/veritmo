@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion/fonts"
+	"veritmo/internal/music/musicmotion/fonts"
 )
 
 func themed(theme *Theme) Design {

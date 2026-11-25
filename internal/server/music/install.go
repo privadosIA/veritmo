@@ -27,10 +27,10 @@ import (
 	"syscall"
 	"time"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/models"
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/models"
+	"veritmo/internal/server/workspace"
 )
 
 // The parts of an install.

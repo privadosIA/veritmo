@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 // Options configure one import run.
@@ -51,6 +51,9 @@ type Result struct {
 // music reports whether the result is a music project.
 func (r *Result) music() bool { return r.Config.Output.Mode == config.ModeMusic }
 
+// models3d reports whether the result is a project that makes 3D models.
+func (r *Result) models3d() bool { return r.Config.Output.Mode == config.ModeModels3D }
+
 var (
 	dialogueRe = regexp.MustCompile(`^Dialogue(\s*\([^)]*\))?\s*:`)
 	quotedRe   = regexp.MustCompile(`"([^"]*)"`)
@@ -58,7 +61,7 @@ var (
 	// (case-insensitive): what moves, the seed, the narration speed, the length
 	// of a silent scene and the number of variants.
 	// The graphic and overlay lines belong to the animated graphics (see MapMotion); Duration is read only there.
-	sceneMarkerRe = regexp.MustCompile(`(?i)^(motion|seed|speed|silence|variants|adult|graphic|duration|part|text|bpm|design|param\s+[a-z_][a-z0-9_]*|overlay(?:\s+(?:position|start|end))?)\s*:\s*(.*)$`)
+	sceneMarkerRe = regexp.MustCompile(`(?i)^(motion|seed|speed|silence|variants|adult|graphic|duration|part|text|bpm|design|blender|param\s+[a-z_][a-z0-9_]*|overlay(?:\s+(?:position|start|end))?)\s*:\s*(.*)$`)
 )
 
 // sceneSettings are the values of the optional marker lines of one entry.
@@ -84,6 +87,8 @@ type sceneSettings struct {
 	text   string
 	bpm    *float64
 	design string
+	// blender is the description of a 3D scene (a .scene.json of the sources) the scene is rendered from.
+	blender string
 }
 
 // set applies one marker line, or says why it cannot.
@@ -164,6 +169,15 @@ func (s *sceneSettings) set(name, val string, report *EntryReport) error {
 		}
 		s.motion = val
 		note("motion_prompt", fmt.Sprintf("%q (animate ← true)", val))
+	case "blender":
+		if s.blender != "" {
+			return fmt.Errorf("a second Blender line (at most one per entry)")
+		}
+		if !config.ValidSceneSpecName(val) {
+			return fmt.Errorf("Blender %q must be the name of a %s file, not a path", val, config.SceneSpecSuffix)
+		}
+		s.blender = val
+		note("blender.build", val)
 	case "adult":
 		switch strings.ToLower(val) {
 		case "yes", "true":
@@ -308,6 +322,23 @@ func mapScenes(entries []Entry, loaderRejected []Rejection, opts Options, motion
 
 		prompt := strings.Join(strings.Fields(strings.Join(promptLines, " ")), " ")
 		graphic := ""
+		// A 3D scene is described by its file: what describes a picture or a graphic beside it is not applied.
+		if settings.blender != "" {
+			if settings.graphic != "" {
+				report.Discarded = append(report.Discarded, fmt.Sprintf("Graphic (%d chars): the scene is a 3D scene (Blender)", len(settings.graphic)))
+				settings.graphic = ""
+			}
+			if motion {
+				if prompt != "" {
+					report.Discarded = append(report.Discarded, fmt.Sprintf("text before the markers (%d chars): the scene is a 3D scene (Blender)", len(prompt)))
+					prompt = ""
+				}
+				if settings.part != "" || len(settings.params) > 0 || settings.text != "" || settings.bpm != nil || settings.design != "" {
+					report.Discarded = append(report.Discarded, "Part, Param, Text, BPM and Design lines: the scene is a 3D scene (Blender), not made from a part")
+					settings.part, settings.params, settings.text, settings.bpm, settings.design = "", nil, "", nil, ""
+				}
+			}
+		}
 		named := motion && settings.part != "" && settings.part != "auto" // a part named: no description is needed
 		if rejected == "" && motion {
 			rejected = checkPartMarkers(&settings)
@@ -327,10 +358,10 @@ func mapScenes(entries []Entry, loaderRejected []Rejection, opts Options, motion
 					report.Discarded = append(report.Discarded, fmt.Sprintf("description (%d chars): the scene is made from the part %q, which needs none", len(graphic), settings.part))
 				}
 				graphic = ""
-			} else if rejected == "" && graphic == "" {
+			} else if rejected == "" && graphic == "" && settings.blender == "" {
 				rejected = "entry has no description of the graphic"
 			}
-		case rejected == "" && prompt == "":
+		case rejected == "" && prompt == "" && settings.blender == "":
 			rejected = "entry yields an empty prompt"
 		}
 		if rejected != "" {
@@ -362,7 +393,7 @@ func mapScenes(entries []Entry, loaderRejected []Rejection, opts Options, motion
 		}
 		if graphic != "" {
 			report.Mapped = append(report.Mapped, fmt.Sprintf("motion_graphic ← %d chars", len(graphic)))
-		} else if scene.MotionPart == "" {
+		} else if scene.MotionPart == "" && prompt != "" {
 			report.Mapped = append(report.Mapped, fmt.Sprintf("prompt ← %d chars", len(prompt)))
 		}
 		if dialogue != nil {
@@ -387,6 +418,13 @@ func mapScenes(entries []Entry, loaderRejected []Rejection, opts Options, motion
 		}
 		if settings.speed > 0 {
 			scene.Speed = settings.speed
+		}
+		if settings.blender != "" {
+			scene.Blender = &config.SceneBlender{Build: settings.blender}
+			if settings.motion != "" {
+				report.Discarded = append(report.Discarded, fmt.Sprintf("Motion %q: the scene is rendered by Blender, it has nothing to animate", settings.motion))
+				settings.motion = ""
+			}
 		}
 		if settings.motion != "" {
 			if graphic != "" {
@@ -466,6 +504,9 @@ func (r *Result) Validate() error {
 	if r.music() {
 		return r.validateMusic()
 	}
+	if r.models3d() {
+		return r.validateModels3D()
+	}
 	check := *r.Config
 	check.SkipBrowserCheck = true // the graphics are drawn where the project runs, not where it is imported
 	check.SkipBlenderCheck = true
@@ -478,7 +519,20 @@ func (r *Result) Validate() error {
 	for i := range check.Scenes {
 		check.Scenes[i].Animate, check.Scenes[i].MotionPrompt = false, ""
 	}
-	return check.Validate()
+	// A 3D scene names a description of the sources, which the import does not have: an empty file stands for each one,
+	// so the check says whether the scenes are valid and not whether the files came with them (the confirmation says that).
+	dir, err := os.MkdirTemp("", "import-check-*")
+	if err != nil {
+		return check.Validate()
+	}
+	defer os.RemoveAll(dir)
+	_ = os.MkdirAll(filepath.Join(dir, config.SourcesSubdir), 0o755)
+	for _, sc := range check.Scenes {
+		if sc.Blender != nil && sc.Blender.Build != "" && config.ValidSceneSpecName(sc.Blender.Build) {
+			_ = os.WriteFile(filepath.Join(dir, config.SourcesSubdir, sc.Blender.Build), nil, 0o644)
+		}
+	}
+	return check.ValidateInDir(dir)
 }
 
 // yamlScalar renders s as a safe single-line YAML scalar.
@@ -501,8 +555,11 @@ func (r *Result) EmitYAML() []byte {
 	if r.music() {
 		return r.emitMusicYAML()
 	}
+	if r.models3d() {
+		return r.emitModels3DYAML()
+	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "# Generated by `orchestrator import`. Fill in the commented placeholders\n")
+	fmt.Fprintf(&b, "# Generated by `veritmo import`. Fill in the commented placeholders\n")
 	fmt.Fprintf(&b, "# below (model, voice, resolution, sampler, steps, fps, output.file)\n")
 	fmt.Fprintf(&b, "# before running the pipeline.\n\n")
 	fmt.Fprintf(&b, "project: %s\n", yamlScalar(r.Config.Project))
@@ -540,8 +597,11 @@ func (r *Result) EmitYAML() []byte {
 		fmt.Fprintf(&b, "  - id: %s\n", yamlScalar(s.ID))
 		if s.MotionGraphic != "" {
 			fmt.Fprintf(&b, "    motion_graphic: %s\n", yamlScalar(s.MotionGraphic))
-		} else if s.MotionPart == "" {
+		} else if s.MotionPart == "" && (s.Prompt != "" || s.Blender == nil) {
 			fmt.Fprintf(&b, "    prompt: %s\n", yamlScalar(s.Prompt))
+		}
+		if s.Blender != nil {
+			fmt.Fprintf(&b, "    blender:\n      build: %s\n", yamlScalar(s.Blender.Build))
 		}
 		if s.MotionPart != "" {
 			fmt.Fprintf(&b, "    motion_part: %s\n", yamlScalar(s.MotionPart))
@@ -647,7 +707,9 @@ func (r *Result) Report() string {
 			fmt.Fprintf(&b, "  discarded: %s\n", d)
 		}
 	}
-	if r.music() {
+	if r.models3d() {
+		fmt.Fprintf(&b, "imported %d models, rejected %d\n", r.Imported, r.Rejected)
+	} else if r.music() {
 		fmt.Fprintf(&b, "imported %d, instrumental %d, rejected %d\n", r.Imported, r.Instrumental, r.Rejected)
 	} else if r.motion {
 		fmt.Fprintf(&b, "imported %d graphics, silent %d, rejected %d\n", r.Imported, r.Silent, r.Rejected)

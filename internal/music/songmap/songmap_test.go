@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"mediaOrquestator/internal/music/transcribe"
+	"veritmo/internal/music/transcribe"
 )
 
 const testRate = 8000

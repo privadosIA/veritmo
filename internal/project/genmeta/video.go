@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // ReadVideoTags returns the format tags of a video file through ffprobe. An

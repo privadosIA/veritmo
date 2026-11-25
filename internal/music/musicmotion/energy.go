@@ -4,7 +4,7 @@ import (
 	"math"
 	"sort"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
 )
 
 // SectionEnergy is how loud a section of the song is: the mean of the map's loudness over its span (0 to 1, the RMS of the audio)

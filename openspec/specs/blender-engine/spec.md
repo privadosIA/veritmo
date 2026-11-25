@@ -160,3 +160,111 @@ Before rendering, a built scene SHALL be saved, with its fonts packed, as `<scen
 #### Scenario: A failed render
 - **WHEN** the render of a built scene fails after the build
 - **THEN** the `.blend` is there and the error says the render failed
+
+### Requirement: A description can place a model from a file
+
+An object of a description MAY have `type: "model"`, which places a 3D model of the project's `sources/` in the scene. It SHALL carry `file` (a plain name of a `.glb` of `sources/`), `size` (the height of the model in metres: its bounding box along Z in the pose it is saved in, after the file's own units), and MAY carry `material` (a material of the description that replaces every material of the model, so that a colour or an `emission` key applies to it) and `animation`. `animation` SHALL be `{clip, speed?, loop?, offset?}`: `clip` the name of one of the clips of the file, `speed` a number from 0.1 to 4 (1 by default) that multiplies how fast the clip plays, `loop` a boolean (true by default) that repeats the clip for the whole scene, and `offset` a number of seconds (0 by default) that delays the clip, so that a looped clip is out of phase with another and a clip that does not loop holds its first pose until then. A clip SHALL keep its own duration in seconds. A model without `animation` SHALL stay in the pose it is saved in. The `keys` of a model (`location`, `rotation`, `scale`, `emission`, in seconds or in beats, with the same eases) SHALL move the model as a whole while its clip plays; the model's origin (usually its feet) is the point `location` places, and at `rotation` `[0, 0, 0]` it faces the negative Y axis. `file` and `animation` SHALL only be for objects of type `model`, and `text`, `extrude`, `bevel`, `align`, `font` and `curve` SHALL NOT be given to one. The contract version stays 1.
+
+#### Scenario: A character runs on the rink
+- **WHEN** a description has the object `{id: "ana", type: "model", file: "character-female-a.glb", size: 1.7, animation: {clip: "sprint"}, keys: [{t: 0, location: [-4, 0, 0]}, {t: 5, location: [4, 0, 0]}]}`
+- **THEN** the clip shows a character 1.7 m tall whose legs and arms move for the 5 s while she crosses the scene, and the sprint cycle lasts as long in seconds as it does in the file at any frame rate
+
+#### Scenario: Two characters out of phase
+- **WHEN** two models use the same file and clip, one with `offset: 0.2`
+- **THEN** on every frame their poses differ, and both loop for the whole scene
+
+#### Scenario: A clip that does not loop
+- **WHEN** a model has `animation: {clip: "jump", loop: false, offset: 2}`
+- **THEN** it keeps the first pose of the clip until second 2, plays the clip once, and keeps its last pose until the end
+
+#### Scenario: A flat colour
+- **WHEN** a model names `material: "m"` and a key gives `emission: 4`
+- **THEN** every part of the model renders with that material and the emission follows the key
+
+#### Scenario: A field that is not for a model
+- **WHEN** an object of type `model` has `text` or `font`, or an object of another type has `file` or `animation`
+- **THEN** the description is refused naming the object and the field
+
+### Requirement: A model is checked before Blender starts
+
+The checks of a description SHALL read each model file as data and refuse, naming the object and the field by their place in the JSON (`objects[2].file`), without starting Blender: a `file` that is not a plain name of a `.glb` of `sources/` (a path, `..`, a link that leads out of the folder, another extension), a file that does not exist, a file that is not a binary glTF (magic, version 2, a readable JSON chunk), a file whose buffers are not inside it, a file whose image is neither embedded nor a relative path (no scheme, not absolute, no `..` segment) whose last name is a picture of `sources/` (`Textures/colormap.png` needs `colormap.png`), a picture that a file needs and the sources do not have, a file larger than 32 MiB or with more than 500,000 triangles, an `animation` on a file with no clips, a `clip` the file does not have (the message SHALL list the clips it has), a `speed` or an `offset` out of range (an `offset` beyond the length of the scene included), and more than 16 `model` objects in a scene. A scene described with no project (the one-call generation, the writer and the preview with no project, a piece of a music motion script) has no `sources/`, so a `model` there SHALL be refused saying that models are files of a project's sources.
+
+#### Scenario: A clip the file does not have
+- **WHEN** a model asks for `clip: "run"` and the file has `idle`, `walk` and `sprint`
+- **THEN** the scene is refused before Blender starts with `objects[0].animation.clip: "run" is not in character-female-a.glb (clips: idle, sprint, walk)`
+
+#### Scenario: A file that is not there
+- **WHEN** `file` names a `.glb` that is not in `sources/`
+- **THEN** the scene is refused naming `objects[0].file`
+
+#### Scenario: A file that is not a glb
+- **WHEN** the file named is a renamed image, or a `.glb` cut in half
+- **THEN** the scene is refused naming the file and saying it is not a valid binary glTF
+
+#### Scenario: A file that points elsewhere
+- **WHEN** the `.glb` has an image whose `uri` is `../../secret.png`, `/etc/passwd` or `http://x/y.png`, or a buffer that is another file
+- **THEN** the scene is refused and nothing outside the sources is read
+
+#### Scenario: A picture the model needs
+- **WHEN** the `.glb` has an image `Textures/colormap.png` and `sources/` has `colormap.png`
+- **THEN** the scene is accepted and the model renders with that picture as its texture
+
+#### Scenario: A picture that is missing
+- **WHEN** the same file is used and `sources/` has no `colormap.png`
+- **THEN** the scene is refused with `objects[0].file: character-female-a.glb needs the picture colormap.png, which is not in the sources`
+
+#### Scenario: Too many models
+- **WHEN** a description has 17 objects of type `model`
+- **THEN** it is refused saying at most 16
+
+#### Scenario: A model without a project
+- **WHEN** a description with a `model` is checked in the one-call generation or in a music motion piece
+- **THEN** it is refused saying that models are files of a project's sources
+
+### Requirement: A model is imported without running anything and scaled to its size
+
+The build SHALL import each `model` with Blender's glTF importer, from a copy of the file placed with the pictures it needs where the file expects them (so a picture of `sources/` is found whatever folder the file names), with the scene's frame rate already set so that a clip keeps its duration in seconds, with the auto-execution of scripts still disabled and no file written, put it under an object named by its `id` that carries its `keys`, and scale it so that its height is `size`. A clip SHALL be assigned to the model's armature and retimed by `speed` and `offset`, and SHALL repeat for the whole scene when `loop` is true. A model that Blender fails to import SHALL fail the run naming the object and the file. The kept `.blend` of the scene SHALL hold the model's meshes, rig, textures and clips packed, so that it opens on another machine with no access to the sources.
+
+#### Scenario: The size
+- **WHEN** a model of 2.0 m in its file has `size: 1.0`
+- **THEN** it renders half as tall, and a `scale` key multiplies that size
+
+#### Scenario: The kept scene
+- **WHEN** a scene with a model has rendered and its `.blend` is opened in a clean Blender with the sources absent
+- **THEN** the model is there with its textures and plays its clip
+
+#### Scenario: A model that cannot be imported
+- **WHEN** the file passes the checks but Blender refuses it
+- **THEN** the run fails with a message that names the object and the file, and the `.blend` of the scene is not left half built
+
+### Requirement: The content of a model is part of the scene's identity
+
+The cache key of a built scene SHALL include the content of every model file it uses and of every picture those files need (not their names or dates), so that a scene is rendered again when a model file is replaced by another with the same name, and SHALL NOT change when a file of `sources/` that no object names changes. A description that cannot be read or resolved SHALL still get a key.
+
+#### Scenario: The same name, another file
+- **WHEN** `character-female-a.glb` is replaced by another file with that name and the scene is run again
+- **THEN** the scene is rendered again
+
+#### Scenario: Its texture changes
+- **WHEN** `colormap.png` is replaced by another picture and the scene is run again
+- **THEN** the scene is rendered again
+
+#### Scenario: A file the scene does not use
+- **WHEN** another `.glb` is added to `sources/` and the scene is run again
+- **THEN** the scene's clip is reused
+
+### Requirement: A model can be sized by its largest dimension
+
+An object of type `model` MAY carry `fit`, which says which dimension of the model its `size` is: `"height"` (its bounding box along Z in the pose it is saved in, the default and what `size` has always meant) or `"largest"` (the longest of the three dimensions of that bounding box). The model SHALL be scaled uniformly so that the chosen dimension equals `size`, and the helper objects the importer adds SHALL NOT count in the measure, as they do not for the height. A description with no `fit` SHALL mean `"height"`. `fit` on an object that is not a model, or any value other than `height` and `largest`, SHALL be refused before Blender starts, naming the object and the field. A `scale` key SHALL still multiply the result. The contract stays at version 1.
+
+#### Scenario: A pizza
+- **WHEN** a pizza that is 3 cm tall and 30 cm wide is placed with `size: 0.3` and `fit: "largest"`
+- **THEN** it is 30 cm wide, and with no `fit` the same `size` makes it 10 times larger
+
+#### Scenario: A character is unchanged
+- **WHEN** a character is placed with `size: 1.7` and no `fit`
+- **THEN** it is 1.7 m tall, as before
+
+#### Scenario: A bad fit
+- **WHEN** a model has `fit: "width"`, or a cube has `fit: "largest"`
+- **THEN** the description is refused naming the object and `fit`

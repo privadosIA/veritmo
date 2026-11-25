@@ -10,19 +10,19 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"mediaOrquestator/internal/platform/media"
-	"mediaOrquestator/internal/server/api"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"veritmo/internal/platform/media"
+	"veritmo/internal/server/api"
 
-	"mediaOrquestator/internal/music/music"
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
+	"veritmo/internal/music/music"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
 )
 
 // ProjectSummary is a project as the listing shows it: its id, mode, size and labels.
@@ -645,6 +645,8 @@ func managedDeleteEndpoint(id string) string {
 		return "DELETE /api/image-edits/{id}"
 	case KindVideoEdit:
 		return "DELETE /api/video-edits/{id}"
+	case KindModelGeneration:
+		return "DELETE /api/models3d/generations/{id}"
 	}
 	return ""
 }

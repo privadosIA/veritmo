@@ -1,17 +1,17 @@
 # http-server Specification
 
 ## Purpose
-Defines the `orchestrator serve` subcommand: a local HTTP server that exposes the management API (and optionally the embedded web UI) while leaving the existing CLI surface and pipeline behavior untouched.
+Defines the `veritmo serve` subcommand: a local HTTP server that exposes the management API (and optionally the embedded web UI) while leaving the existing CLI surface and pipeline behavior untouched.
 
 ## Requirements
 
 ### Requirement: The serve subcommand starts a local HTTP server without touching the pipeline CLI
 
-The CLI SHALL accept `orchestrator serve` as a subcommand, dispatched before pipeline flag parsing (like `import`). It SHALL start an HTTP server and keep running until stopped. Invocations without the `serve` subcommand SHALL behave exactly as before this change: same flags, same output, same exit codes.
+The CLI SHALL accept `veritmo serve` as a subcommand, dispatched before pipeline flag parsing (like `import`). It SHALL start an HTTP server and keep running until stopped. Invocations without the `serve` subcommand SHALL behave exactly as before this change: same flags, same output, same exit codes.
 
 #### Scenario: serve starts a server
 
-- **WHEN** `orchestrator serve` is invoked
+- **WHEN** `veritmo serve` is invoked
 - **THEN** an HTTP server starts and responds to API requests, and no pipeline run begins
 
 #### Scenario: pipeline CLI is untouched
@@ -25,7 +25,7 @@ The server SHALL listen on a loopback address by default so it is not reachable 
 
 #### Scenario: default binding is loopback
 
-- **WHEN** `orchestrator serve` is invoked with no address flag
+- **WHEN** `veritmo serve` is invoked with no address flag
 - **THEN** the server listens only on a loopback interface
 
 #### Scenario: bind failure is reported
@@ -35,12 +35,12 @@ The server SHALL listen on a loopback address by default so it is not reachable 
 
 #### Scenario: non-loopback without token is refused
 
-- **WHEN** `orchestrator serve --addr 0.0.0.0:4666` is invoked with no token configured and no opt-out flag
+- **WHEN** `veritmo serve --addr 0.0.0.0:4666` is invoked with no token configured and no opt-out flag
 - **THEN** the subcommand exits non-zero before binding, with a message explaining how to set a token
 
 #### Scenario: non-loopback with token
 
-- **WHEN** `orchestrator serve --addr 0.0.0.0:4666` is invoked with a token configured
+- **WHEN** `veritmo serve --addr 0.0.0.0:4666` is invoked with a token configured
 - **THEN** the server starts and requires the token on API requests
 
 #### Scenario: explicit opt-out
@@ -68,7 +68,7 @@ Every API error response SHALL be a JSON object carrying at least a machine-read
 
 ### Requirement: A front end is served from a directory the operator gives
 
-When `orchestrator serve` is given a web directory (`--web-dir`, or `ORCHESTRATOR_WEB_DIR` when the flag is absent), the server SHALL serve the static files in it at the HTTP root, whatever front end they belong to, and SHALL answer `index.html` for any other path outside `/api/`. The directory SHALL be read on each request.
+When `veritmo serve` is given a web directory (`--web-dir`, or `ORCHESTRATOR_WEB_DIR` when the flag is absent), the server SHALL serve the static files in it at the HTTP root, whatever front end they belong to, and SHALL answer `index.html` for any other path outside `/api/`. The directory SHALL be read on each request.
 
 #### Scenario: serving a build
 

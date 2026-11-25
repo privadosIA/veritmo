@@ -1,7 +1,7 @@
 package blender
 
 // Real Blender tests of what extend-blender-scene-build added: the step ease, the backdrop, the design fonts and the check
-// that the kept .blend, reopened in a clean Blender, gives the frames of the pipeline. Skipped without MO_REAL_BLENDER=1.
+// that the kept .blend, reopened in a clean Blender, gives the frames of the pipeline. Skipped without VERITMO_REAL_BLENDER=1.
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // queryBlend opens a .blend in a clean Blender and runs a short script on it; the lines of the script's output that start
@@ -266,7 +266,7 @@ func TestRealTheReopenedBlendGivesTheFramesOfThePipelineAndTheSphereHitsOnTheBea
 // numbers and the log in $DUMP_VIDEOS_DIR/blender-build-2/. The default for built scenes is chosen from the result.
 func TestRealMeasureTheExampleAt16And32Samples(t *testing.T) {
 	if os.Getenv("DUMP_VIDEOS_DIR") == "" {
-		t.Skip("set DUMP_VIDEOS_DIR (and MO_REAL_BLENDER=1) to measure 16 against 32 samples at 1280x720")
+		t.Skip("set DUMP_VIDEOS_DIR (and VERITMO_REAL_BLENDER=1) to measure 16 against 32 samples at 1280x720")
 	}
 	info, r := realBlender(t)
 	type run struct {

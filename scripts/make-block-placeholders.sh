@@ -3,17 +3,17 @@
 #
 # Generates, with the project's own image engine (bin/sd), the cover pictures that some HyperFrames blocks (the carousels) list and the registry does not ship.
 # They are abstract artwork (no people, no text, no logos) named like the files they stand for, kept in hyperframes/placeholders/ (or $HYPERFRAMES_DIR/placeholders/);
-# `orchestrator blocks placeholders` then copies them into the blocks that need them. Optional and slow (about 12 s a picture on a 12 GB card); without it
+# `veritmo blocks placeholders` then copies them into the blocks that need them. Optional and slow (about 12 s a picture on a 12 GB card); without it
 # the blocks get procedural pictures instead.
 #
 #   bash scripts/make-block-placeholders.sh [GPU]        # the card number, default 1
-#   MO_SD_MODEL=models/other.safetensors bash scripts/make-block-placeholders.sh
+#   VERITMO_SD_MODEL=models/other.safetensors bash scripts/make-block-placeholders.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 GPU="${1:-1}"
-MODEL="${MO_SD_MODEL:-${ROOT}/models/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors}"
+MODEL="${VERITMO_SD_MODEL:-${ROOT}/models/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors}"
 OUT="${HYPERFRAMES_DIR:-${ROOT}/hyperframes}/placeholders"
 [[ -x "${ROOT}/bin/sd" ]] || { echo "[make-block-placeholders] ✗  bin/sd is not built" >&2; exit 1; }
 [[ -f "${MODEL}" ]] || { echo "[make-block-placeholders] ✗  no model at ${MODEL}" >&2; exit 1; }

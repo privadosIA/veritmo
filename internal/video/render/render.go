@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/sdlog"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/sdlog"
 )
 
 // Flags centralizes every sd CLI flag in one place so they are easy to

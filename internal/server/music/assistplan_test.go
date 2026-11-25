@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/musicmotion"
 )
 
 func planSeams(s *testServer, g assist.PlanGuess, planErr error, musicErr error) {

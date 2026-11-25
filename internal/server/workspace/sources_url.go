@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 const (

@@ -6,7 +6,9 @@ package workspace
 // (see specs/project-management).
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,19 +18,28 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/genmeta"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/assets3d"
+	"veritmo/internal/assets3d/generate"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/genmeta"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/blender"
 )
 
 type sourceInfo struct {
 	Name string `json:"name"`
-	// Kind is "audio" (mp3, wav), "image" or "video" (a clip a scene can use).
+	// Kind is "audio" (mp3, wav), "image", "video" (a clip a scene can use), "blend", "scene" (a description of a 3D scene),
+	// "font" or "model" (a .glb).
 	Kind string `json:"kind"`
 	// UsedBy lists the scenes that use a video as their clip (empty: nobody does); only videos have it.
 	UsedBy   *[]string `json:"used_by,omitempty"`
 	Size     int64     `json:"size"`
 	Modified string    `json:"modified"`
+	// A model (kind "model") says what its file holds: the clips it can play, its triangles and the pictures of the sources it
+	// refers to (the texture atlas of a pack, for one). They are only given when the file is a valid binary glTF.
+	Clips     *[]string `json:"clips,omitempty"`
+	Triangles *int      `json:"triangles,omitempty"`
+	Needs     *[]string `json:"needs,omitempty"`
 }
 
 // SourcesDir is the sources folder of a project (its pictures, clips and songs).
@@ -53,6 +64,9 @@ func SourceKind(name string) string {
 	if config.ValidFontName(name) {
 		return "font"
 	}
+	if config.ValidModelName(name) {
+		return "model"
+	}
 	return "audio"
 }
 
@@ -66,6 +80,12 @@ func (h *Handler) listSources(id string) []sourceInfo {
 		}
 		if fi, err := e.Info(); err == nil {
 			info := sourceInfo{Name: e.Name(), Kind: SourceKind(e.Name()), Size: fi.Size(), Modified: fi.ModTime().UTC().Format(time.RFC3339)}
+			if info.Kind == "model" {
+				if m, err := blender.ReadModel(filepath.Join(h.SourcesDir(id), e.Name())); err == nil {
+					clips, needs := append([]string{}, m.Clips...), append([]string{}, m.Needs...)
+					info.Clips, info.Triangles, info.Needs = &clips, &m.Triangles, &needs
+				}
+			}
 			if info.Kind == "video" {
 				scenes := used[e.Name()]
 				if scenes == nil {
@@ -92,7 +112,7 @@ func (h *Handler) handleSourcesList(w http.ResponseWriter, r *http.Request) {
 // sourceName validates the name in the path; it answers 400 itself.
 func sourceName(w http.ResponseWriter, name string) bool {
 	if !config.ValidSourceFile(name) {
-		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("invalid source name %q: use a plain file name ending in .mp3, .wav, .png, .jpg, .jpeg, .webp, .mp4, .mov, .webm, .mkv or .blend (letters, digits, '.', '_' or '-')", name))
+		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("invalid source name %q: use a plain file name ending in .mp3, .wav, .png, .jpg, .jpeg, .webp, .mp4, .mov, .webm, .mkv, .blend or .glb (letters, digits, '.', '_' or '-')", name))
 		return false
 	}
 	return true
@@ -173,7 +193,21 @@ func (h *Handler) handleSourcePut(w http.ResponseWriter, r *http.Request) {
 	if !sourceName(w, name) {
 		return
 	}
-	if !h.writeSource(w, id, name, r.Body) {
+	body := io.Reader(r.Body)
+	if config.ValidModelName(name) {
+		// A model is checked before it is stored: a file that is not a binary glTF is refused now, not at the first run.
+		data, err := io.ReadAll(io.LimitReader(r.Body, blender.MaxModelBytes+1))
+		if err != nil {
+			api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("cannot read the upload: %v", err))
+			return
+		}
+		if _, err := blender.ParseModel(data); err != nil {
+			api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("%q is not a usable model: %v", name, err))
+			return
+		}
+		body = bytes.NewReader(data)
+	}
+	if !h.writeSource(w, id, name, body) {
 		return
 	}
 	h.keepSizeOf(id) // the sources changed: the size kept with the project follows
@@ -333,6 +367,22 @@ func (h *Handler) handleSourceDelete(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
+			if config.ValidModelName(name) || config.ValidImageName(name) {
+				// a 3D scene that places this model, or a model that needs this picture, is using it
+				for _, sc := range cfg.Scenes {
+					if sc.Blender == nil || !sc.Blender.IsBuild() {
+						continue
+					}
+					raw, err := os.ReadFile(filepath.Join(h.SourcesDir(id), sc.Blender.Build))
+					if err != nil {
+						continue
+					}
+					if spec, err := blender.Decode(raw); err == nil && spec.UsesSource(h.SourcesDir(id), name) {
+						api.WriteError(w, http.StatusConflict, api.CodeConflict, fmt.Sprintf("scene %q places %q (through %s): change or remove it first", sc.ID, name, sc.Blender.Build))
+						return
+					}
+				}
+			}
 		}
 	}
 	if err := os.Remove(path); err != nil {
@@ -488,4 +538,67 @@ func (h *Handler) writePictureAnswer(w http.ResponseWriter, name string, meta ge
 		out["metadata"] = meta
 	}
 	api.WriteJSON(w, http.StatusCreated, out)
+}
+
+// SetModelLibrary gives the handler the library of 3D model packs: a model of it can be added to a project's sources.
+func (h *Handler) SetModelLibrary(lib *assets3d.Library) {
+	h.models3d = lib
+	h.rm.models3d.Library = lib
+}
+
+// SetModelService gives the runs of the models3d mode the 3D service they make their models with (see add-models3d-mode): without it such a run fails
+// saying there is none.
+func (h *Handler) SetModelService(svc generate.Opener) { h.rm.models3d.Service = svc }
+
+// POST /api/projects/{id}/sources/model  {"from": "<pack>/<model>", "name"?}
+//
+// Copies a model of the library into the project's sources with the pictures it needs (see assets3d.CopyModel): from then on it
+// is an ordinary source, independent of the library.
+func (h *Handler) handleSourceModel(w http.ResponseWriter, r *http.Request) {
+	id, ok := h.RequireProject(w, r)
+	if !ok {
+		return
+	}
+	var req struct {
+		From string `json:"from"`
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&req); err != nil {
+		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("invalid JSON body: %v", err))
+		return
+	}
+	if h.models3d == nil {
+		api.WriteError(w, http.StatusServiceUnavailable, api.CodeEngineNotRunning, "the library of 3D models is not available")
+		return
+	}
+	if runID, busy := h.ProjectBusy(id); busy {
+		api.WriteError(w, http.StatusConflict, api.CodeConflict, fmt.Sprintf("project %q has an active or queued run (%s)", id, runID))
+		return
+	}
+	res, err := h.models3d.CopyModel(req.From, h.SourcesDir(id), req.Name)
+	if err != nil {
+		WriteModelCopyError(w, err)
+		return
+	}
+	h.keepSizeOf(id) // the sources changed: the size kept with the project follows
+	status := http.StatusCreated
+	if res.Already {
+		status = http.StatusOK
+	}
+	api.WriteJSON(w, status, res)
+}
+
+// WriteModelCopyError answers an error of assets3d.CopyModel with the status of its kind (used by the routes of a project and of a
+// piece, which copy the same way).
+func WriteModelCopyError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, assets3d.ErrNotFound):
+		api.WriteError(w, http.StatusNotFound, api.CodeNotFound, err.Error())
+	case errors.Is(err, assets3d.ErrConflict):
+		api.WriteError(w, http.StatusConflict, api.CodeConflict, err.Error())
+	case errors.Is(err, assets3d.ErrInvalid):
+		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, err.Error())
+	default:
+		api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, err.Error())
+	}
 }

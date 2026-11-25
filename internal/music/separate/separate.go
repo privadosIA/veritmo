@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // Threads is how many threads demucs is given. Its memory grows with them, not with the length of the song, and its time

@@ -14,9 +14,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mediaOrquestator/internal/music/diffrhythm2"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/diffrhythm2"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
 )
 
 // diffRhythm2CLI is the diffrhythm2 executable published next to the service (it installs the weights and recognises

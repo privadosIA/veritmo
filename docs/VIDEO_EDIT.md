@@ -51,7 +51,7 @@ The request is refused with `422` if nobody is in the 33 frames, **before** anyt
 
 ### The library of motions
 
-A motion is a short video of people moving (a dance, a walk, a gesture) prepared once and applied by name to any picture (its record is a row of the server's database; its control frames and its preview are files in `~/.config/mediaorquestator/motions/<id>/`), so the vision service has nothing left to do: a request that names one is accepted at once (0.2 s instead of 8). The library starts empty; you add what you own or may use. A motion added from an address keeps that address (`source`, shown in the list and the read) so you can tell where it came from; the video itself is never kept.
+A motion is a short video of people moving (a dance, a walk, a gesture) prepared once and applied by name to any picture (its record is a row of the server's database; its control frames and its preview are files in `~/.config/veritmo/motions/<id>/`), so the vision service has nothing left to do: a request that names one is accepted at once (0.2 s instead of 8). The library starts empty; you add what you own or may use. A motion added from an address keeps that address (`source`, shown in the list and the read) so you can tell where it came from; the video itself is never kept.
 
 | | |
 |---|---|
@@ -65,7 +65,7 @@ A video must last from 2.1 to 30 seconds and have somebody in it (`422` otherwis
 
 ## Where the files are
 
-Results and sources of an edit live in its hidden project (`api-vid-…`), removed with it. Models: `models/video/` (the vision models, and the three files of Wan 2.1 VACE for `motion-control`, which the catalog installs as one entry). Programs: `bin/` (`sd`, `bin/realesrgan`, `bin/rife`, `bin/services/videovision`). The library of motions is in the settings folder (`~/.config/mediaorquestator/motions/`).
+Results and sources of an edit live in its hidden project (`api-vid-…`), removed with it. Models: `models/video/` (the vision models, and the three files of Wan 2.1 VACE for `motion-control`, which the catalog installs as one entry). Programs: `bin/` (`sd`, `bin/realesrgan`, `bin/rife`, `bin/services/videovision`). The library of motions is in the settings folder (`~/.config/veritmo/motions/`).
 
 ## Trying it on real clips
 

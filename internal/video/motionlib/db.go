@@ -15,7 +15,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // Row is a motion as the database keeps it. Tags holds the tags between commas (",walk,slow,") so that the search finds a part of one.

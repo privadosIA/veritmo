@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO="https://github.com/heygen-com/hyperframes"
 COMMIT="dbc9c18262fd9c773491990d04f2aef6b32cea1d"
-CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/mediaorquestator/hyperframes"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/veritmo/hyperframes"
 DEST_DIR="${ROOT}/third_party/hyperframes-runtime"
 DEST="${DEST_DIR}/hyperframe.runtime.iife.js"
 # What the build was made and checked with: the dependencies of packages/core at that commit and esbuild.

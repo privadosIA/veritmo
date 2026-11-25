@@ -13,13 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/music/beatgrid"
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/music/transcribe"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/pipeline"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/music/beatgrid"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/music/transcribe"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/pipeline"
 )
 
 type realSong struct {

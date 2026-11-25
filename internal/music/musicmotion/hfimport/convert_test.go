@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 // A kinetic-type block as HyperFrames installs it: a complete document that loads GSAP from a CDN, sets its page up in px,

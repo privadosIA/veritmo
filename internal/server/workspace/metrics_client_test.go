@@ -35,21 +35,21 @@ func TestMetrics_RunsAreCountedByClientAndKind(t *testing.T) {
 	seedClientRun(t, s, "e1", EditPrefix+"1", "photo-lab", StateSucceeded, 20)
 	out := scrape(t, s)
 	wantLines(t, out,
-		`mediaorquestator_runs{state="succeeded",client="video-studio",kind="video"} 2`,
-		`mediaorquestator_runs{state="failed",client="video-studio",kind="video"} 1`,
-		`mediaorquestator_runs{state="succeeded",client="photo-lab",kind="edit"} 1`,
-		`mediaorquestator_runs{state="succeeded",client="embedded",kind="project"} 2`,
-		`mediaorquestator_run_duration_seconds_bucket{client="video-studio",kind="video",le="120"} 1`,
-		`mediaorquestator_run_duration_seconds_bucket{client="video-studio",kind="video",le="300"} 2`,
-		`mediaorquestator_run_duration_seconds_sum{client="video-studio",kind="video"} 300`,
-		`mediaorquestator_run_duration_seconds_count{client="photo-lab",kind="edit"} 1`,
+		`veritmo_runs{state="succeeded",client="video-studio",kind="video"} 2`,
+		`veritmo_runs{state="failed",client="video-studio",kind="video"} 1`,
+		`veritmo_runs{state="succeeded",client="photo-lab",kind="edit"} 1`,
+		`veritmo_runs{state="succeeded",client="embedded",kind="project"} 2`,
+		`veritmo_run_duration_seconds_bucket{client="video-studio",kind="video",le="120"} 1`,
+		`veritmo_run_duration_seconds_bucket{client="video-studio",kind="video",le="300"} 2`,
+		`veritmo_run_duration_seconds_sum{client="video-studio",kind="video"} 300`,
+		`veritmo_run_duration_seconds_count{client="photo-lab",kind="edit"} 1`,
 	)
 }
 
 func TestMetrics_ARunWithoutClientIsUnknownIfItCameFromTheAPI(t *testing.T) {
 	s := metricsServer(t)
 	seedClientRun(t, s, "old", GenPrefix+"old", "", StateSucceeded, 50)
-	wantLines(t, scrape(t, s), `mediaorquestator_runs{state="succeeded",client="unknown",kind="video"} 1`)
+	wantLines(t, scrape(t, s), `veritmo_runs{state="succeeded",client="unknown",kind="video"} 1`)
 }
 
 func TestMetrics_WithoutRunsTheStatesStillComeAtZero(t *testing.T) {
@@ -59,8 +59,8 @@ func TestMetrics_WithoutRunsTheStatesStillComeAtZero(t *testing.T) {
 	}
 	out := scrape(t, s)
 	wantLines(t, out,
-		`mediaorquestator_runs{state="succeeded",client="embedded",kind="project"} 0`,
-		`mediaorquestator_run_duration_seconds_count{client="embedded",kind="project"} 0`,
+		`veritmo_runs{state="succeeded",client="embedded",kind="project"} 0`,
+		`veritmo_run_duration_seconds_count{client="embedded",kind="project"} 0`,
 	)
 }
 
@@ -75,7 +75,7 @@ func TestMetrics_OnlyTheClientsWithMostRunsAreNamed(t *testing.T) {
 	out := scrape(t, s)
 	named := map[string]bool{}
 	for _, l := range strings.Split(out, "\n") {
-		if strings.HasPrefix(l, "mediaorquestator_runs{state=\"succeeded\"") {
+		if strings.HasPrefix(l, "veritmo_runs{state=\"succeeded\"") {
 			start := strings.Index(l, `client="`) + len(`client="`)
 			named[l[start:start+strings.Index(l[start:], `"`)]] = true
 		}

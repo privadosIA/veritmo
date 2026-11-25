@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
 )
 
 func (s *testServer) putSettingsStub(w http.ResponseWriter, r *http.Request) {

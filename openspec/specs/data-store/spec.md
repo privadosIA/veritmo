@@ -7,17 +7,17 @@ The database that holds the state of the server: what lives in it and what stays
 
 ### Requirement: The state of the server lives in one database
 
-The server SHALL keep its state in the database chosen in Settings (the SQLite file at `--db` by default, or MySQL or Postgres): the run history and every entity a later change moves share that database. The schema SHALL be changed only by migrations that are part of the program, each with an identifier that orders it by date. The migrations the database has not applied SHALL be applied, in order and each completely or not at all, only by the command `orchestrator data migrate`, which the deployment workflow runs; the server SHALL never apply a migration: it SHALL refuse to start while any is pending, saying which and what to run. Each migration SHALL be recorded in the database with its identifier and when it was applied, SHALL be applied once and never again, and SHALL give the same schema on a new database as on one upgraded step by step. Two programs migrating the same database at once SHALL take turns, so that each migration is applied once. A program SHALL refuse to start or to migrate, naming them, on a database that has applied migrations it does not know. The same state and the same answers SHALL be given on the three engines.
+The server SHALL keep its state in the database chosen in Settings (the SQLite file at `--db` by default, or MySQL or Postgres): the run history and every entity a later change moves share that database. The schema SHALL be changed only by migrations that are part of the program, each with an identifier that orders it by date. The migrations the database has not applied SHALL be applied, in order and each completely or not at all, only by the command `veritmo data migrate`, which the deployment workflow runs; the server SHALL never apply a migration: it SHALL refuse to start while any is pending, saying which and what to run. Each migration SHALL be recorded in the database with its identifier and when it was applied, SHALL be applied once and never again, and SHALL give the same schema on a new database as on one upgraded step by step. Two programs migrating the same database at once SHALL take turns, so that each migration is applied once. A program SHALL refuse to start or to migrate, naming them, on a database that has applied migrations it does not know. The same state and the same answers SHALL be given on the three engines.
 
 #### Scenario: A new database
 
-- **WHEN** `orchestrator data migrate` runs on an empty database
+- **WHEN** `veritmo data migrate` runs on an empty database
 - **THEN** the tables exist and every migration is recorded with its date
 
 #### Scenario: The server on a database with pending migrations
 
 - **WHEN** the server starts on a database that has migrations not applied
-- **THEN** it does not start, it changes nothing, and the error names the pending migrations and says to run `orchestrator data migrate`
+- **THEN** it does not start, it changes nothing, and the error names the pending migrations and says to run `veritmo data migrate`
 
 #### Scenario: A database of a newer server
 
@@ -26,17 +26,17 @@ The server SHALL keep its state in the database chosen in Settings (the SQLite f
 
 #### Scenario: An upgrade
 
-- **WHEN** `orchestrator data migrate` of a program with two new migrations runs on a database of the version before
+- **WHEN** `veritmo data migrate` of a program with two new migrations runs on a database of the version before
 - **THEN** the two are applied in order and recorded, the rows that existed are intact, and a second run applies nothing
 
 #### Scenario: The database of before this capability
 
-- **WHEN** `orchestrator data migrate` runs on a database that only has the tables and rows of the run history
+- **WHEN** `veritmo data migrate` runs on a database that only has the tables and rows of the run history
 - **THEN** the history is intact and its migration is recorded as applied
 
 #### Scenario: Two programs at once
 
-- **WHEN** two programs run `orchestrator data migrate` on the same MySQL or Postgres database at the same time
+- **WHEN** two programs run `veritmo data migrate` on the same MySQL or Postgres database at the same time
 - **THEN** each migration is applied once and both end well
 
 #### Scenario: The same on every engine
@@ -84,7 +84,7 @@ When the server starts, each entity that was kept in files and whose import is n
 
 ### Requirement: The status of the data
 
-`GET /api/data/status` SHALL answer the engine in use, the migrations applied (identifier and date) and the ones not applied yet, each table with its number of rows, the record of each import and, per entity, the files left behind (`legacy_files`: how many and how many bytes). `orchestrator data status` SHALL print the same.
+`GET /api/data/status` SHALL answer the engine in use, the migrations applied (identifier and date) and the ones not applied yet, each table with its number of rows, the record of each import and, per entity, the files left behind (`legacy_files`: how many and how many bytes). `veritmo data status` SHALL print the same.
 
 #### Scenario: After an import with a skipped file
 
@@ -93,7 +93,7 @@ When the server starts, each entity that was kept in files and whose import is n
 
 ### Requirement: An import can be asked for
 
-`POST /api/data/import` with `{entity?}` SHALL run the import again for that entity, or for all of them without it, with the same rules: files that have no row become rows, existing rows are untouched. It SHALL answer the record of what it did, `404` naming the entities that exist for an unknown one and `409` while another import runs. `orchestrator data import [entity]` SHALL do the same.
+`POST /api/data/import` with `{entity?}` SHALL run the import again for that entity, or for all of them without it, with the same rules: files that have no row become rows, existing rows are untouched. It SHALL answer the record of what it did, `404` naming the entities that exist for an unknown one and `409` while another import runs. `veritmo data import [entity]` SHALL do the same.
 
 #### Scenario: A part dropped in the folder by hand
 
@@ -102,7 +102,7 @@ When the server starts, each entity that was kept in files and whose import is n
 
 ### Requirement: The data can be exported and restored
 
-`GET /api/data/export` SHALL answer a `.zip` with one file per table (one JSON object per line) and a manifest with the migrations applied, the engine and the date; it SHALL hold no secret and no media. `orchestrator data export <file>` SHALL write the same file. `orchestrator data restore <file>` SHALL load an export into an empty database of any of the three engines; it SHALL refuse, changing nothing, a database that already has rows and an export made with migrations the program does not know.
+`GET /api/data/export` SHALL answer a `.zip` with one file per table (one JSON object per line) and a manifest with the migrations applied, the engine and the date; it SHALL hold no secret and no media. `veritmo data export <file>` SHALL write the same file. `veritmo data restore <file>` SHALL load an export into an empty database of any of the three engines; it SHALL refuse, changing nothing, a database that already has rows and an export made with migrations the program does not know.
 
 #### Scenario: From SQLite to Postgres
 
@@ -139,7 +139,7 @@ An operation that changes more than one row or table SHALL be applied completely
 
 ### Requirement: The last migration can be undone
 
-`orchestrator data rollback <migration>` SHALL undo the migration named when it is the last one applied and it can be undone, and remove its record; it SHALL exit with a non-zero code, changing nothing, when the migration is not the last one applied, when it says it cannot be undone, or while a server is running on the same SQLite database. The server SHALL never undo a migration by itself.
+`veritmo data rollback <migration>` SHALL undo the migration named when it is the last one applied and it can be undone, and remove its record; it SHALL exit with a non-zero code, changing nothing, when the migration is not the last one applied, when it says it cannot be undone, or while a server is running on the same SQLite database. The server SHALL never undo a migration by itself.
 
 #### Scenario: Undoing the last one
 

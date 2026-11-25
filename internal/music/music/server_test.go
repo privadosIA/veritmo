@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 // fakeAce is an ace-server: it records what it is sent and answers the job API.

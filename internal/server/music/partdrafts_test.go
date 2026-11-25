@@ -15,12 +15,12 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/video/motion"
 )
 
 const draftManifest = `{"name":"probe","description":"a test part","version":1,"levels":["simple"],"params":[]}`

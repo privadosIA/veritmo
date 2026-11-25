@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/platform/runner"
 )
 
 // heartMulaWeights writes a complete weights folder.

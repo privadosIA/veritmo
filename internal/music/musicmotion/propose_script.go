@@ -15,7 +15,7 @@ import (
 	"strings"
 	"unicode"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
 )
 
 // MaxPieceSeconds is the longest piece the fixed rule leaves: a longer section is cut in equal pieces.
@@ -91,6 +91,9 @@ func FallbackPieces(s Script, cat Catalog) []string {
 func FallbackPiecesWith(s Script, parts map[string]Part) []string {
 	var out []string
 	for _, p := range s.Pieces {
+		if p.Blender != nil {
+			continue // a 3D scene is not a part the fixed rule chose
+		}
 		if part, ok := parts[p.Part]; ok && part.Scene != nil {
 			continue
 		}

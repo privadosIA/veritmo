@@ -6,15 +6,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"mediaOrquestator/internal/platform/store"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"sync"
 	"time"
+	"veritmo/internal/platform/store"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 // PresetIDPrefix starts every style id.

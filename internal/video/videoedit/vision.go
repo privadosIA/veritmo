@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/video/videovision"
 )
 
 // Vision is the service the tools that read a picture with a network talk to (the person mask, the depth). The

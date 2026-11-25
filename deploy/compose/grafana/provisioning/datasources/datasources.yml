@@ -8,14 +8,14 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
   # The history of the runs, read from the MySQL of the stack with a user that can only read.
-  - name: mediaOrquestator MySQL
+  - name: Veritmo MySQL
     uid: mysql
     type: mysql
     access: proxy
     url: mysql:3306
     user: grafana_ro
     jsonData:
-      database: ${MO_DB_NAME}
+      database: ${VERITMO_DB_NAME}
       maxOpenConns: 5
     secureJsonData:
       password: ${GRAFANA_RO_PASSWORD}

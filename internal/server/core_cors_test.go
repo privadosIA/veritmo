@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/settingsdb"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/settingsdb"
 )
 
 // corsServer is a server with an isolated settings file (never the developer's own), whose log lines are collected.
@@ -157,7 +157,7 @@ func TestCORSSettings_ARejectedOriginIsLoggedOnce(t *testing.T) {
 	count := func() int {
 		n := 0
 		for _, l := range *logs {
-			if strings.Contains(l, "http://192.168.1.50:4200") && strings.Contains(l, "orchestrator cors add") {
+			if strings.Contains(l, "http://192.168.1.50:4200") && strings.Contains(l, "veritmo cors add") {
 				n++
 			}
 		}
@@ -218,7 +218,7 @@ func TestCORSSettings_ThePutOfOtherSettingsKeepsTheLists(t *testing.T) {
 	}
 }
 
-// With the settings in the database a change made by another process (the command `orchestrator cors`) reaches the policy within 5 seconds.
+// With the settings in the database a change made by another process (the command `veritmo cors`) reaches the policy within 5 seconds.
 func TestCORS_TheSettingsOfTheDatabaseAreReadAgainEvery5Seconds(t *testing.T) {
 	s, _, _ := corsServer(t)
 	src := settingsdb.New(s.store)

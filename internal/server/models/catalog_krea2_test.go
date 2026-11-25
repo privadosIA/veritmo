@@ -2,9 +2,9 @@ package models
 
 import (
 	"encoding/json"
-	"mediaOrquestator/internal/server/modelcat"
 	"strings"
 	"testing"
+	"veritmo/internal/server/modelcat"
 )
 
 const (

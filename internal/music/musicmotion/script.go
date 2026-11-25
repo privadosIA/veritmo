@@ -6,6 +6,7 @@ package musicmotion
 // is used. See specs/music-motion ("A script is proposed from the song and can be edited").
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -14,7 +15,10 @@ import (
 	"strings"
 	"unicode"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/video/blender"
 )
 
 // ScriptVersion is the format of the script file.
@@ -49,13 +53,23 @@ type PartRef struct {
 	Animate Animate `json:"animate,omitempty"`
 }
 
+// PieceBlender makes a piece a 3D scene that Blender draws instead of a page made from a part: Description is the JSON of
+// a scene of the contract of the Blender engine (its keys in seconds or in beats of the song's tempo).
+type PieceBlender struct {
+	Description json.RawMessage `json:"description"`
+}
+
 // Piece is one scene of the video.
 type Piece struct {
-	ID      string         `json:"id"`
-	Start   float64        `json:"start"`
-	End     float64        `json:"end"`
-	Section string         `json:"section,omitempty"`
-	Part    string         `json:"part"`
+	ID      string  `json:"id"`
+	Start   float64 `json:"start"`
+	End     float64 `json:"end"`
+	Section string  `json:"section,omitempty"`
+	// Part is the part of the catalog the piece is made from; empty for a 3D piece (Blender).
+	Part string `json:"part,omitempty"`
+	// Blender makes the piece a 3D scene: it has no part and none of the fields of a page (params, animate, with, design,
+	// mode, lines, hit, stage).
+	Blender *PieceBlender  `json:"blender,omitempty"`
 	Params  map[string]any `json:"params,omitempty"`
 	// Animate changes parameters of the main part over the piece (see animate.go); the extras have their own.
 	Animate Animate `json:"animate,omitempty"`
@@ -84,6 +98,16 @@ type Script struct {
 	Home string `json:"home,omitempty"`
 	// Layers are lanes of parts drawn over the pieces (see layers.go).
 	Layers []Layer `json:"layers,omitempty"`
+	// sources is the sources folder of the piece this script belongs to, where its 3D pieces find the models they place
+	// (see WithSources); empty when the script has no folder, and then a model is refused.
+	sources string
+}
+
+// WithSources is the script with the sources folder of its piece set: the descriptions of its 3D pieces are then checked
+// against the models and pictures that are there. The folder is not part of what is stored.
+func (s Script) WithSources(dir string) Script {
+	s.sources = dir
+	return s
 }
 
 var reID = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,23}$`)
@@ -170,6 +194,12 @@ func (s Script) Validate(cat Catalog, m songmap.Map, d Design) error {
 				return fmt.Errorf("%s overlaps %s by %.2f s", n, name(prev, i-1), -gap)
 			}
 		}
+		if p.Blender != nil {
+			if err := p.validateBlender(n, s.blenderEnv(m, d)); err != nil {
+				return err
+			}
+			continue
+		}
 		part, ok := cat.Get(p.Part)
 		if !ok {
 			return fmt.Errorf("%s: the part %q is not in the catalog", n, p.Part)
@@ -251,6 +281,59 @@ func (s Script) Validate(cat Catalog, m songmap.Map, d Design) error {
 	return s.validateLayers(cat)
 }
 
+// blenderEnv is what the description of a 3D piece is checked against: the song's tempo and the song's design (its colours and
+// the fonts it has in the server's pack), with no font files, the same environment the render writes into the project. With
+// the piece's sources folder (WithSources) it also sees the models and pictures there; without it a model is refused.
+func (s Script) blenderEnv(m songmap.Map, d Design) blender.Env {
+	env := pipeline.BlenderEnv(BlenderConfig(m, d, 0, 0, 0), "")
+	if s.sources != "" {
+		env.NoFiles, env.NoFontFiles, env.Sources = false, true, s.sources
+	}
+	return env
+}
+
+// BlenderConfig is the settings a 3D piece is written and checked for: the frame and the frame rate when given, the song's tempo
+// as defaults.motion.bpm and the song's design as defaults.motion.design.
+func BlenderConfig(m songmap.Map, d Design, width, height, fps int) *config.Config {
+	cfg := &config.Config{Defaults: config.Defaults{FPS: fps}}
+	if width > 0 && height > 0 {
+		cfg.Defaults.Resolution = fmt.Sprintf("%dx%d", width, height)
+	}
+	motion := &config.MotionDefaults{Design: d.ToConfig()}
+	if m.BPM > 0 {
+		bpm := m.BPM
+		motion.BPM = &bpm
+	}
+	cfg.Defaults.Motion = motion
+	return cfg
+}
+
+// IsBlender reports whether the piece is a 3D scene.
+func (p Piece) IsBlender() bool { return p.Blender != nil }
+
+// validateBlender checks a 3D piece: no part and none of the fields of a page, and a description that passes the checks of a
+// hand-written one for a scene as long as the piece.
+func (p Piece) validateBlender(n string, env blender.Env) error {
+	if p.Part != "" {
+		return fmt.Errorf("%s: a piece is made from a part or is a 3D scene (blender), not both", n)
+	}
+	for field, set := range map[string]bool{
+		"params": len(p.Params) > 0, "animate": len(p.Animate) > 0, "with": len(p.With) > 0, "design": p.Design != nil,
+		"mode": p.Mode != "", "lines": len(p.Lines) > 0, "hit": p.Hit != nil, "stage": p.Stage != nil,
+	} {
+		if set {
+			return fmt.Errorf("%s: a 3D piece (blender) cannot have %s: it is drawn by Blender and not from a part", n, field)
+		}
+	}
+	if len(bytes.TrimSpace(p.Blender.Description)) == 0 {
+		return fmt.Errorf("%s: the 3D scene has no description", n)
+	}
+	if _, err := blender.Parse(p.Blender.Description, p.End-p.Start, env); err != nil {
+		return fmt.Errorf("%s: the 3D scene does not pass the checks: %w", n, err)
+	}
+	return nil
+}
+
 // ValidateStages checks the stage of every piece against the library and the frame, and names the piece.
 func (s Script) ValidateStages(lib Library, width, height int) error {
 	for i, p := range s.Pieces {
@@ -314,6 +397,9 @@ func (s Script) CheckSceneParts(cat Catalog, pieceID string) error {
 		return nil
 	}
 	for i, p := range s.Pieces {
+		if p.Blender != nil {
+			continue
+		}
 		if err := check(name(p, i), p.Part); err != nil {
 			return err
 		}

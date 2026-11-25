@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/music/beatgrid"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/music/beatgrid"
 )
 
 // The settings of the shots are constants: the same video gives the same shots.

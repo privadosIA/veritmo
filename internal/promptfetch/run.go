@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	store "mediaOrquestator/internal/prompts"
+	store "veritmo/internal/prompts"
 )
 
 // Version is the version of the rules; it goes in the bundle's meta.

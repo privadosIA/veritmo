@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
 )
 
 // ExecRun is a run as the test double of the pipeline sees it.

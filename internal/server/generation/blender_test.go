@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/video/blender"
+	"veritmo/internal/video/blender"
 )
 
 func TestEnvironment_BlenderAvailableWithItsDevices(t *testing.T) {

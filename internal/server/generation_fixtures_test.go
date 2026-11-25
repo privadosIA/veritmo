@@ -17,11 +17,12 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/export"
-	"mediaOrquestator/internal/server/generation"
-	"mediaOrquestator/internal/server/servertest"
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/export"
+	"veritmo/internal/server/generation"
+	"veritmo/internal/server/library3d"
+	"veritmo/internal/server/servertest"
+	"veritmo/internal/server/workspace"
 )
 
 func fullCatalog() []catalogEntry { return servertest.FullCatalog() }
@@ -200,24 +201,26 @@ func waitEdit(t *testing.T, s *Server, id, want string) generation.ImageEditView
 
 // The types of the answers of the generation API, under the names the tests use.
 type (
-	generationRequest    = generation.GenerationRequest
-	generationView       = generation.GenerationView
-	generationInput      = generation.GenerationInput
-	generationInputs     = generation.GenerationInputs
-	generationOptions    = generation.GenerationOptions
-	durationRange        = generation.DurationRange
-	inputLimit           = generation.InputLimit
-	videoOptionView      = generation.VideoOptionView
-	imageModelView       = generation.ImageModelView
-	imageEditRequest     = generation.ImageEditRequest
-	imageEditResult      = generation.ImageEditResult
-	imageEditView        = generation.ImageEditView
-	videoEditRequest     = generation.VideoEditRequest
-	videoEditView        = generation.VideoEditView
-	videoEditResult      = generation.VideoEditResult
-	videoEditToolView    = generation.VideoEditToolView
-	libraryMotionView    = generation.LibraryMotionView
-	libraryMotionRequest = generation.LibraryMotionRequest
-	presetRequest        = generation.PresetRequest
-	presetPut            = generation.PresetPut
+	generationRequest      = generation.GenerationRequest
+	generationView         = generation.GenerationView
+	generationInput        = generation.GenerationInput
+	generationInputs       = generation.GenerationInputs
+	generationOptions      = generation.GenerationOptions
+	durationRange          = generation.DurationRange
+	inputLimit             = generation.InputLimit
+	videoOptionView        = generation.VideoOptionView
+	imageModelView         = generation.ImageModelView
+	imageEditRequest       = generation.ImageEditRequest
+	imageEditResult        = generation.ImageEditResult
+	imageEditView          = generation.ImageEditView
+	videoEditRequest       = generation.VideoEditRequest
+	videoEditView          = generation.VideoEditView
+	modelGenerationView    = library3d.GenerationView
+	modelGenerationRequest = library3d.GenerationRequest
+	videoEditResult        = generation.VideoEditResult
+	videoEditToolView      = generation.VideoEditToolView
+	libraryMotionView      = generation.LibraryMotionView
+	libraryMotionRequest   = generation.LibraryMotionRequest
+	presetRequest          = generation.PresetRequest
+	presetPut              = generation.PresetPut
 )

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/settings"
 )
 
 type availBody struct {

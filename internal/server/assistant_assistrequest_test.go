@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/server/assistant"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/server/assistant"
 )
 
 type plannedRequest struct {
@@ -19,6 +19,7 @@ type plannedRequest struct {
 	Language     string   `json:"language"`
 	ImagePrompt  string   `json:"image_prompt"`
 	MotionPrompt string   `json:"motion_prompt"`
+	ModelPrompt  string   `json:"model_prompt"`
 	Speech       string   `json:"speech"`
 	Caption      string   `json:"caption"`
 	Lyrics       string   `json:"lyrics"`
@@ -306,5 +307,63 @@ func TestAssistRequest_IfTheInstructionCannotBeWrittenTheWordsGoAsTheyAre(t *tes
 	_, p, body := planRequest(t, s, map[string]any{"text": "ponle una gorra", "kind": "image", "attachments": map[string]any{"image": true}})
 	if p.ImagePrompt != "" || len(p.Warnings) == 0 || !strings.Contains(p.Warnings[0], "picture instruction") {
 		t.Fatalf("the plan carries the kind and a warning, and the page uses the user's words: %s", body)
+	}
+}
+
+func TestAssistRequest_AModelPromptIsOneObjectAndTheCallerNamesTheKind(t *testing.T) {
+	s, asked := plannerServer(t, "KIND=music")
+	var told string
+	prev := s.assistant.AssistRun
+	s.assistant.AssistRun = func(ctx context.Context, task assist.Task, text, model string) (string, error) {
+		if task == assist.TaskModel3D {
+			told = text
+			return "A glossy pink retro roller skate with white wheels, leather boot and chrome trucks.", nil
+		}
+		return prev(ctx, task, text, model)
+	}
+	code, p, body := planRequest(t, s, map[string]any{"text": "un patín de ruedas retro, rosa y brillante", "kind": "model3d", "language": "es"})
+	if code != http.StatusOK || p.Kind != "model3d" || p.KindSource != "user" || !strings.Contains(p.ModelPrompt, "roller skate") || len(p.Warnings) != 0 {
+		t.Fatalf("%d %s", code, body)
+	}
+	if told != "un patín de ruedas retro, rosa y brillante" || p.ImagePrompt != "" || p.MotionPrompt != "" || p.Caption != "" || p.Title == "" {
+		t.Errorf("only the model prompt is written: told %q, %+v", told, p)
+	}
+	for _, a := range *asked {
+		if strings.HasPrefix(a, "kind|") {
+			t.Errorf("the caller named the kind and the model was asked for it: %v", *asked)
+		}
+	}
+	// a picture attached does not change the kind the caller named
+	if _, p, body := planRequest(t, s, map[string]any{"text": "este patín", "kind": "model3d", "attachments": map[string]bool{"image": true}}); p.Kind != "model3d" || p.ModelPrompt == "" {
+		t.Errorf("with a picture: %s", body)
+	}
+}
+
+func TestAssistRequest_TheModelNeverDecidesThatARequestIsA3DModel(t *testing.T) {
+	s, _ := plannerServer(t, "KIND=model3d; LANG=es; TITLE=Un patín")
+	_, p, body := planRequest(t, s, map[string]any{"text": "un patín de ruedas"})
+	if p.Kind == "model3d" || p.KindSource == "model" && p.Kind == "model3d" {
+		t.Fatalf("the kind of a 3D model is the caller's to name: %s", body)
+	}
+	if p.Kind != "video" || p.KindSource != "default" {
+		t.Errorf("an answer the planner does not know falls back as before: %s", body)
+	}
+}
+
+func TestAssistRequest_AModelPromptThatCannotBeWrittenIsAWarning(t *testing.T) {
+	s, _ := plannerServer(t, "")
+	s.assistant.AssistRun = func(ctx context.Context, task assist.Task, text, model string) (string, error) {
+		return "", assist.ErrNoMemory
+	}
+	code, p, body := planRequest(t, s, map[string]any{"text": "un patín", "kind": "model3d"})
+	if code != http.StatusOK || p.Kind != "model3d" || p.Title == "" || p.ModelPrompt != "" || len(p.Warnings) != 1 || !strings.Contains(p.Warnings[0], "model prompt") {
+		t.Fatalf("%d %s", code, body)
+	}
+	// the model's refusal, with nothing else written, is an error as for the other kinds
+	s.assistant.AssistRun = func(ctx context.Context, task assist.Task, text, model string) (string, error) {
+		return "", assist.ErrRefused
+	}
+	if code, _, body := planRequest(t, s, map[string]any{"text": "x", "kind": "model3d"}); code != http.StatusUnprocessableEntity || !strings.Contains(body, "assist_refused") {
+		t.Errorf("refused: %d %s", code, body)
 	}
 }

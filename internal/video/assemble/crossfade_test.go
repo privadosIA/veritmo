@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 func TestBuildCrossfadeArgs_ChainsFadesAndJoinsRunsSeparatedByCuts(t *testing.T) {

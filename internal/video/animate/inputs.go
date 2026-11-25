@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/render"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/render"
 )
 
 // RefVideoFPS is the rate sd takes the frames of a reference video as.

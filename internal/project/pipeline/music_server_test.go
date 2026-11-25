@@ -15,8 +15,8 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/music/music"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/music/music"
+	"veritmo/internal/project/config"
 )
 
 // fakeAceServer is a minimal ace-server: it enriches /lm requests and answers

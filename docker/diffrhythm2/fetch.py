@@ -2,7 +2,7 @@
 """Downloads the weights of the DiffRhythm2 service into /ckpt (about 9.5 GB). It is the only thing of this
 image that touches the network, and it only runs when the user asks for it (the Models tab):
 
-  docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v <weights folder>:/ckpt mediaorquestator/diffrhythm2:1 python /opt/fetch.py
+  docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v <weights folder>:/ckpt veritmo/diffrhythm2:1 python /opt/fetch.py
 
 It prints one line per step, so the caller can show where it is, and exits 0 only when every file is there.
 """

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/assistant/llm"
+	"veritmo/internal/assistant/llm"
 )
 
 // service starts a fake ctxpress that answers status and body, counts its calls and keeps the Authorization header of the last one.

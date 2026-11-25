@@ -15,10 +15,10 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
 )
 
 // engineCache keeps the answer of GET /api/music/engines for a short time, like the model availability.

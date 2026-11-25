@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // f32 builds decoded mono audio at peaksRate: silence, a tone of the given

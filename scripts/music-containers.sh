@@ -12,15 +12,15 @@
 #   bash scripts/music-containers.sh down   heartmula|diffrhythm2
 #   bash scripts/music-containers.sh status
 #
-# Needs Docker with the NVIDIA container toolkit (docker run --gpus must work). MO_DOCKER=podman uses another compatible CLI.
+# Needs Docker with the NVIDIA container toolkit (docker run --gpus must work). VERITMO_DOCKER=podman uses another compatible CLI.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-DOCKER="${MO_DOCKER:-docker}"
+DOCKER="${VERITMO_DOCKER:-docker}"
 
 declare -A PORT=([heartmula]=8787 [diffrhythm2]=8788)
-declare -A IMAGE=([heartmula]=mediaorquestator/heartmula:1 [diffrhythm2]=mediaorquestator/diffrhythm2:1)
+declare -A IMAGE=([heartmula]=veritmo/heartmula:1 [diffrhythm2]=veritmo/diffrhythm2:1)
 declare -A SETTING=([heartmula]=heartmula_host [diffrhythm2]=diffrhythm2_host)
 
 usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
@@ -49,21 +49,21 @@ case "$cmd" in
         ckpt="${ROOT}/models/music/${engine}"
         [[ -d "$ckpt" ]] || die "no weights in ${ckpt} (see docker/${engine}/README.md)"
         "$DOCKER" image inspect "${IMAGE[$engine]}" >/dev/null 2>&1 || die "no image ${IMAGE[$engine]}: run: bash scripts/music-containers.sh build ${engine}"
-        "$DOCKER" rm -f "mo-${engine}" >/dev/null 2>&1 || true
-        "$DOCKER" run -d --name "mo-${engine}" --restart no --gpus "device=${gpu}" \
+        "$DOCKER" rm -f "vt-${engine}" >/dev/null 2>&1 || true
+        "$DOCKER" run -d --name "vt-${engine}" --restart no --gpus "device=${gpu}" \
             -p "127.0.0.1:${PORT[$engine]}:${PORT[$engine]}" -v "${ckpt}:/ckpt:ro" "${IMAGE[$engine]}" >/dev/null
-        echo "[music-containers] ✓  mo-${engine} is starting on card ${gpu} (it loads its model first: GET http://127.0.0.1:${PORT[$engine]}/health says ready)"
+        echo "[music-containers] ✓  vt-${engine} is starting on card ${gpu} (it loads its model first: GET http://127.0.0.1:${PORT[$engine]}/health says ready)"
         echo "[music-containers]    tell the server where it is, once:"
         echo "[music-containers]    curl -X PUT <server>/api/settings -H 'Content-Type: application/json' -d '{\"${SETTING[$engine]}\": \"http://127.0.0.1:${PORT[$engine]}\"}'"
         ;;
     down)
         engine_arg "$engine"; need_docker
-        "$DOCKER" rm -f "mo-${engine}" >/dev/null 2>&1 && echo "[music-containers] ✓  mo-${engine} stopped and removed" || echo "[music-containers] mo-${engine} was not there"
+        "$DOCKER" rm -f "vt-${engine}" >/dev/null 2>&1 && echo "[music-containers] ✓  vt-${engine} stopped and removed" || echo "[music-containers] vt-${engine} was not there"
         ;;
     status)
         need_docker
         for e in heartmula diffrhythm2; do
-            state="$("$DOCKER" inspect -f '{{.State.Status}}' "mo-${e}" 2>/dev/null || echo "none")"
+            state="$("$DOCKER" inspect -f '{{.State.Status}}' "vt-${e}" 2>/dev/null || echo "none")"
             img="no"; "$DOCKER" image inspect "${IMAGE[$e]}" >/dev/null 2>&1 && img="yes"
             printf '%-12s container: %-8s image built: %-3s address: http://127.0.0.1:%s\n' "$e" "$state" "$img" "${PORT[$e]}"
         done

@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // ProjectsAccess works with the projects of a database and their folders under a projects directory.

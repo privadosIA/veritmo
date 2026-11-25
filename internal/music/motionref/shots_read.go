@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/assistant/describe"
+	"veritmo/internal/assistant/describe"
 )
 
 // The states of the reading of the shots (Analysis.BreakdownState).

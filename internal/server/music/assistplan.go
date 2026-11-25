@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/assistant"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/assistant"
 )
 
 // PlanRequest is the body of POST /api/assist/plan.

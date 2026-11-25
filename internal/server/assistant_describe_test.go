@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/describe"
+	"veritmo/internal/assistant/describe"
 )
 
 // describeServer is a server with a project "p" holding sources/ref.png and a fake describer.

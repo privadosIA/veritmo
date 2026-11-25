@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/settings"
 )
 
-// remoteDB reads MO_TEST_MYSQL or MO_TEST_POSTGRES ("user:password@host:port/database"), a server the test may fill
+// remoteDB reads VERITMO_TEST_MYSQL or VERITMO_TEST_POSTGRES ("user:password@host:port/database"), a server the test may fill
 // and empty. Without it the tests of the remote engines are skipped, with the reason.
 func remoteDB(t *testing.T, driver, env string) settings.Database {
 	t.Helper()
@@ -133,9 +133,9 @@ func testRemoteHistory(t *testing.T, d settings.Database) {
 }
 
 func TestRemoteHistory_MySQL(t *testing.T) {
-	testRemoteHistory(t, remoteDB(t, settings.DBMySQL, "MO_TEST_MYSQL"))
+	testRemoteHistory(t, remoteDB(t, settings.DBMySQL, "VERITMO_TEST_MYSQL"))
 }
 
 func TestRemoteHistory_Postgres(t *testing.T) {
-	testRemoteHistory(t, remoteDB(t, settings.DBPostgres, "MO_TEST_POSTGRES"))
+	testRemoteHistory(t, remoteDB(t, settings.DBPostgres, "VERITMO_TEST_POSTGRES"))
 }

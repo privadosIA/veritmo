@@ -8,26 +8,27 @@ package workspace
 
 import (
 	"context"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/musicsvc"
 	"net/http"
 	"os"
 	"sync"
 	"time"
+	"veritmo/internal/assets3d"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/musicsvc"
 
-	"mediaOrquestator/internal/assistant/assist"
-	"mediaOrquestator/internal/music/heartmula"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/project/quality"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/server/modelcat"
-	"mediaOrquestator/internal/video/blender"
-	"mediaOrquestator/internal/video/motion"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/assistant/assist"
+	"veritmo/internal/music/heartmula"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/project/quality"
+	"veritmo/internal/server/api"
+	"veritmo/internal/server/modelcat"
+	"veritmo/internal/video/blender"
+	"veritmo/internal/video/motion"
+	"veritmo/internal/video/videoedit"
 )
 
 // Config is what the family reads of the configuration of the server.
@@ -130,6 +131,8 @@ type TokenInfo struct {
 type Handler struct {
 	cfg  Config
 	host Host
+	// models3d is the library of 3D model packs (nil until the server gives it): a model of it can be added to a project's sources.
+	models3d *assets3d.Library
 
 	rm *runManager
 	rv *reviewManager
@@ -277,6 +280,7 @@ func (h *Handler) Register(handle api.HandleFunc) {
 	handle("POST /api/projects/{id}/sources", h.handleSourceCopy)
 	handle("POST /api/projects/{id}/sources/from-url", h.handleSourceFromURL)
 	handle("POST /api/projects/{id}/sources/clip", h.handleSourceClipCopy)
+	handle("POST /api/projects/{id}/sources/model", h.handleSourceModel)
 	handle("GET /api/clips", h.handleClipsList)
 	handle("GET /api/storage", h.handleStorage)
 	handle("GET /api/projects/{id}/storage", h.handleProjectStorage)
@@ -335,6 +339,9 @@ func (h *Handler) Register(handle api.HandleFunc) {
 	handle("GET /api/projects/{id}/blender/descriptions/{name}", h.handleDescriptionGet)
 	handle("PUT /api/projects/{id}/blender/descriptions/{name}", h.handleDescriptionPut)
 	handle("POST /api/projects/{id}/blender/descriptions/{name}/preview", h.handleDescriptionPreview)
+	// ... and the same without a project, storing nothing
+	handle("POST /api/blender/descriptions", h.handleStatelessWrite)
+	handle("POST /api/blender/preview", h.handleStatelessPreview)
 
 	// data-store
 	handle("GET /api/data/status", h.handleDataStatus)

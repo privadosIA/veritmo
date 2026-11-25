@@ -39,14 +39,14 @@ The server SHALL apply a change of `cors_origins` or `cors_networks` to the requ
 
 ### Requirement: The lists can only be changed on the machine
 
-The lists SHALL be changed only by editing the settings file or with `orchestrator cors add|remove|list` run on the machine. No API endpoint SHALL return or change them, and saving the other settings through the API SHALL leave them as they were.
+The lists SHALL be changed only by editing the settings file or with `veritmo cors add|remove|list` run on the machine. No API endpoint SHALL return or change them, and saving the other settings through the API SHALL leave them as they were.
 
 #### Scenario: No endpoint
 - **WHEN** a client sends `PUT /api/settings` with `cors_origins`
 - **THEN** the key is not accepted and the lists in the file are unchanged
 
 #### Scenario: Command
-- **WHEN** `orchestrator cors add http://192.168.1.50:4200` is run and then `orchestrator cors list`
+- **WHEN** `veritmo cors add http://192.168.1.50:4200` is run and then `veritmo cors list`
 - **THEN** the origin is in the file and in the list
 
 #### Scenario: Other settings saved
@@ -59,7 +59,7 @@ When a browser request from a different origin is not allowed, the server SHALL 
 
 #### Scenario: First rejection
 - **WHEN** a page at `http://192.168.1.50:4200`, not allowed, calls the API twice
-- **THEN** the log has one line naming that origin and `orchestrator cors add`
+- **THEN** the log has one line naming that origin and `veritmo cors add`
 
 #### Scenario: Own origin
 - **WHEN** a page served by the server itself sends a `POST` carrying its own origin

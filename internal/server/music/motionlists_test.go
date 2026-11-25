@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
 )
 
 type listed struct {

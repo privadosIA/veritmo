@@ -16,16 +16,16 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/music/songmap"
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/assemble"
-	"mediaOrquestator/internal/video/motion"
-	"mediaOrquestator/internal/video/render"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/music/songmap"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/assemble"
+	"veritmo/internal/video/motion"
+	"veritmo/internal/video/render"
 )
 
 // Seams for the tests, which have no Chrome or model to hand.

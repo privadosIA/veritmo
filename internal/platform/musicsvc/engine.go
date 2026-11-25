@@ -134,7 +134,7 @@ func (e *Engine) Availability(ctx context.Context) Availability {
 		if errors.As(err, &ue) {
 			a.Reason, a.Detail = ue.Reason, ue.Detail
 			if ue.Reason == ReasonNoWeights {
-				a.Missing = e.Spec.Missing(e.Local.Models)
+				a.Missing = e.Spec.MissingFor(e.Local.Backend, e.Local.Models)
 			}
 		}
 		return a
@@ -173,7 +173,7 @@ func (e *Engine) localReady(ctx context.Context) error {
 			return unavailable(ReasonNoService, "dotnet is not installed: the %s service needs the .NET runtime", e.Spec.Name)
 		}
 	}
-	if missing := l.Spec.Missing(l.Models); len(missing) > 0 {
+	if missing := l.Spec.MissingFor(l.Backend, l.Models); len(missing) > 0 {
 		return unavailable(ReasonNoWeights, "the weights are not complete in %s (%d files missing)", e.Spec.WeightsDir, len(missing))
 	}
 	gpus, err := l.GPUs(ctx)

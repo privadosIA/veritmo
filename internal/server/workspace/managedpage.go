@@ -9,9 +9,9 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // ManagedListSpec says what the lists of records can be sorted by: created_at, newest first by default as they always were.

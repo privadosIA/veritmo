@@ -2,11 +2,11 @@ package music
 
 import (
 	"context"
-	"mediaOrquestator/internal/platform/runner"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"veritmo/internal/platform/runner"
 )
 
 type fakeFFmpeg struct{ measure, loud string }

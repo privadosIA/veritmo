@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"veritmo/internal/platform/edition"
 )
 
 // labelled makes the projects a (adult: true), b (adult: false) and c (not looked at), each with a
@@ -250,6 +251,41 @@ func TestEveryRouteIsClassified(t *testing.T) {
 		}
 		if !found {
 			t.Errorf("listRoutes names %q, which is not a route", p)
+		}
+	}
+}
+
+func TestContentMode_ADatasetOfAdultModelsIsRefusedByACensoredServer(t *testing.T) {
+	s, dir := newProjectsServerMode(t, ContentCensored)
+	h := s.Handler()
+	adult := `[["patin","t","","a roller skate\nAdult: true"]]`
+	rec := doJSON(t, h, http.MethodPost, "/api/import/preview", map[string]any{"content": adult, "project": "objetos", "mode": "models3d"})
+	if rec.Code != http.StatusUnprocessableEntity || !strings.Contains(rec.Body.String(), `"content_not_allowed"`) {
+		t.Fatalf("preview: %d %s", rec.Code, rec.Body)
+	}
+	if strings.Contains(rec.Body.String(), "strict") {
+		t.Errorf("the refusal must not say how the mode changes: %s", rec.Body)
+	}
+	// a dataset that marks nothing as adult imports; so does one that says Adult: false
+	for _, ok := range []string{`[["patin","t","","a roller skate"]]`, `[["patin","t","","a roller skate\nAdult: false"]]`} {
+		if rec := doJSON(t, h, http.MethodPost, "/api/import/preview", map[string]any{"content": ok, "project": "objetos", "mode": "models3d"}); rec.Code != http.StatusOK {
+			t.Errorf("%s: %d %s", ok, rec.Code, rec.Body)
+		}
+	}
+	// the confirmation refuses the same entry in a project file
+	yml := "project: objetos\noutput: {mode: models3d}\nmodels:\n  - {id: patin, prompt: a roller skate, adult: true}\n"
+	rec = doJSON(t, h, http.MethodPost, "/api/import/confirm", map[string]string{"id": "objetos", "yaml": yml})
+	if rec.Code != http.StatusUnprocessableEntity || !strings.Contains(rec.Body.String(), `"content_not_allowed"`) {
+		t.Errorf("confirm: %d %s", rec.Code, rec.Body)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "objetos")); err == nil {
+		t.Error("no project may be created")
+	}
+	// a server that shows everything takes it (only a build that allows that mode can start one)
+	if edition.ContentAll() {
+		open, _ := newProjectsServerMode(t, ContentAll)
+		if rec := doJSON(t, open.Handler(), http.MethodPost, "/api/import/preview", map[string]any{"content": adult, "project": "objetos", "mode": "models3d"}); rec.Code != http.StatusOK {
+			t.Errorf("an open server: %d %s", rec.Code, rec.Body)
 		}
 	}
 }

@@ -7,10 +7,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/sched"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/sched"
+	"veritmo/internal/project/config"
 )
 
 // runState is what the scenes of one run share: the cache manifest (guarded

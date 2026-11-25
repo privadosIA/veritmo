@@ -42,11 +42,11 @@ bash scripts/music-containers.sh down diffrhythm2
 ## Build, weights and run by hand
 
 ```bash
-docker build -t mediaorquestator/diffrhythm2:1 docker/diffrhythm2
+docker build -t veritmo/diffrhythm2:1 docker/diffrhythm2
 # the only step that uses the network (about 9.5 GB)
-docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v "$PWD/models/music/diffrhythm2:/ckpt" mediaorquestator/diffrhythm2:1 python /opt/fetch.py
+docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v "$PWD/models/music/diffrhythm2:/ckpt" veritmo/diffrhythm2:1 python /opt/fetch.py
 # the service never downloads: the weights are mounted read-only
-docker run --rm --gpus device=1 -p 127.0.0.1:8788:8788 -v "$PWD/models/music/diffrhythm2:/ckpt:ro" mediaorquestator/diffrhythm2:1
+docker run --rm --gpus device=1 -p 127.0.0.1:8788:8788 -v "$PWD/models/music/diffrhythm2:/ckpt:ro" veritmo/diffrhythm2:1
 ```
 
 Tests of the API without a GPU: `python3 -m unittest discover -s docker/diffrhythm2 -p test_server.py`.

@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
 )
 
 // newProjectsServer builds the workspace over a temp projects root and chdirs into a temp "repo root" holding

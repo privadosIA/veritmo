@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
 )
 
 // weights writes a complete weights folder in dir.

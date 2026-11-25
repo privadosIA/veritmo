@@ -1,4 +1,4 @@
-# Guía de mediaOrquestator: conceptos, terminal y un ejemplo completo
+# Guía de Veritmo: conceptos, terminal y un ejemplo completo
 
 [← Volver al README](../README.md) · [English version](TUTORIAL.md)
 
@@ -18,7 +18,7 @@ La guía pantalla a pantalla del **dashboard** (entorno, modelos, el editor, run
 
 ## 1. Qué hace esto, en una frase
 
-Escribes **escenas** (un texto para generar una imagen y, si quieres, un texto para que alguien lo narre) y mediaOrquestator produce un **vídeo narrado**, o solo las **imágenes**, o —aparte, sin relación con el vídeo— **canciones** a partir de un estilo y una letra (ver Música). Si ya tienes la imagen, puedes usarla tal cual en una escena, girarla, o partir de ella para generar otra, y ponerle música de fondo al vídeo. Todo se ejecuta en tu máquina, con tus GPUs; no manda nada a ningún servicio.
+Escribes **escenas** (un texto para generar una imagen y, si quieres, un texto para que alguien lo narre) y Veritmo produce un **vídeo narrado**, o solo las **imágenes**, o —aparte, sin relación con el vídeo— **canciones** a partir de un estilo y una letra (ver Música). Si ya tienes la imagen, puedes usarla tal cual en una escena, girarla, o partir de ella para generar otra, y ponerle música de fondo al vídeo. Todo se ejecuta en tu máquina, con tus GPUs; no manda nada a ningún servicio.
 
 Por dentro, cada escena pasa por estas fases, y el dashboard te las enseña una a una mientras se ejecutan:
 
@@ -56,7 +56,7 @@ Dos cosas que te ahorran tiempo y que conviene saber desde el principio:
 | Una escena con calidad propia sale con otro tamaño que el resto | Es lo esperado: el vídeo final mantiene la resolución del proyecto y esa escena se recorta hasta ella (sin estirarla). Para cambiar el tamaño de todo el vídeo, cambia la resolución en Defaults. |
 | En el mezclador, «Oír sin mezclar» no suena igual que la mezcla exportada | Es una aproximación en el navegador (volumen hasta 2 solo si el audio es del mismo origen que la página). Pulsa **Mezclar** para generar el archivo y oír el resultado real. |
 | Falla en `render` y se queda sin memoria | Mira «Recursos» del run: si la VRAM llega al 100 %, baja la resolución o usa otro modelo. |
-| El run se cuelga o el equipo se queda sin RAM | Los modelos grandes (conjuntos, Wan) copian el modelo a RAM. `./serve.sh` ya limita la memoria al 85 % de la RAM por defecto (unos 52G en 64 GB, sin swap): si un run se pasa, se corta ese proceso en vez de colgar el equipo. Cámbialo con `MEM_MAX=40G ./serve.sh`. Si lanzas `bin/orchestrator serve` a mano: `systemd-run --user --scope -p MemoryMax=24G -p MemorySwapMax=0 bin/orchestrator serve …`. |
+| El run se cuelga o el equipo se queda sin RAM | Los modelos grandes (conjuntos, Wan) copian el modelo a RAM. `./serve.sh` ya limita la memoria al 85 % de la RAM por defecto (unos 52G en 64 GB, sin swap): si un run se pasa, se corta ese proceso en vez de colgar el equipo. Cámbialo con `MEM_MAX=40G ./serve.sh`. Si lanzas `bin/veritmo serve` a mano: `systemd-run --user --scope -p MemoryMax=24G -p MemorySwapMax=0 bin/veritmo serve …`. |
 | La imagen sale mal con Krea 2 / IntoRealism | Comprueba que son 8 pasos y cfg 1: usa **Usar ajustes recomendados**. |
 | Una escena se rehace entera aunque no la tocaste | Comprueba que **keep-tmp** está activado; sin él no hay caché entre runs. |
 
@@ -65,18 +65,18 @@ Dos cosas que te ahorran tiempo y que conviene saber desde el principio:
 Todo lo que hace el dashboard se puede hacer sin él, con el mismo `scenes.yaml`:
 
 ```bash
-bin/orchestrator --gpu 1 --keep-tmp projects/mi-proyecto/scenes.yaml
+bin/veritmo --gpu 1 --keep-tmp projects/mi-proyecto/scenes.yaml
 ```
 
-Banderas útiles (van **antes** del archivo): `--gpu 0,1`, `--keep-tmp`, `--force`, `--only <id-escena>`, `--mode images`, `--vram-warn-mb 2048`. Para convertir un dataset de canciones: `bin/orchestrator import --mode music -o scenes.yaml canciones.json` (las banderas, también aquí, antes del fichero).
+Banderas útiles (van **antes** del archivo): `--gpu 0,1`, `--keep-tmp`, `--force`, `--only <id-escena>`, `--mode images`, `--vram-warn-mb 2048`. Para convertir un dataset de canciones: `bin/veritmo import --mode music -o scenes.yaml canciones.json` (las banderas, también aquí, antes del fichero).
 
 Para usar el dashboard desde otra máquina, protege el acceso con `ORCHESTRATOR_TOKEN` y haz un túnel SSH (`ssh -L 4666:127.0.0.1:4666 usuario@servidor`). Los detalles y todos los campos del `scenes.yaml` están en [SCENES_YAML.md](SCENES_YAML.md); los endpoints, en [`docs/http-api.md`](http-api.md).
 
 Para que la IA ayude a escribir prompts desde la terminal:
 
 ```bash
-bin/orchestrator assist image "una cafetería por la mañana"
-bin/orchestrator assist motion "ella pasa una página"
+bin/veritmo assist image "una cafetería por la mañana"
+bin/veritmo assist motion "ella pasa una página"
 ```
 
 (Necesita Ollama en marcha; trabaja en CPU para no quitar VRAM al render.)
@@ -84,10 +84,10 @@ bin/orchestrator assist motion "ella pasa una página"
 Para sacar el prompt de una imagen o un vídeo que ya tienes, y para usar otro proveedor en una ejecución:
 
 ```bash
-bin/orchestrator describe foto.png                 # imprime el prompt que la dibujaría
-bin/orchestrator describe --split clip.mp4         # una línea por plano: [inicio-fin] prompt, y su MOTION:
-bin/orchestrator describe --provider nube foto.png
-bin/orchestrator assist --provider lan image "una cafetería por la mañana"
+bin/veritmo describe foto.png                 # imprime el prompt que la dibujaría
+bin/veritmo describe --split clip.mp4         # una línea por plano: [inicio-fin] prompt, y su MOTION:
+bin/veritmo describe --provider nube foto.png
+bin/veritmo assist --provider lan image "una cafetería por la mañana"
 ```
 
 `describe` necesita un modelo de visión en Ollama (`ollama pull gemma4:26b`). `--provider` recibe el id de un proveedor registrado en **Configuración**; uno remoto tiene que haberse aceptado antes allí (la terminal no puede aceptarlo), y si no, los comandos siguen el enrutado elegido en la tarjeta **Tareas**.
@@ -298,14 +298,14 @@ scenes:
 
 No lances los 15 planos para averiguarlo. Prueba primero los difíciles, **primero la imagen y luego el movimiento**:
 
-1. **La imagen**, en modo imágenes, unos 17 s: `orchestrator --mode images --only s06_stand_up scenes.yaml`. Mírala antes de animar: el primer intento del plano de levantarse (*«low angle, about to stand up»*) salió como una vista trasera inclinada, así que el prompt pasó a un plano frontal sentadas en el borde del banco y el `negative_prompt` ganó *bent over, from behind, rear view close-up*. El plano de patinar también pasó de vista trasera a **plano general de perfil**.
-2. **El movimiento**, unos 85 s: `orchestrator --keep-tmp --gpu 1 --only s06_stand_up scenes.yaml`. Luego mira fotogramas del clip. La primera prueba usó 49 fotogramas (3 s) y el clip se miró fotograma a fotograma (segundos 0 a 2,8).
+1. **La imagen**, en modo imágenes, unos 17 s: `veritmo --mode images --only s06_stand_up scenes.yaml`. Mírala antes de animar: el primer intento del plano de levantarse (*«low angle, about to stand up»*) salió como una vista trasera inclinada, así que el prompt pasó a un plano frontal sentadas en el borde del banco y el `negative_prompt` ganó *bent over, from behind, rear view close-up*. El plano de patinar también pasó de vista trasera a **plano general de perfil**.
+2. **El movimiento**, unos 85 s: `veritmo --keep-tmp --gpu 1 --only s06_stand_up scenes.yaml`. Luego mira fotogramas del clip. La primera prueba usó 49 fotogramas (3 s) y el clip se miró fotograma a fotograma (segundos 0 a 2,8).
 
    El primer segundo y medio estaba bien (se inclina hacia delante y se impulsa con las manos); después las piernas se agitan y cae por encima del banco. Le pasó lo mismo al plano de patinar: se aleja bien y luego los cuerpos se doblan. Por eso los planos se recortaron a **33 fotogramas (2 s)**, y el de levantarse a 1,5 s.
 
    Con 33 fotogramas los dos se mantienen coherentes: se levantan (algo bruscos: el movimiento se comprime en 1,5 s) y se deslizan mientras la cámara las sigue. El corte al plano siguiente esconde el resto.
 3. **Corrige lo que no funcione** cambiando el `prompt` (imagen) o solo el `motion_prompt` (movimiento: la imagen no se vuelve a dibujar). La caché también te dice qué va a rehacer.
-4. **Luego todo**: `orchestrator --keep-tmp --gpu 1 scenes.yaml` (o *Crear* en el editor). Con el 5B cada plano tarda unos 100 s (17 s la imagen, 85 s el movimiento): los 15 planos, unos 25 minutos. En una máquina de 30 GB lánzalo con un tope de memoria, como dice la sección de Animación.
+4. **Luego todo**: `veritmo --keep-tmp --gpu 1 scenes.yaml` (o *Crear* en el editor). Con el 5B cada plano tarda unos 100 s (17 s la imagen, 85 s el movimiento): los 15 planos, unos 25 minutos. En una máquina de 30 GB lánzalo con un tope de memoria, como dice la sección de Animación.
 
 > **`--only` y la caché**: hasta que se corrigió un fallo, `--only` también escribía las entradas de caché de las escenas que dejaba fuera, así que un run posterior podía creer que ya estaban hechas y fallar al unir el vídeo (*Error opening input … scene_….mp4*). Está corregido; si alguna vez ves ese error en un proyecto en el que ejecutaste las escenas de una en una, borra el `tmp/manifest.json` del proyecto y vuelve a lanzarlo.
 

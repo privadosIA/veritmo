@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 func renderArgs(t *testing.T, d config.Defaults) []string {

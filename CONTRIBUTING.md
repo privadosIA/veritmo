@@ -1,4 +1,4 @@
-# Contributing to mediaOrquestator
+# Contributing to Veritmo
 
 ## Maintenance
 

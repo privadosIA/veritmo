@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/store"
 )
 
 const legacySettings = `{

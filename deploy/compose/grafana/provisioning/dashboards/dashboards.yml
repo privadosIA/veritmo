@@ -1,7 +1,7 @@
 # The two dashboards of docs/grafana, copied (with their data source ids filled in) to /var/lib/grafana/dashboards by the entry point of the service.
 apiVersion: 1
 providers:
-  - name: mediaorquestator
+  - name: veritmo
     type: file
     disableDeletion: true
     allowUiUpdates: false

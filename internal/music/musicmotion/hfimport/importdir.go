@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/music/musicmotion"
+	"veritmo/internal/music/musicmotion"
 )
 
 // Options of Import.

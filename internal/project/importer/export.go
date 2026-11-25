@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/render"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/render"
 )
 
-// Dataset is a project written in the dataset format `orchestrator import`
+// Dataset is a project written in the dataset format `veritmo import`
 // reads: a JSON array of [id, title, lora_info, full_prompt] tuples.
 type Dataset struct {
 	// JSON is the file: one tuple per line.
@@ -27,8 +27,8 @@ type Dataset struct {
 	Notes []string
 }
 
-// ExportDataset writes the scenes (video or images mode) or the tracks (music
-// mode) of a project as a dataset that Map or MapMusic read back: what each
+// ExportDataset writes the scenes (video or images mode), the tracks (music
+// mode) or the models (models3d mode) of a project as a dataset that Map or MapMusic read back: what each
 // entry says is put in the lines the importer understands (dialogue, negative,
 // motion, seed, speed, silence and variants for scenes, plus graphic and overlay lines for the animated graphics; lyrics, language, bpm,
 // duration, key, time signature, seed and variants for songs). What the project
@@ -47,11 +47,13 @@ func ExportDataset(cfg *config.Config) (*Dataset, error) {
 	var tuples [][]string
 	if cfg.Output.Mode == config.ModeMusic {
 		tuples = exportTracks(cfg, d)
+	} else if cfg.Output.Mode == config.ModeModels3D {
+		tuples = exportModels(cfg, d)
 	} else {
 		tuples = exportScenes(cfg, d)
 	}
 	if len(tuples) == 0 {
-		return nil, fmt.Errorf("export: the project has nothing to export (no scenes or songs)")
+		return nil, fmt.Errorf("export: the project has nothing to export (no scenes, songs or models)")
 	}
 	var b strings.Builder
 	b.WriteString("[\n")
@@ -81,9 +83,22 @@ func exportScenes(cfg *config.Config, d *Dataset) [][]string {
 	var notCarried = map[string]bool{}
 	pages := false
 	labelled, designed := false, false
+	var descriptions []string // the 3D scenes' description files: only the package carries them
 	for _, s := range cfg.Scenes {
 		prompt := render.ComposePositive(oneLine(cfg.Defaults.SubjectPrompt), oneLine(s.Prompt))
-		if s.MotionPart != "" {
+		build := ""
+		if s.Blender != nil {
+			if s.Blender.Build == "" {
+				d.Notes = append(d.Notes, fmt.Sprintf("scene %q is rendered from a .blend file (%s), which a dataset cannot carry: it was not exported", s.ID, s.Blender.File))
+				continue
+			}
+			build = s.Blender.Build
+			descriptions = append(descriptions, build)
+			prompt = oneLine(s.Prompt) // the project's subject is for pictures, not for a 3D scene
+		}
+		if build != "" {
+			// A 3D scene: its description is a file of the sources, named by the Blender line.
+		} else if s.MotionPart != "" {
 			// A graphic made from a part of the catalog: its description (for auto) and the part with what it is given.
 			pages = true
 			prompt = ""
@@ -107,6 +122,13 @@ func exportScenes(cfg *config.Config, d *Dataset) [][]string {
 			}
 		}
 		lines := []string{strings.TrimSpace(prompt)}
+		if build != "" {
+			lines = lines[:0]
+			if t := strings.TrimSpace(prompt); t != "" {
+				lines = append(lines, t)
+			}
+			lines = append(lines, "Blender: "+build)
+		}
 		if s.MotionPart != "" {
 			lines = append(lines, "Part: "+s.MotionPart)
 			names := make([]string, 0, len(s.MotionParams))
@@ -193,6 +215,9 @@ func exportScenes(cfg *config.Config, d *Dataset) [][]string {
 			d.Notes = append(d.Notes, what+" of some scenes is not carried by the dataset format")
 		}
 	}
+	if len(descriptions) > 0 {
+		d.Notes = append(d.Notes, fmt.Sprintf("the dataset keeps the Blender line of the 3D scenes, not their description files (%s): they travel in the project package, or the assistant writes them again", strings.Join(descriptions, ", ")))
+	}
 	if pages {
 		d.Notes = append(d.Notes, "the pages of the animated graphics and titles are not carried: the model writes them again when the dataset is imported (the full project keeps them)")
 	}
@@ -249,7 +274,7 @@ func exportTracks(cfg *config.Config, d *Dataset) [][]string {
 }
 
 // packageReadme goes inside a project package.
-const packageReadme = `A mediaOrquestator project package: scenes.yaml (every setting of the project),
+const packageReadme = `A Veritmo project package: scenes.yaml (every setting of the project),
 the files of its sources/ folder, and the recipe (RECIPE.md to read, recipe.json
 for the program): the models, voice and LoRAs it uses, the settings it runs with,
 the catalog's recommended settings and where each file can be downloaded.
@@ -259,8 +284,8 @@ project, and choose this .zip. It says which models are installed and which are
 missing (and installs the missing ones with one click). Then launch the generation.
 
 By hand: unpack it into a folder, install the models listed in RECIPE.md and run
-  orchestrator --keep-tmp scenes.yaml
-or put the folder in the projects directory of an 'orchestrator serve'.
+  veritmo --keep-tmp scenes.yaml
+or put the folder in the projects directory of an 'veritmo serve'.
 Models and voices are not in the package, they belong to the machine; neither is
 what was generated (out/, tmp/).
 `

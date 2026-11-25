@@ -35,7 +35,7 @@ A setting saved through the API or by a command SHALL be used by the next operat
 
 #### Scenario: A command changes a setting
 
-- **WHEN** `orchestrator cors` adds an origin while the server runs
+- **WHEN** `veritmo cors` adds an origin while the server runs
 - **THEN** within 5 seconds the server answers CORS requests of that origin
 
 ### Requirement: Every secret is in the private keys file

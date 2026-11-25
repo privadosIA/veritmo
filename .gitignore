@@ -15,7 +15,7 @@
 /.claude/
 /.agents/
 /skills-lock.json
-/cmd/orchestrator/orchestrator
+/cmd/veritmo/veritmo
 __pycache__/
 *.pyc
 /.orchestrator/services/

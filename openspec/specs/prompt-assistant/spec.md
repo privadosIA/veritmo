@@ -84,7 +84,7 @@ The model SHALL default to `qwen3:8b`, be overridden by the environment variable
 
 ### Requirement: The command line prints the result
 
-`orchestrator assist <image|motion> "<text>"` SHALL print the generated prompt on standard output followed by a newline and nothing else, and SHALL print errors on standard error with a non-zero exit status. An unknown task or an empty text SHALL be rejected before contacting Ollama.
+`veritmo assist <image|motion> "<text>"` SHALL print the generated prompt on standard output followed by a newline and nothing else, and SHALL print errors on standard error with a non-zero exit status. An unknown task or an empty text SHALL be rejected before contacting Ollama.
 
 #### Scenario: success
 - **WHEN** the command runs with a valid task and text
@@ -136,7 +136,7 @@ The `music` task SHALL send the user's description to the local model with instr
 
 ### Requirement: The server and the command line offer the music task
 
-`POST /api/assist` SHALL accept `task: "music"` and an optional `instrumental` flag and SHALL answer `caption` and `lyrics` (and `text` with the reply as written). `orchestrator assist music "<text>"` SHALL print the style and the lyrics, with `--instrumental` for the style only. The same protections as the other tasks SHALL apply: CPU only, memory check, unload when finished, and refusal while a run is queued or active.
+`POST /api/assist` SHALL accept `task: "music"` and an optional `instrumental` flag and SHALL answer `caption` and `lyrics` (and `text` with the reply as written). `veritmo assist music "<text>"` SHALL print the style and the lyrics, with `--instrumental` for the style only. The same protections as the other tasks SHALL apply: CPU only, memory check, unload when finished, and refusal while a run is queued or active.
 
 #### Scenario: Request over the API
 - **WHEN** a client posts `{"task":"music","text":"..."}`
@@ -147,7 +147,7 @@ The `music` task SHALL send the user's description to the local model with instr
 - **THEN** the request is answered with a conflict, as for the other tasks
 
 #### Scenario: Command line
-- **WHEN** the user runs `orchestrator assist music "..."`
+- **WHEN** the user runs `veritmo assist music "..."`
 - **THEN** it prints the style and the lyrics and nothing else
 
 ### Requirement: A request can name the model, and the installed models can be listed
@@ -489,3 +489,55 @@ The plan written from one sentence SHALL also carry `world` (where the video hap
 #### Scenario: An unknown device
 - **WHEN** the model answers a device that is not in the list
 - **THEN** the plan says `type carries the argument` and its note says the model's device was not one offered
+
+### Requirement: The dataset assistant can write 3D scenes
+
+`POST /api/assist/dataset` in mode `video` or `motion` with `"picture": "blender"` SHALL write, for every entry, the description of a 3D scene with the same writer and checks as `POST /api/projects/{id}/blender/descriptions` (the model of the `motion_graphics` task, up to 3 attempts), from the entry's own text, and SHALL give the entry a `Blender: <id>.scene.json` line. The answer SHALL carry the descriptions in `descriptions` (`{<id>.scene.json: <description>}`) beside `entries`, `mode` and `warnings`. An entry whose description does not pass SHALL be left out with a warning naming the problems; the call SHALL fail with `422` only when no entry is usable. At most 6 entries SHALL be written in this way per call, the rest left out with a warning. An optional `project` (an existing project) SHALL give the design, the tempo and the frame; without it the writer SHALL use no design, keys in seconds and a 16:9 frame. The guards of the dataset assistant apply (consent for a remote provider, `409` with a local model while a run is active, the memory rule, `assist_refused`). In mode `motion` the entries SHALL be 3D graphics: each gets a `Blender: <id>.scene.json` line and a `Duration:` line (the length its description is written for) and no `Part:`, `Graphic:` or `Param` line. `picture` with mode `music`, or a value other than `blender`, SHALL be `400`.
+
+#### Scenario: A storyboard of 3D scenes
+- **WHEN** the call asks for 4 scenes with `picture: "blender"`
+- **THEN** the answer has 4 entries each with a `Blender:` line and 4 descriptions, and the entries preview with the import's own mapping
+
+#### Scenario: One scene does not pass
+- **WHEN** the description of the third entry fails its 3 attempts
+- **THEN** the answer has the other entries and a warning for the third, with status `200`
+
+#### Scenario: More than the limit
+- **WHEN** the model writes 8 entries
+- **THEN** 6 are kept, and a warning says that 2 were left out
+
+#### Scenario: A local model while a run is active
+- **WHEN** the model is local and a run is active
+- **THEN** the call answers `409`, as every call of the dataset assistant does
+
+#### Scenario: Four 3D titles
+- **WHEN** the call asks for four animated titles with `picture: "blender"` in mode `motion`
+- **THEN** the answer has up to four entries with a `Blender:` line and a `Duration:` line and their descriptions, and the entries preview with the motion mode of the import
+
+### Requirement: The catalog says the 3D datasets exist
+
+`GET /api/music-motion/catalog` SHALL list `blender` in `features` when `POST /api/assist/dataset` accepts `picture: "blender"` and the import reads the `Blender:` line.  A server without that code SHALL NOT list it. The animations' side SHALL be announced by its own entry when it exists, never by this one.
+
+#### Scenario: A server with it
+- **WHEN** the catalog is read
+- **THEN** `features` has `dataset` and `blender`
+
+### Requirement: The assistant writes a dataset of 3D models
+
+`POST /api/assist/dataset` SHALL accept `mode: "models3d"` and write up to 12 entries from the sentence, each the prompt of **one object alone** (a concrete shape, material and colour; no scene, no people, no text to read), in the tuple shape the import reads, with the guards of the other modes (the routing and the consent of a remote provider, the wait for a run, the memory rule, the model's own refusal) and its answer checked by the import of this mode before it is returned, so that what comes back imports. The `examples` of the call SHALL be the presets of the kind `model3d` when it names them, and `picture` and `parts` SHALL be refused for this mode. An unknown `mode` SHALL be `400` naming the accepted ones, which now include `models3d`.
+
+#### Scenario: A sentence becomes prompts
+- **WHEN** the dataset is asked for "ten objects for a roller derby team room"
+- **THEN** up to ten entries come back, each the description of a single object, and the answer imports as a project of the mode
+
+#### Scenario: Not an object
+- **WHEN** the model writes an entry that describes a scene with people
+- **THEN** the entry is rewritten asking for one object, or dropped with a warning, and what is returned still imports
+
+### Requirement: The assistant writes the prompt of one 3D model
+
+`POST /api/assist/request` SHALL accept `kind: "model3d"` and answer `{kind, kind_source, title, model_prompt, warnings}`, where `model_prompt` is an English prompt for one object alone written from the request in any language, with the guards of the other kinds; when it cannot be written the answer carries the kind and the title and a warning with the prompt empty. The kind SHALL be decided by the caller only (the model does not choose it between the kinds): a request with an attachment of a picture SHALL be a `model3d` only when the caller says so.
+
+#### Scenario: A request in Spanish
+- **WHEN** the text is "un patín de ruedas retro, rosa y brillante" and the kind is `model3d`
+- **THEN** `model_prompt` is an English description of one roller skate

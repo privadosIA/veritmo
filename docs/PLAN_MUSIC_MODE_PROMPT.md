@@ -1,6 +1,6 @@
 > **STATUS: HISTORICAL.** This was the planning prompt of the music mode, which is implemented (see [MUSIC_MODE.md](MUSIC_MODE.md) and `openspec/specs/music/`). It is kept for reference.
 
-# TASK: Plan a "music" output mode for mediaOrquestator (acestep.cpp) with OpenSpec
+# TASK: Plan a "music" output mode for Veritmo (acestep.cpp) with OpenSpec
 
 You are a senior Go + Angular engineer. Your job in this session is ONLY planning
 (OpenSpec `propose` flow): do not implement anything until I run `/opsx:apply`.

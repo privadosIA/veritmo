@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/store"
 )
 
-// open makes a database in memory and an isolated config directory: a test never reads or writes the real ~/.config/mediaorquestator.
+// open makes a database in memory and an isolated config directory: a test never reads or writes the real ~/.config/veritmo.
 func open(t *testing.T) (*Source, *store.Store) {
 	t.Helper()
 	cfg := t.TempDir()

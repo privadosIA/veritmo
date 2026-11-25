@@ -16,12 +16,13 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/blender"
-	videorender "mediaOrquestator/internal/video/render"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/blender"
+	"veritmo/internal/video/motion"
+	videorender "veritmo/internal/video/render"
 )
 
 // The seconds a description can be written for.
@@ -145,15 +146,7 @@ func (h *Handler) handleDescriptionWrite(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
-	width, height, _ := videorender.ParseResolution(cfg.Defaults.Resolution) // 0 when unreadable: the prompt says 16:9
-	fps := cfg.Defaults.FPS
-	wreq := blender.WriteRequest{Idea: req.Idea, Seconds: req.Seconds, FPS: fps, Width: width, Height: height, Env: env,
-		Families: pipeline.BlenderFamilies(cfg), Current: current}
-	write := h.Overrides.BlenderWrite
-	if write == nil {
-		write = blender.WriteDescription
-	}
-	res, err := write(ctx, wr, wreq)
+	res, err := h.describeScene(ctx, wr, cfg, env, req.Idea, req.Seconds, current)
 	if err != nil {
 		if errors.Is(err, blender.ErrRejected) {
 			api.WriteError(w, http.StatusUnprocessableEntity, api.CodeInvalid, err.Error())
@@ -172,6 +165,134 @@ func (h *Handler) handleDescriptionWrite(w http.ResponseWriter, r *http.Request)
 		Model    string `json:"model"`
 		Attempts int    `json:"attempts"`
 	}{descriptionView{Name: req.Name, Description: bytes.TrimSpace(res.Raw), Resolved: res.Spec}, info.Provider, info.Model, res.Attempts})
+}
+
+// describeScene asks the model for a description of a scene seconds long (or, with current, for that one changed as the idea
+// says) against the settings of cfg and checks it, up to the attempts of the writer. It is what the handler and the dataset
+// assistant share; the model's own tests replace it with Overrides.BlenderWrite.
+func (h *Handler) describeScene(ctx context.Context, wr motion.Writer, cfg *config.Config, env blender.Env, idea string, seconds float64, current []byte) (blender.WriteResult, error) {
+	width, height, _ := videorender.ParseResolution(cfg.Defaults.Resolution) // 0 when unreadable: the prompt says 16:9
+	wreq := blender.WriteRequest{Idea: idea, Seconds: seconds, FPS: cfg.Defaults.FPS, Width: width, Height: height, Env: env,
+		Families: pipeline.BlenderFamilies(cfg), Current: current}
+	write := h.Overrides.BlenderWrite
+	if write == nil {
+		write = blender.WriteDescription
+	}
+	return write(ctx, wr, wreq)
+}
+
+// SceneWriter takes the model of the motion_graphics task for a caller that writes 3D descriptions without a project of its
+// own (the dataset assistant), with the checks of the handlers of this file: the routing of the provider and the wait for a
+// run when the model is local. It answers the error itself and reports whether it can go on.
+func (h *Handler) SceneWriter(w http.ResponseWriter, r *http.Request, provider string) (context.Context, motion.Writer, motion.ModelInfo, bool) {
+	return h.motionWriterFor(w, r, provider, "the scenes")
+}
+
+// WriteSceneError answers the error of a model call that wrote or changed a description: blender.ErrRejected is 422 with the
+// last problems, anything else as the handlers of the model of the motion_graphics task answer it.
+func (h *Handler) WriteSceneError(w http.ResponseWriter, err error) {
+	if errors.Is(err, blender.ErrRejected) {
+		api.WriteError(w, http.StatusUnprocessableEntity, api.CodeInvalid, err.Error())
+		return
+	}
+	writeMotionError(w, err)
+}
+
+// BlenderUsable says whether Blender can be used here; the error says how to fix it.
+func (h *Handler) BlenderUsable(ctx context.Context) error {
+	var err error
+	if find := h.Overrides.BlenderInfo; find != nil {
+		_, err = find(ctx)
+	} else {
+		_, err = blender.Cached(ctx)
+	}
+	return err
+}
+
+// DescribeSceneWith writes the description of a scene (or changes current) against the settings of cfg: its frame, its frame
+// rate, and the tempo and design of defaults.motion. There are no font files (the scene has no project of its own).
+func (h *Handler) DescribeSceneWith(ctx context.Context, wr motion.Writer, cfg *config.Config, idea string, seconds float64, current []byte) (blender.WriteResult, error) {
+	return h.DescribeSceneIn(ctx, wr, cfg, "", idea, seconds, current)
+}
+
+// sceneEnv is what a scene of a piece of a music motion script is checked against: cfg's tempo and design, and, when sources
+// is not empty, the models and pictures of that folder. Fonts are never files: a piece takes the design's.
+func sceneEnv(cfg *config.Config, sources string) blender.Env {
+	env := pipeline.BlenderEnv(cfg, "")
+	if sources != "" {
+		env.NoFiles, env.NoFontFiles, env.Sources = false, true, sources
+	}
+	return env
+}
+
+// DescribeSceneIn is DescribeSceneWith for a scene that has the 3D models of the folder sources (the writer is told which, and
+// a description that places one is checked against them).
+func (h *Handler) DescribeSceneIn(ctx context.Context, wr motion.Writer, cfg *config.Config, sources, idea string, seconds float64, current []byte) (blender.WriteResult, error) {
+	return h.describeScene(ctx, wr, cfg, sceneEnv(cfg, sources), idea, seconds, current)
+}
+
+// DescriptionError is a description that does not pass the checks of a hand-written one; its message names each fault by its place.
+type DescriptionError struct{ Err error }
+
+func (e *DescriptionError) Error() string { return e.Err.Error() }
+func (e *DescriptionError) Unwrap() error { return e.Err }
+
+// BlenderUnavailableError says Blender cannot be used here (not installed, too old); its message says how to fix it.
+type BlenderUnavailableError struct{ Err error }
+
+func (e *BlenderUnavailableError) Error() string { return e.Err.Error() }
+func (e *BlenderUnavailableError) Unwrap() error { return e.Err }
+
+// PreviewDescription draws a frame of a description given as bytes, second t of a scene seconds long, against the settings of cfg
+// (frame, frame rate, tempo, design), on the CPU. Nothing is stored. The errors are DescriptionError, BlenderUnavailableError or
+// any other failure of the drawing.
+func (h *Handler) PreviewDescription(ctx context.Context, cfg *config.Config, desc []byte, t, seconds float64, width int) ([]byte, error) {
+	return h.PreviewDescriptionIn(ctx, cfg, "", desc, t, seconds, width)
+}
+
+// PreviewDescriptionIn is PreviewDescription for a scene that has the 3D models of the folder sources.
+func (h *Handler) PreviewDescriptionIn(ctx context.Context, cfg *config.Config, sources string, desc []byte, t, seconds float64, width int) ([]byte, error) {
+	spec, err := blender.Parse(desc, seconds, sceneEnv(cfg, sources))
+	if err != nil {
+		return nil, &DescriptionError{err}
+	}
+	var info blender.Info
+	if find := h.Overrides.BlenderInfo; find != nil {
+		info, err = find(ctx)
+	} else {
+		info, err = blender.Cached(ctx)
+	}
+	if err != nil {
+		return nil, &BlenderUnavailableError{err}
+	}
+	fonts, err := pipeline.BlenderFontPaths(cfg, spec)
+	if err != nil {
+		return nil, err
+	}
+	aw, ah, _ := videorender.ParseResolution(cfg.Defaults.Resolution)
+	opts := blender.PreviewOptions{T: t, Seconds: seconds, FPS: cfg.Defaults.FPS, Width: width, AspectW: aw, AspectH: ah, Fonts: fonts, Sources: sources}
+	return h.drawFrame(ctx, info.Path, spec, opts)
+}
+
+// DescribeSceneFor writes the description of a 3D scene for a dataset: against the design, tempo and frame of project, or
+// with no design, no tempo (keys in seconds) and a 16:9 frame when project is empty. It returns blender.ErrRejected when no
+// attempt passes the checks, and ErrNoProject when project is not one.
+func (h *Handler) DescribeSceneFor(ctx context.Context, wr motion.Writer, project, idea string, seconds float64) (blender.WriteResult, error) {
+	cfg := &config.Config{Defaults: config.Defaults{Resolution: "1280x720", FPS: 30}}
+	var env blender.Env
+	if project != "" {
+		if !h.ProjectExists(project) {
+			return blender.WriteResult{}, ErrNoProject
+		}
+		var err error
+		if cfg, err = h.ProjectConfig(project); err != nil {
+			return blender.WriteResult{}, fmt.Errorf("the project's configuration cannot be read: %w", err)
+		}
+		env = pipeline.BlenderEnv(cfg, h.ProjectDir(project))
+	} else {
+		env = pipeline.BlenderEnv(cfg, "")
+	}
+	return h.describeScene(ctx, wr, cfg, env, idea, seconds, nil)
 }
 
 // GET /api/projects/{id}/blender/descriptions/{name} -> {name, description, resolved}
@@ -294,13 +415,7 @@ func (h *Handler) handleDescriptionPreview(w http.ResponseWriter, r *http.Reques
 	}
 	aw, ah, _ := videorender.ParseResolution(cfg.Defaults.Resolution)
 	opts := blender.PreviewOptions{T: req.T, Seconds: req.Seconds, FPS: cfg.Defaults.FPS, Width: req.Width, AspectW: aw, AspectH: ah, Sources: h.SourcesDir(id), Fonts: fonts}
-	preview := h.Overrides.BlenderPreview
-	if preview == nil {
-		preview = func(ctx context.Context, bin string, spec *blender.Spec, o blender.PreviewOptions) ([]byte, error) {
-			return blender.Preview(ctx, runner.NewExecRunner(), bin, spec, o)
-		}
-	}
-	png, err := preview(r.Context(), info.Path, spec, opts)
+	png, err := h.drawFrame(r.Context(), info.Path, spec, opts)
 	if err != nil {
 		api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, fmt.Sprintf("cannot draw the frame: %v", err))
 		return
@@ -308,6 +423,17 @@ func (h *Handler) handleDescriptionPreview(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Cache-Control", "no-store")
 	_, _ = w.Write(png)
+}
+
+// drawFrame draws one frame of a checked description with Blender on the CPU (or with the seam of a test).
+func (h *Handler) drawFrame(ctx context.Context, bin string, spec *blender.Spec, opts blender.PreviewOptions) ([]byte, error) {
+	preview := h.Overrides.BlenderPreview
+	if preview == nil {
+		preview = func(ctx context.Context, bin string, spec *blender.Spec, o blender.PreviewOptions) ([]byte, error) {
+			return blender.Preview(ctx, runner.NewExecRunner(), bin, spec, o)
+		}
+	}
+	return preview(ctx, bin, spec, opts)
 }
 
 // blenderInfo finds Blender, as configured for tests or on this machine; the error says how to install it.

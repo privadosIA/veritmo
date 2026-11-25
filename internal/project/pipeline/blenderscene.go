@@ -15,14 +15,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"veritmo/internal/platform/legacyname"
 
-	"mediaOrquestator/internal/music/musicmotion/fonts"
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/assemble"
-	"mediaOrquestator/internal/video/blender"
+	"veritmo/internal/music/musicmotion/fonts"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/assemble"
+	"veritmo/internal/video/blender"
 )
 
 // Seams for the tests, which have no Blender to hand.
@@ -75,7 +76,7 @@ var blenderFontDir = func() string {
 	if err != nil {
 		dir = os.TempDir()
 	}
-	return filepath.Join(dir, "mediaorquestator", "fonts")
+	return filepath.Join(legacyname.Dir(dir), "fonts")
 }
 
 // blenderFaces are the files of the font pack that the project's design stands for: the display font at weight 700 when
@@ -96,8 +97,9 @@ func blenderFaces(cfg *config.Config) map[string]fonts.Face {
 	return out
 }
 
-// blenderEnv is what a description is checked against: the design's colours and fonts, the project's tempo
-// (defaults.motion.bpm, none when absent) and the sources folder.
+// blenderEnv is what a description is checked against in a project that is being run: the design's colours and fonts, the
+// project's tempo (defaults.motion.bpm, none when absent) and the sources folder under base (the current folder when base
+// is empty: the command line runs a scenes.yaml in place, and it has sources like any project).
 func blenderEnv(cfg *config.Config, base string) blender.Env {
 	env := blender.Env{Palette: blenderPalette(cfg), Sources: joinDir(base, config.SourcesSubdir), DesignFonts: map[string]bool{}}
 	if m := cfg.Defaults.Motion; m != nil && m.BPM != nil {
@@ -110,8 +112,14 @@ func blenderEnv(cfg *config.Config, base string) blender.Env {
 }
 
 // BlenderEnv is what a scene description is checked against in this project (see blenderEnv): the design's colours and
-// fonts, the project's tempo and the sources folder under base, the project's folder.
-func BlenderEnv(cfg *config.Config, base string) blender.Env { return blenderEnv(cfg, base) }
+// fonts, the project's tempo and the sources folder under base, the project's folder. An empty base here means there is NO
+// project (a scene written or checked on its own: the one-call generation, the stateless writer, a piece of a music motion
+// script): it has no sources, so a font or a model file is refused.
+func BlenderEnv(cfg *config.Config, base string) blender.Env {
+	env := blenderEnv(cfg, base)
+	env.NoFiles = base == ""
+	return env
+}
 
 // BlenderFamilies names the family of each font role the design has in the pack ("display": "Playfair Display"), for
 // what is said to a model about the project.
@@ -183,6 +191,7 @@ func BlenderImageHash(cfg *config.Config, scene config.Scene, base, audioHash st
 					p.Build = hex.EncodeToString(sum[:])
 				}
 				p.Font = blenderFontKey(spec, cfg, base)
+				p.Models = spec.ModelsHash(joinDir(base, config.SourcesSubdir))
 			}
 		}
 	}

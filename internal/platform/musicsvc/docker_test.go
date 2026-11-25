@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // fakeDocker is a docker that answers like the real one for the commands the container backend uses, and remembers what was run.
@@ -80,8 +80,8 @@ func dockerEngine(t *testing.T, d *fakeDocker) *Engine {
 	t.Helper()
 	fr := runner.NewFakeRunner()
 	fr.SetHandler(d.handle)
-	spec := Spec{Name: "Demo", Container: "mo-demo", MinFreeMB: 8000, Missing: func(string) []string { return nil },
-		Docker: DockerSpec{Image: "mediaorquestator/demo:1", Port: 8799}}
+	spec := Spec{Name: "Demo", Container: "vt-demo", MinFreeMB: 8000, Missing: func(string) []string { return nil },
+		Docker: DockerSpec{Image: "veritmo/demo:1", Port: 8799}}
 	return &Engine{Spec: spec, Local: Local{Spec: spec, Runner: fr, Models: "/w/models/music/demo", Backend: BackendDocker}, NoStart: true}
 }
 
@@ -94,12 +94,12 @@ func TestDocker_StartRunsTheContainerOnTheCardLoopbackAndReadOnly(t *testing.T) 
 		t.Fatal(err)
 	}
 	run := strings.Join(d.ran("run"), " ")
-	for _, want := range []string{"-d", "--name mo-demo", "--restart no", "--gpus device=1", "-p 127.0.0.1:8799:8799", "-v /w/models/music/demo:/ckpt:ro", "mediaorquestator/demo:1"} {
+	for _, want := range []string{"-d", "--name vt-demo", "--restart no", "--gpus device=1", "-p 127.0.0.1:8799:8799", "-v /w/models/music/demo:/ckpt:ro", "veritmo/demo:1"} {
 		if !strings.Contains(run, want) {
 			t.Errorf("docker run lacks %q: %s", want, run)
 		}
 	}
-	if d.ran("rm", "-f", "mo-demo") == nil {
+	if d.ran("rm", "-f", "vt-demo") == nil {
 		t.Error("a container of the same name is removed before it is run")
 	}
 	port, ok := l.Running(ctx)

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/server/assistant"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/server/assistant"
 )
 
 type fakePiper struct{ args []string }

@@ -15,10 +15,10 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/video/motionlib"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/video/motionlib"
+	"veritmo/internal/video/videoedit"
 )
 
 // libraryServer is a server whose library is in a folder of its own and whose vision service is the fake.
@@ -274,7 +274,7 @@ func TestMotions_TheServersStopLeavesNoMotionHalfMade(t *testing.T) {
 	s, _ := newProjectsServer(t)
 	t.Cleanup(s.Workspace.Shutdown)
 	// a motion that was being prepared when the previous server stopped: its record is in the database the server uses
-	st := motionlib.NewStoreDB(filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "mediaorquestator", "motions"), s.Workspace.Store())
+	st := motionlib.NewStoreDB(filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "veritmo", "motions"), s.Workspace.Store())
 	m, _ := st.Create("x", nil)
 	if v := s.libraryStore(); v == nil {
 		t.Fatal("no store")

@@ -56,7 +56,7 @@ func TestSaveIsPrivateAndAtomic(t *testing.T) {
 	if err := Save(File{OllamaHost: "http://192.168.1.50:11434"}); err != nil {
 		t.Fatal(err)
 	}
-	p := filepath.Join(dir, "mediaorquestator", "settings.json")
+	p := filepath.Join(dir, "veritmo", "settings.json")
 	fi, err := os.Stat(p)
 	if err != nil {
 		t.Fatal(err)
@@ -90,7 +90,7 @@ func TestSaveIsPrivateAndAtomic(t *testing.T) {
 
 func TestCorruptFileMeansNoSetting(t *testing.T) {
 	dir := isolate(t)
-	p := filepath.Join(dir, "mediaorquestator", "settings.json")
+	p := filepath.Join(dir, "veritmo", "settings.json")
 	os.MkdirAll(filepath.Dir(p), 0o700)
 	os.WriteFile(p, []byte("{not json"), 0o600)
 	if r := Ollama(); r.Source != SourceDefault {
@@ -172,5 +172,27 @@ func TestNormalize(t *testing.T) {
 		if got := Normalize(in); got != want {
 			t.Errorf("Normalize(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+// A server updated in place keeps its token and settings: the first Dir() under XDG_CONFIG_HOME moves the directory of the former name.
+func TestDir_MovesTheDirectoryOfTheFormerName(t *testing.T) {
+	base := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", base)
+	old := filepath.Join(base, "mediaorquestator")
+	if err := os.MkdirAll(old, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(old, "token"), []byte("t0k3n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := Dir(); got != filepath.Join(base, "veritmo") {
+		t.Fatalf("Dir() = %s", got)
+	}
+	if b, err := os.ReadFile(filepath.Join(Dir(), "token")); err != nil || string(b) != "t0k3n" {
+		t.Errorf("the token is not in the new directory: %q %v", b, err)
+	}
+	if _, err := os.Stat(old); err == nil {
+		t.Errorf("the old directory is still there")
 	}
 }

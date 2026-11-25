@@ -18,9 +18,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
 )
 
 // ErrNoSong is a song that is not in the library; ErrNoPlaylist a playlist that is not; ErrPlaylistExists one that already is.

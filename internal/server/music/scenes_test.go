@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/video/motion"
 )
 
 // A scene that owns the verse: it draws the words of window.__scene.lines at their times and moves with the beat.

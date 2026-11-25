@@ -13,9 +13,9 @@ import (
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // SongsListSpec says what the list of songs can be sorted and searched by: the newest first unless asked otherwise.

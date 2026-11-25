@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/platform/runner"
 )
 
 // clickTrack is decoded mono audio with a noise burst on every beat of a tempo.

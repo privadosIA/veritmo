@@ -13,9 +13,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"mediaOrquestator/internal/platform/fsutil"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/fsutil"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 // FFmpegBinary is the executable used for the optional contact sheet.

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/musicsvc"
+	"veritmo/internal/platform/musicsvc"
 )
 
 func TestMissing_NamesTheFilesThatAreNotThereOrAreEmpty(t *testing.T) {

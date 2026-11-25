@@ -8,12 +8,12 @@ package workspace
 
 import (
 	"fmt"
-	"mediaOrquestator/internal/platform/media"
-	"mediaOrquestator/internal/server/api"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"veritmo/internal/platform/media"
+	"veritmo/internal/server/api"
 )
 
 // GET /api/projects/{id}/artifacts/{path...}

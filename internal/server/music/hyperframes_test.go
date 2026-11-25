@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/hyperframes"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/video/motion"
+	"veritmo/internal/music/hyperframes"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/video/motion"
 )
 
 // hfRegistry writes two blocks the way the registry keeps them and returns the folder.

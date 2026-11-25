@@ -20,12 +20,12 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
-	pstore "mediaOrquestator/internal/platform/store"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
-	"mediaOrquestator/internal/video/motionlib"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/platform/settings"
+	pstore "veritmo/internal/platform/store"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
+	"veritmo/internal/video/motionlib"
+	"veritmo/internal/video/videoedit"
 )
 
 // libraryMotionTimeout bounds the preparation of one motion (a download and the control of up to 480 frames).

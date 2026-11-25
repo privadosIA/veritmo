@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/server/api"
 )
 
 // newDLServer is an asset server whose download client may reach the

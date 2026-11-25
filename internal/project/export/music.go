@@ -3,9 +3,9 @@ package export
 import (
 	"encoding/json"
 	"fmt"
-	"mediaOrquestator/internal/platform/fsutil"
 	"os"
 	"path/filepath"
+	"veritmo/internal/platform/fsutil"
 )
 
 // MusicEntry is one exported song variant in the music manifest.json. With

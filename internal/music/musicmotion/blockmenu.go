@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/music/hyperframes"
+	"veritmo/internal/music/hyperframes"
 )
 
 // Limits of the block layers a proposal may carry.

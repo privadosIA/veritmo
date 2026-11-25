@@ -7,15 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mediaOrquestator/internal/platform/store"
 	"net/http"
 	"path/filepath"
 	"strings"
+	"veritmo/internal/platform/store"
 
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/api"
 )
 
 // PresetStore is the folder of the styles, under the settings (where they are when it is first used).

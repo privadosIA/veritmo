@@ -1,4 +1,4 @@
-module mediaOrquestator
+module veritmo
 
 go 1.26.0
 

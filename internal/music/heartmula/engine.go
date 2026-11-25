@@ -3,8 +3,8 @@ package heartmula
 import (
 	"context"
 
-	"mediaOrquestator/internal/platform/musicsvc"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/musicsvc"
+	"veritmo/internal/platform/settings"
 )
 
 // Why the engine cannot be used (the `reason` of the availability).

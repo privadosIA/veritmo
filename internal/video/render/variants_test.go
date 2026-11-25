@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
 )
 
 func argValue(t *testing.T, args []string, flag string) string {

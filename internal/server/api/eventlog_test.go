@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	"mediaOrquestator/internal/platform/events"
+	"veritmo/internal/platform/events"
 )
 
 // TestEventLog_VerbatimBytes is the regression test for the marshal-once

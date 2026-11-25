@@ -10,17 +10,18 @@ package workspace
 import (
 	"encoding/json"
 	"fmt"
-	"mediaOrquestator/internal/server/modelcat"
 	"os"
 	"path"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+	"veritmo/internal/server/modelcat"
 
 	"gopkg.in/yaml.v3"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/assets3d/generate"
+	"veritmo/internal/project/config"
 )
 
 // recipeFormat is the version of recipe.json.
@@ -43,6 +44,8 @@ type recipeFile struct {
 	RequiresToken string `json:"requires_token,omitempty"`
 	// Installed is whether the file exists on the machine that built the recipe or checks it.
 	Installed bool `json:"installed"`
+	// Note says where a file that is not in the catalog comes from (the weights of a 3D engine are fetched by their own route).
+	Note string `json:"note,omitempty"`
 }
 
 // recipePreset compares the project's settings with a catalog preset.
@@ -71,6 +74,46 @@ type recipeSettings struct {
 	FPS        int             `json:"fps,omitempty"`
 	Animate    *recipeAnimate  `json:"animate,omitempty"`
 	Music      *recipeMusicSet `json:"music,omitempty"`
+	// Models3D is what a models3d project makes its models with: the engines of its entries.
+	Models3D *recipeModels3D `json:"models3d,omitempty"`
+}
+
+// recipeModels3D is the 3D engines a models3d project uses, with the licence each one's models come under.
+type recipeModels3D struct {
+	Engines []recipeEngine `json:"engines"`
+}
+
+type recipeEngine struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Licence string `json:"licence"`
+	// Gated says the weights come from a repository whose licence the person's own Hugging Face account has to accept.
+	Gated bool `json:"gated,omitempty"`
+}
+
+// models3DRecipe is the engines the entries of a models3d project use, in the order they first appear, and the weights each one reads.
+func models3DRecipe(cfg *config.Config) (*recipeModels3D, []recipeFile) {
+	if cfg.Output.Mode != config.ModeModels3D {
+		return nil, nil
+	}
+	out := &recipeModels3D{}
+	var files []recipeFile
+	seen := map[string]bool{}
+	for _, e := range cfg.Models {
+		id := cfg.EntryEngine(e)
+		info, ok := generate.Info(id)
+		if !ok || seen[id] {
+			continue
+		}
+		seen[id] = true
+		out.Engines = append(out.Engines, recipeEngine{ID: id, Name: info.Name, Licence: info.Licence, Gated: info.Gated})
+		for _, rel := range generate.Required(id) {
+			p := path.Join(generate.WeightsDir, rel)
+			files = append(files, recipeFile{Key: "models3d.engine." + id, Label: "3D · " + info.Name, Path: p, Name: path.Base(p),
+				Note: "POST /api/models3d/engines/" + id + "/install"})
+		}
+	}
+	return out, files
 }
 
 type recipeAnimate struct {
@@ -96,6 +139,7 @@ type recipe struct {
 	ExportedAt string            `json:"exported_at"`
 	Scenes     int               `json:"scenes,omitempty"`
 	Tracks     int               `json:"tracks,omitempty"`
+	Models     int               `json:"models,omitempty"`
 	Settings   recipeSettings    `json:"settings"`
 	Presets    []recipePreset    `json:"presets,omitempty"`
 	Files      []recipeFile      `json:"files"`
@@ -345,6 +389,17 @@ func recipeSettingsOf(cfg *config.Config) recipeSettings {
 // buildRecipe describes a project. assetsRoot is the directory with models/ and voices/ ("" is the working directory).
 func buildRecipe(cat []modelcat.Entry, yamlData []byte, cfg *config.Config, assetsRoot, lang string, now time.Time) *recipe {
 	files := collectRecipeFiles(yamlData, cfg, lang)
+	m3d, m3dFiles := models3DRecipe(cfg)
+	seenPath := map[string]bool{}
+	for _, f := range files {
+		seenPath[f.Path] = true
+	}
+	for _, f := range m3dFiles {
+		if !seenPath[f.Path] { // the cut-out model is shared by the two engines
+			seenPath[f.Path] = true
+			files = append(files, f)
+		}
+	}
 	annotateRecipeFiles(cat, files, assetsRoot, lang)
 	r := &recipe{
 		Format:     recipeFormat,
@@ -356,6 +411,10 @@ func buildRecipe(cat []modelcat.Entry, yamlData []byte, cfg *config.Config, asse
 		Settings:   recipeSettingsOf(cfg),
 		Presets:    recipePresets(cat, cfg, files, lang),
 		Files:      files,
+	}
+	r.Settings.Models3D = m3d
+	if m3d != nil {
+		r.Models = len(cfg.Models)
 	}
 	return r
 }
@@ -399,6 +458,15 @@ func (r *recipe) markdown(lang string) []byte {
 	row := func(k, v string) {
 		if v != "" {
 			fmt.Fprintf(&b, "- **%s**: %s\n", k, v)
+		}
+	}
+	if m := s.Models3D; m != nil {
+		for _, e := range m.Engines {
+			gated := ""
+			if e.Gated {
+				gated = tr(" (los pesos piden aceptar su licencia con tu cuenta de Hugging Face)", " (the weights need your Hugging Face account to accept its licence)")
+			}
+			row(tr("Motor 3D", "3D engine"), fmt.Sprintf("%s · %s%s", e.Name, e.Licence, gated))
 		}
 	}
 	if r.Mode != config.ModeMusic {
@@ -458,6 +526,9 @@ func (r *recipe) markdown(lang string) []byte {
 	b.WriteString("| " + tr("Para qué", "What for") + " | " + tr("Archivo", "File") + " | " + tr("Tamaño", "Size") + " | " + tr("Dónde conseguirlo", "Where to get it") + " |\n|---|---|---|---|\n")
 	for _, f := range r.Files {
 		src := tr("no está en el catálogo: búscalo por su nombre", "not in the catalog: look it up by its name")
+		if f.Note != "" {
+			src = f.Note
+		}
 		if f.CatalogID != "" {
 			src = fmt.Sprintf("%s (`%s`)", f.CatalogName, f.CatalogID)
 		}

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"mediaOrquestator/internal/server/workspace"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -14,9 +13,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"veritmo/internal/server/workspace"
 
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
 )
 
 // touchFiles creates, under root, the files of the installed entries (models/ or models/video/).

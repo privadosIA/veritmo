@@ -7,10 +7,10 @@ package musicsvc
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
+	"veritmo/internal/platform/legacyname"
 )
 
 // The two ways to run a generator on this machine.
@@ -38,9 +38,9 @@ type DockerSpec struct {
 // ValidBackend reports whether the text is one of the two backends.
 func ValidBackend(b string) bool { return b == BackendDotnet || b == BackendDocker }
 
-// dockerProgram is the Docker command line program: MO_DOCKER when set (podman is compatible), docker otherwise.
+// dockerProgram is the Docker command line program: VERITMO_DOCKER when set (podman is compatible), docker otherwise.
 func dockerProgram() string {
-	if p := strings.TrimSpace(os.Getenv("MO_DOCKER")); p != "" {
+	if p := strings.TrimSpace(legacyname.Getenv("DOCKER")); p != "" {
 		return p
 	}
 	return "docker"
@@ -160,7 +160,8 @@ func (e *Engine) Backends(ctx context.Context) map[string]BackendInfo {
 		return nil
 	}
 	l := e.local()
-	weights := len(e.Spec.Missing(l.Models)) > 0
+	weights := len(e.Spec.MissingFor(BackendDocker, l.Models)) > 0
+	serviceWeights := len(e.Spec.MissingFor(BackendDotnet, l.Models)) > 0
 	out := map[string]BackendInfo{}
 
 	dn := BackendInfo{}
@@ -172,7 +173,7 @@ func (e *Engine) Backends(ctx context.Context) map[string]BackendInfo {
 		dn.Missing = append(dn.Missing, MissingService)
 		dn.Reason, dn.Detail = ReasonNoService, "dotnet is not installed: the "+e.Spec.Name+" service needs the .NET runtime"
 	}
-	if weights {
+	if serviceWeights {
 		dn.Missing = append(dn.Missing, MissingWeights)
 		dn.NeedBytes += e.Spec.Sizes.Weights
 		if dn.Reason == "" {
@@ -212,6 +213,6 @@ func (e *Engine) Backends(ctx context.Context) map[string]BackendInfo {
 	return out
 }
 
-// DockerProgram is the Docker command line program the container backend uses (docker, or MO_DOCKER), for the callers that run
+// DockerProgram is the Docker command line program the container backend uses (docker, or VERITMO_DOCKER), for the callers that run
 // `docker build` and the like themselves.
 func DockerProgram() string { return dockerProgram() }

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/runner"
 )
 
 // clip makes a 3 s test clip with ffmpeg from a filter graph.

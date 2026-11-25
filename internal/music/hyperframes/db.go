@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // BlockRow is a block as the database keeps it. Tags holds the tags between commas (",neon,city,") so that one tag is matched whole.

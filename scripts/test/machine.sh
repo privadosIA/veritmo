@@ -38,8 +38,8 @@ echo 2026.08.19'
 echo "Usage: realesrgan-ncnn-vulkan -i infile -o outfile"'; fake_repo_file bin/realesrgan/models/realesr-animevideov3-x2.bin 'x'
     fake_repo_file bin/rife/rife-ncnn-vulkan '#!/usr/bin/env bash
 echo "Usage: rife-ncnn-vulkan -0 infile0 -1 infile1 -o outfile"'; fake_repo_file bin/rife/rife-v4.6/flownet.bin 'x'
-    fake_repo_file bin/orchestrator '#!/usr/bin/env bash
-echo "Usage of orchestrator"'
+    fake_repo_file bin/veritmo '#!/usr/bin/env bash
+echo "Usage of veritmo"'
     fake_repo_file voices/v.onnx; fake_repo_file voices/v.onnx.json '{}'
     fake_repo_file models/m.safetensors
 }

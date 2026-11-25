@@ -119,10 +119,10 @@ The age check, the detection of refusals, the deletion of refused files and the 
 
 ### Requirement: The command line uses the same routing
 
-`orchestrator assist`, `describe` and `check` SHALL read the routing from the same settings and SHALL accept `--provider <id>` to use another provider for that run, with the same consent rule when it is remote: a remote provider without a stored acknowledgement SHALL make the command stop with a message that says to accept it in the Settings screen.
+`veritmo assist`, `describe` and `check` SHALL read the routing from the same settings and SHALL accept `--provider <id>` to use another provider for that run, with the same consent rule when it is remote: a remote provider without a stored acknowledgement SHALL make the command stop with a message that says to accept it in the Settings screen.
 
 #### Scenario: the terminal follows the routing
-- **WHEN** `assistant` is routed to a provider and `orchestrator assist` runs
+- **WHEN** `assistant` is routed to a provider and `veritmo assist` runs
 - **THEN** the command uses that provider
 
 #### Scenario: no consent in the terminal

@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/music/motionref"
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/music/motionref"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/server/api"
 )
 
 // checkReference refuses (422) a reference that is not in the library or not ready; "" is no reference. It changes nothing.

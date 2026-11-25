@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 // Verdicts of a scene.
@@ -130,7 +130,7 @@ type SceneReport struct {
 // CheckClip samples the clip at path, measures and (with vision) judges every
 // frame, and decides the verdict. vision may be nil.
 func CheckClip(ctx context.Context, r runner.CommandRunner, vision Vision, id, path string, o Options) (*SceneReport, error) {
-	dir, err := os.MkdirTemp("", "mo-quality-*")
+	dir, err := os.MkdirTemp("", "vt-quality-*")
 	if err != nil {
 		return nil, err
 	}

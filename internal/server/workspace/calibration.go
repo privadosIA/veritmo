@@ -10,16 +10,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"mediaOrquestator/internal/server/modelcat"
 	"path"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+	"veritmo/internal/server/modelcat"
 
 	"gorm.io/gorm"
 
-	"mediaOrquestator/internal/project/config"
+	"veritmo/internal/project/config"
 )
 
 // CalibrationSample is one comparison of a phase with its expected time.

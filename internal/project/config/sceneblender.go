@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/video/blender"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/video/blender"
 )
 
 // SceneBlender makes a scene rendered by Blender (Cycles) to a video as long as the scene, from one of two things in the
@@ -89,6 +89,11 @@ func ValidSceneSpecName(name string) bool {
 func ValidFontName(name string) bool {
 	ext := strings.ToLower(filepath.Ext(name))
 	return sourceNamePattern.MatchString(name) && (ext == ".ttf" || ext == ".otf")
+}
+
+// ValidModelName reports whether name can be a 3D model of the sources folder: a plain .glb (binary glTF) file name.
+func ValidModelName(name string) bool {
+	return sourceNamePattern.MatchString(name) && strings.EqualFold(filepath.Ext(name), ".glb")
 }
 
 // insideDir reports whether the file name, given as a plain name inside dir, is a regular reading that stays inside dir

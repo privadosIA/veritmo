@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/cache"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/project/pipeline"
+	"veritmo/internal/platform/cache"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/project/pipeline"
 )
 
 // Specs run-statistics ("The history gives the typical duration of a phase") and project-estimate.

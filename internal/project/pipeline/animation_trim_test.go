@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/cache"
+	"veritmo/internal/platform/cache"
 )
 
 func TestAnimationTrim_CutsThePartOfTheForwardAnimationWithoutMakingItAgain(t *testing.T) {

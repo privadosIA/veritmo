@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"mediaOrquestator/internal/music/songmap"
+	"veritmo/internal/music/songmap"
 )
 
 // Table renders a report as text: one table per song and the summary with the medians per way and the decision.

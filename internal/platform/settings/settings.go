@@ -1,7 +1,7 @@
 // Package settings is what the server and the commands keep as settings: the Ollama address, the model providers and the routing of the tasks, the
 // hosts of the music services, the monitoring tools, the CORS lists, the ctxpress connection and the database settings. The settings are read at every
 // use, so saving one needs no restart and a terminal and the server cannot disagree. Where they are kept is a Source: the database for the server and
-// for the commands that open it (UseSource, with package settingsdb) and the settings file (~/.config/mediaorquestator/settings.json) when none is
+// for the commands that open it (UseSource, with package settingsdb) and the settings file (~/.config/veritmo/settings.json) when none is
 // set, which is also where the database settings and the server name always are, because they are read before the database is open. Every secret is in
 // the private keys file (keys.go), never in a Source.
 package settings
@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"veritmo/internal/platform/legacyname"
 )
 
 // DefaultOllama is the address used when neither a setting nor OLLAMA_HOST says otherwise.
@@ -56,6 +57,9 @@ type File struct {
 	// container); an address in the fields above wins over both (see musicbackend.go).
 	HeartMulaBackend   string `json:"heartmula_backend,omitempty"`
 	DiffRhythm2Backend string `json:"diffrhythm2_backend,omitempty"`
+	// Model3DBackend says how TripoSR (the 3D generator) runs on this machine: "dotnet" (triposr-service, the default) or "docker" (the container of
+	// docker/model3d, the fallback). Stable Fast 3D has no .NET port and always runs in the container.
+	Model3DBackend string `json:"model3d_backend,omitempty"`
 	// Database is where the run history is kept (see internal/server/runs_database.go); the zero value is the SQLite file.
 	Database Database `json:"database,omitempty"`
 	// Monitoring are the addresses and keys of the tools the user runs beside this server (Grafana, Prometheus, Loki,
@@ -65,7 +69,7 @@ type File struct {
 	ServerName string `json:"server_name,omitempty"`
 	// CORSOrigins and CORSNetworks say which browser pages may call the API from another origin (see internal/server/core_cors.go and the
 	// cors-settings spec): exact origins, and CIDR ranges whose IP hosts are allowed on any port. They are changed on
-	// the machine only (the file, or `orchestrator cors`); no API endpoint reads or writes them.
+	// the machine only (the file, or `veritmo cors`); no API endpoint reads or writes them.
 	CORSOrigins  []string `json:"cors_origins,omitempty"`
 	CORSNetworks []string `json:"cors_networks,omitempty"`
 	// ReviewDrafts makes every part draft of music motion be graded by the vision model of the check task without asking
@@ -82,11 +86,11 @@ type RemoteSettings struct {
 }
 
 func (f File) empty() bool {
-	return f.OllamaHost == "" && f.Browser == "" && f.MotionModel == "" && f.HeartMulaHost == "" && f.HeartMulaToken == "" && f.DiffRhythm2Host == "" && f.DiffRhythm2Token == "" && f.HeartMulaBackend == "" && f.DiffRhythm2Backend == "" && f.Database == (Database{}) && f.ServerName == "" && len(f.CORSOrigins) == 0 && len(f.CORSNetworks) == 0 && !f.ReviewDrafts && f.Ctxpress == nil && len(f.Monitoring) == 0 && len(f.Providers) == 0 && len(f.Routing) == 0 && len(f.Consent) == 0 && (f.Remote == nil || f.Remote.MaxCalls == 0)
+	return f.OllamaHost == "" && f.Browser == "" && f.MotionModel == "" && f.HeartMulaHost == "" && f.HeartMulaToken == "" && f.DiffRhythm2Host == "" && f.DiffRhythm2Token == "" && f.HeartMulaBackend == "" && f.DiffRhythm2Backend == "" && f.Model3DBackend == "" && f.Database == (Database{}) && f.ServerName == "" && len(f.CORSOrigins) == 0 && len(f.CORSNetworks) == 0 && !f.ReviewDrafts && f.Ctxpress == nil && len(f.Monitoring) == 0 && len(f.Providers) == 0 && len(f.Routing) == 0 && len(f.Consent) == 0 && (f.Remote == nil || f.Remote.MaxCalls == 0)
 }
 
 // Dir is the server's config directory: $XDG_CONFIG_HOME or ~/.config, then
-// mediaorquestator (the one that holds the token).
+// veritmo (the one that holds the token).
 func Dir() string {
 	base := os.Getenv("XDG_CONFIG_HOME")
 	if base == "" {
@@ -96,7 +100,7 @@ func Dir() string {
 		}
 		base = filepath.Join(home, ".config")
 	}
-	return filepath.Join(base, "mediaorquestator")
+	return legacyname.Dir(base)
 }
 
 // Path is the settings file.

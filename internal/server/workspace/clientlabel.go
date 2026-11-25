@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/api"
 )
 
 // Client names that are not a dashboard's own.
@@ -23,6 +23,8 @@ const (
 	kindVideoRun   = "video"
 	KindEditRun    = "edit"
 	kindProjectRun = "project"
+	// kindModelsRun is the run of a 3D model generation.
+	kindModelsRun = "models3d"
 )
 
 // RunKindOf is the kind of the run of a project, read from its name.
@@ -32,6 +34,8 @@ func RunKindOf(project string) string {
 		return kindVideoRun
 	case strings.HasPrefix(project, EditPrefix), strings.HasPrefix(project, VideoPrefix):
 		return KindEditRun
+	case strings.HasPrefix(project, ModelGenPrefix):
+		return kindModelsRun
 	}
 	return kindProjectRun
 }

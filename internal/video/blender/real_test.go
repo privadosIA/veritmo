@@ -12,14 +12,14 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
-// Real Blender: skipped unless MO_REAL_BLENDER=1 (it needs Blender installed).
+// Real Blender: skipped unless VERITMO_REAL_BLENDER=1 (it needs Blender installed).
 func realBlender(t *testing.T) (Info, runner.CommandRunner) {
 	t.Helper()
-	if os.Getenv("MO_REAL_BLENDER") != "1" {
-		t.Skip("set MO_REAL_BLENDER=1 to run against the installed Blender")
+	if os.Getenv("VERITMO_REAL_BLENDER") != "1" {
+		t.Skip("set VERITMO_REAL_BLENDER=1 to run against the installed Blender")
 	}
 	if _, err := exec.LookPath("blender"); err != nil {
 		t.Skip("no blender")
@@ -328,7 +328,7 @@ func dumpTo(t *testing.T, to, dir string, frames []int, log []string) {
 // process is given (CUDA_VISIBLE_DEVICES), times it, joins the clip and leaves everything on the share for the owner.
 func TestRealBuiltExampleAtTheProjectsSize(t *testing.T) {
 	if os.Getenv("DUMP_VIDEOS_DIR") == "" {
-		t.Skip("set DUMP_VIDEOS_DIR (and MO_REAL_BLENDER=1) to measure the example at 1280x720 and keep the result")
+		t.Skip("set DUMP_VIDEOS_DIR (and VERITMO_REAL_BLENDER=1) to measure the example at 1280x720 and keep the result")
 	}
 	started := time.Now()
 	dir, res := buildExample(t, 1280, 720, 32)
@@ -374,13 +374,13 @@ func TestRealBuiltAwkwardTextIsKeptAsDataAndNothingRuns(t *testing.T) {
 	}
 	// the text in the kept .blend is exactly the one written
 	out, err := r.Run(context.Background(), info.Path, []string{"--factory-startup", "-b", "-noaudio", filepath.Join(dir, "a.blend"), "--disable-autoexec",
-		"--python-expr", "import bpy, json; print('MO_BODY ' + json.dumps(bpy.data.objects['t'].data.body))"})
+		"--python-expr", "import bpy, json; print('VERITMO_BODY ' + json.dumps(bpy.data.objects['t'].data.body))"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var got string
 	for _, line := range strings.Split(string(out), "\n") {
-		if v, ok := strings.CutPrefix(line, "MO_BODY "); ok {
+		if v, ok := strings.CutPrefix(line, "VERITMO_BODY "); ok {
 			json.Unmarshal([]byte(v), &got)
 		}
 	}

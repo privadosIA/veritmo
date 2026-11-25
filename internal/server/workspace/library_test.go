@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/music/audiomeasure"
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/export"
+	"veritmo/internal/music/audiomeasure"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/export"
 )
 
 // songProject writes a music project with a manifest listing the given songs (track, seed) and the audio of

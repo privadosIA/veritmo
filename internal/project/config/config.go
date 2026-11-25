@@ -21,10 +21,10 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/speech/tts"
-	"mediaOrquestator/internal/video/motion"
-	"mediaOrquestator/internal/video/videoedit"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/speech/tts"
+	"veritmo/internal/video/motion"
+	"veritmo/internal/video/videoedit"
 )
 
 // OutputMode is what a project makes (output.mode, and the --mode CLI override). It is written in the files and in the API as
@@ -71,6 +71,8 @@ type Config struct {
 	// Tracks lists the songs of a music-mode project; scenes and tracks are
 	// mutually exclusive by mode.
 	Tracks []Track `yaml:"tracks,omitempty" json:"tracks,omitempty"`
+	// Models lists the 3D models of a models3d-mode project; scenes, tracks and models are mutually exclusive by mode.
+	Models []ModelEntry `yaml:"models,omitempty" json:"models,omitempty"`
 	// Mixes lists the timelines of clips a music project renders into one
 	// file each, after its tracks.
 	Mixes []Mix `yaml:"mixes,omitempty" json:"mixes,omitempty"`
@@ -130,6 +132,8 @@ type Defaults struct {
 	Motion *MotionDefaults `yaml:"motion,omitempty" json:"motion,omitempty"`
 	// Music configures the music engine (music mode only).
 	Music *Music `yaml:"music,omitempty" json:"music,omitempty"`
+	// Models3D gives the engine and the detail of the models that do not say (models3d mode only).
+	Models3D *Models3DDefaults `yaml:"models3d,omitempty" json:"models3d,omitempty"`
 	// TransitionSeconds is the length of the crossfade between scenes (0 = hard cuts);
 	// a scene's own TransitionSeconds overrides it.
 	TransitionSeconds float64 `yaml:"transition_seconds,omitempty" json:"transition_seconds,omitempty"`
@@ -711,9 +715,9 @@ func ValidClipName(name string) bool {
 }
 
 // ValidSourceFile reports whether name can be stored in the sources folder:
-// audio (mp3, wav), a picture, a video, a .blend file, a scene description (.scene.json) or a font (.ttf, .otf).
+// audio (mp3, wav), a picture, a video, a .blend file, a scene description (.scene.json), a font (.ttf, .otf) or a 3D model (.glb).
 func ValidSourceFile(name string) bool {
-	return ValidSourceName(name) || ValidImageName(name) || ValidClipName(name) || ValidBlendName(name) || ValidSceneSpecName(name) || ValidFontName(name)
+	return ValidSourceName(name) || ValidImageName(name) || ValidClipName(name) || ValidBlendName(name) || ValidSceneSpecName(name) || ValidFontName(name) || ValidModelName(name)
 }
 
 // MotionType returns the scene's resolved motion type: static when the
@@ -1415,9 +1419,9 @@ func (c *Config) validate(statBase string) error {
 	if c.Output.Mode == "" {
 		c.Output.Mode = ModeVideo
 	}
-	modeValid := c.Output.Mode == ModeVideo || c.Output.Mode == ModeImages || c.Output.Mode == ModeMusic || c.Output.Mode == ModeVideoEdit
+	modeValid := c.Output.Mode == ModeVideo || c.Output.Mode == ModeImages || c.Output.Mode == ModeMusic || c.Output.Mode == ModeVideoEdit || c.Output.Mode == ModeModels3D
 	if !modeValid {
-		errs = append(errs, fmt.Errorf("config: output.mode %q is invalid: must be %q, %q, %q or %q", c.Output.Mode, ModeVideo, ModeImages, ModeMusic, ModeVideoEdit))
+		errs = append(errs, fmt.Errorf("config: output.mode %q is invalid: must be %q, %q, %q, %q or %q", c.Output.Mode, ModeVideo, ModeImages, ModeMusic, ModeVideoEdit, ModeModels3D))
 	}
 	if c.VideoEdit != nil && c.Output.Mode != ModeVideoEdit {
 		errs = append(errs, fmt.Errorf("config: video_edit is only valid with output.mode %q (mode is %q)", ModeVideoEdit, c.Output.Mode))
@@ -1634,11 +1638,19 @@ func (c *Config) validate(statBase string) error {
 	if c.Output.Mode != ModeMusic && len(c.Tracks) > 0 {
 		errs = append(errs, fmt.Errorf("config: tracks is only valid with output.mode %q (mode is %q)", ModeMusic, c.Output.Mode))
 	}
+	if c.Output.Mode != ModeModels3D && len(c.Models) > 0 {
+		errs = append(errs, fmt.Errorf("config: models is only valid with output.mode %q (mode is %q)", ModeModels3D, c.Output.Mode))
+	}
+	if c.Output.Mode != ModeModels3D && c.Defaults.Models3D != nil {
+		errs = append(errs, fmt.Errorf("config: defaults.models3d is only valid with output.mode %q (mode is %q)", ModeModels3D, c.Output.Mode))
+	}
 	if c.Output.Mode != ModeMusic && len(c.Mixes) > 0 {
 		errs = append(errs, fmt.Errorf("config: mixes is only valid with output.mode %q (mode is %q)", ModeMusic, c.Output.Mode))
 	}
 
 	switch c.Output.Mode {
+	case ModeModels3D:
+		errs = append(errs, c.validateModels3D(statPath)...)
 	case ModeVideoEdit:
 		errs = append(errs, c.validateVideoEdit(statPath)...)
 	case ModeMusic:

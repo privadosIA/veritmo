@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/sched"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/sched"
 )
 
 // fakeOllama answers the four endpoints the assistant uses and records what
@@ -444,13 +444,13 @@ func TestRun_TagsTaskAsksForShortStyleTags(t *testing.T) {
 // Every task that has a prompt of its own is in the table, with a system prompt and a limit: the tasks were registered by
 // init functions before, and a lost one would only show when somebody asked for it.
 func TestTasks_TheTableHasEveryTaskThatWritesWithAPrompt(t *testing.T) {
-	for _, task := range []Task{TaskImage, TaskTags, TaskMotion, TaskListen, TaskImprove, TaskKind, TaskEdit} {
+	for _, task := range []Task{TaskImage, TaskTags, TaskMotion, TaskListen, TaskImprove, TaskKind, TaskEdit, TaskModel3D} {
 		spec, ok := tasks[task]
 		if !ok || spec.system == "" || spec.user == nil || spec.maxTokens <= 0 {
 			t.Errorf("the task %q is not in the table or is incomplete: %+v", task, spec)
 		}
 	}
-	if len(tasks) != 7 {
-		t.Errorf("the table has %d tasks, want 7", len(tasks))
+	if len(tasks) != 8 {
+		t.Errorf("the table has %d tasks, want 8", len(tasks))
 	}
 }

@@ -11,11 +11,11 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/edition"
-	"mediaOrquestator/internal/platform/events"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/server/generation"
-	"mediaOrquestator/internal/server/workspace"
+	"veritmo/internal/platform/edition"
+	"veritmo/internal/platform/events"
+	"veritmo/internal/project/config"
+	"veritmo/internal/server/generation"
+	"veritmo/internal/server/workspace"
 )
 
 func TestImageEdits_ATokenIsNeeded(t *testing.T) {
@@ -63,7 +63,7 @@ func TestGenerationOptions_AskForTheTokenAndListTheOptions(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Video) != 11 || len(got.ImageModels) == 0 || len(got.AspectRatios) == 0 || len(got.Qualities) != 3 {
+	if len(got.Video) != 12 || len(got.ImageModels) == 0 || len(got.AspectRatios) == 0 || len(got.Qualities) != 3 {
 		t.Errorf("options = %+v", got)
 	}
 	if !got.Video[0].Default || !got.ImageModels[0].Default {

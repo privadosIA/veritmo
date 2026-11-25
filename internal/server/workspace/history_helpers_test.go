@@ -1,8 +1,8 @@
 package workspace
 
 import (
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/platform/store"
 )
 
 // openHistory opens (creating if needed) the SQLite history at path, migrated: what a test needs of a server's database.

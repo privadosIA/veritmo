@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 
-	"mediaOrquestator/internal/video/videovision"
+	"veritmo/internal/video/videovision"
 )
 
 // What motion control makes: a clip of 33 frames at 16 per second (about 2 seconds), the length VACE 1.3B was measured at.

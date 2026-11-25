@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/music/musicmotion"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/music/musicmotion"
+	"veritmo/internal/platform/settings"
 )
 
 // visionSeam is a vision model that answers every request with the next of its answers.

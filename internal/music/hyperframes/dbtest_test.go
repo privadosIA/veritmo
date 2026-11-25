@@ -3,7 +3,7 @@ package hyperframes
 import (
 	"testing"
 
-	"mediaOrquestator/internal/platform/store"
+	"veritmo/internal/platform/store"
 )
 
 // eachStore runs a test twice: on a store that keeps the record of a block in its block.json and on one that keeps it in the database, so that

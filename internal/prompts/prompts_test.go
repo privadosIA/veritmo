@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	pstore "mediaOrquestator/internal/platform/store"
+	pstore "veritmo/internal/platform/store"
 )
 
 // memory is a store of presets on a database in memory, with the importer reading dir.
@@ -248,8 +248,8 @@ func TestStoreDir(t *testing.T) {
 	t.Setenv("MEDIA_DIR", "")
 	cfg := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", cfg)
-	_ = os.MkdirAll(filepath.Join(cfg, "mediaorquestator"), 0o755)
-	_ = os.WriteFile(filepath.Join(cfg, "mediaorquestator", "media-dir"), []byte("/saved\nrest"), 0o644)
+	_ = os.MkdirAll(filepath.Join(cfg, "veritmo"), 0o755)
+	_ = os.WriteFile(filepath.Join(cfg, "veritmo", "media-dir"), []byte("/saved\nrest"), 0o644)
 	if got := StoreDir("", "projects"); got != "/saved/prompts" {
 		t.Error(got)
 	}

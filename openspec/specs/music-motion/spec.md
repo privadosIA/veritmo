@@ -578,3 +578,103 @@ A proposal or a scene batch of a piece that was being written when the server st
 
 - **WHEN** the server is stopped while a scene batch runs and started again
 - **THEN** the first read of the piece shows the batch as interrupted
+
+### Requirement: A piece of the script can be a 3D scene
+
+A piece of the script SHALL be either made from a part of the catalog (`part`) or a 3D scene (`blender: {description}`, where `description` is the JSON of a scene of the contract of `blender-engine`), never both and never neither. A 3D piece SHALL have no `params`, `animate`, `with`, `design`, `mode`, `lines`, `hit` or `stage`, and a script that gives any of them to a 3D piece SHALL be refused naming the piece and the field. The description SHALL be checked as a hand-written one against the piece's length, with the song's tempo (a key in beats is valid), the design of the song for its colours and fonts, and no font files; saving a script (`PUT .../script`) and rendering SHALL refuse a piece whose description does not pass with `422` naming the piece and each fault by its place in the JSON, and reading the script SHALL return the description of every 3D piece. The script SHALL still cover the whole song with no gap or overlap, and a 3D piece SHALL count in it like any other.
+
+#### Scenario: A script with a 3D chorus
+- **WHEN** the script has pieces made from parts and, for the chorus, `{id: "c1", start: 30, end: 42, blender: {description: {...}}}` with a description that passes
+- **THEN** the script is saved and `GET` of the piece returns the 3D piece as it was sent
+
+#### Scenario: A part and a scene at once
+- **WHEN** a piece has `part` and `blender`, or has `blender` and `lines`
+- **THEN** the script is refused with `422` naming the piece and what cannot go together, and the stored script is as it was
+
+#### Scenario: A beat in the description
+- **WHEN** a description has a key at `beat: 8` and the song is 120 bpm
+- **THEN** it is valid for a piece of 4 seconds or more, and a key beyond the piece's length is refused naming its place
+
+### Requirement: A 3D piece is drawn by Blender in the piece's project
+
+Rendering a piece SHALL write each 3D piece as a scene `blender: {build: <id>.scene.json}` of the project of the piece, with the description stored in the project's `sources/`, a length of the piece's (plus the fade into the next piece, as for any scene), the song's tempo in `defaults.motion.bpm` and the design of the song in `defaults.motion.design`; the crossfade between pieces and the song as the soundtrack SHALL be as for the other pieces. A render that has 3D pieces SHALL be refused with `503` and the way to install Blender when Blender is not usable, and one with only 3D pieces SHALL NOT need the browser. The estimate of the render SHALL count a 3D piece by its length and the frame, not by the parts it has.
+
+#### Scenario: A mixed piece renders
+- **WHEN** a piece of 60 s has 4 pieces from parts and one 3D piece of 12 s and Blender is installed
+- **THEN** the render starts and its project has five scenes, one of them `blender: {build}`, with the description in `sources/` and the tempo of the song in the project's defaults
+
+#### Scenario: No Blender
+- **WHEN** the render is asked and Blender is not installed
+- **THEN** it answers `503` saying how to install it, and no run starts
+
+### Requirement: A 3D piece can be seen without rendering
+
+`POST /api/music-motion/pieces/{id}/preview` SHALL list a 3D piece with `blender: true` and no page, and `GET /api/music-motion/pieces/{id}/frame?t=` with `t` inside a 3D piece SHALL answer a PNG of that frame drawn by Blender on the CPU (the frame of the preview of a description), `503` without Blender. The review of a piece by the vision model SHALL leave a 3D piece out and say so in its answer.
+
+#### Scenario: A frame of a 3D piece
+- **WHEN** the frame is asked at a second inside a 3D piece
+- **THEN** it answers a PNG at the piece's frame, drawn at the piece's own second, and stores nothing
+
+### Requirement: The catalog announces the 3D pieces apart from the datasets
+
+`GET /api/music-motion/catalog` SHALL list `blender-motion` in `features` when the script accepts 3D pieces. It SHALL be a different entry from `blender`, which announces the 3D scenes of the datasets.
+
+#### Scenario: A server with both
+- **WHEN** the catalog is read
+- **THEN** `features` has `blender` and `blender-motion`
+
+### Requirement: A piece keeps 3D models
+
+A piece SHALL keep the 3D models its 3D pieces can place, in the `sources/` of the piece's project. `PUT /api/music-motion/pieces/{id}/models/{name}` with a raw body SHALL store a binary glTF (`name` a plain name ending in `.glb`, up to 32 MiB) after reading it as `blender-engine` reads a model, answering `400` with the reason and storing nothing for a file that is not a usable model, and SHALL store a picture (`.png`, `.jpg`, `.jpeg` or `.webp`, a plain name, up to 32 MiB) as it is: it is what a model's textures are, found by name. It SHALL never replace a file of that name (`409`), and a piece with a render queued or running SHALL refuse it with `409`. `GET /api/music-motion/pieces/{id}/models` SHALL list `{models: [{name, kind, size, clips?, triangles?, needs?}]}` with `kind` `model` or `picture`, and for a model its `clips`, `triangles` and `needs` as the sources list of a project does. `DELETE /api/music-motion/pieces/{id}/models/{name}` SHALL remove a file, `404` when it is not there, and `409` naming the piece when the saved script has a 3D piece whose description names it (as `file` of a model, or as a picture that a model of the script needs). An unknown piece SHALL be `404` and the routes SHALL follow the content gate of the piece.
+
+#### Scenario: Upload a character and its texture
+- **WHEN** `character-female-a.glb` and then `colormap.png` are uploaded to a piece
+- **THEN** both answer `201` and `GET …/models` lists the character with `kind: "model"`, its clips (`idle`, `sprint`, `walk`, …), its triangles and `needs: ["colormap.png"]`, and the picture with `kind: "picture"`
+
+#### Scenario: Not a model
+- **WHEN** a text file named `x.glb` is uploaded
+- **THEN** it is refused with `400` saying it is not a usable model and nothing is stored
+
+#### Scenario: A model that the script uses
+- **WHEN** a 3D piece of the saved script places `character-female-a.glb` and its deletion is asked
+- **THEN** it is refused with `409` naming that piece and the file is still there
+
+#### Scenario: A render in progress
+- **WHEN** a run of the piece is queued or active and a model is uploaded
+- **THEN** it is refused with `409`
+
+### Requirement: A 3D piece can place the models of its piece
+
+The description of a 3D piece SHALL be checked with the models of its piece: an object of type `model` SHALL be accepted when its `file` is a model of the piece, every picture that file needs is a picture of the piece and its `animation.clip` is one of the file's clips, and SHALL be refused, naming its place in the JSON (`pieces[2].blender.objects[0].file`), with the same reasons and limits as in a project (`blender-engine`: a file that is not there, a picture that is missing, a clip the file does not have, more than 16 models, a file that is too heavy). A font file SHALL still be refused: a piece has no fonts of its own, it takes the design's. Saving a script (`PUT …/script`), the writer, the preview and the render SHALL all check it this way, and the render SHALL import the models from the piece's project, so a model placed in a 3D piece plays its clip for the length of the piece, moves with its keys (in seconds, or in beats counted from the start of the piece) and is hashed in the cache by its content like any model. A script that places a model the piece does not have SHALL be refused with `422` naming the piece and the file.
+
+#### Scenario: A character runs in the chorus
+- **WHEN** the piece has `character-female-a.glb` and `colormap.png`, and the chorus is a 3D piece with a `model` object that plays `sprint` and crosses the scene with two keys
+- **THEN** the script is saved, the preview of the chorus shows the character in the pose its clip has at that second, and the render plays it for the whole length of the piece, on the song's tempo and design, with the song as the soundtrack
+
+#### Scenario: A model the piece does not have
+- **WHEN** a 3D piece names `skater.glb` and the piece has no such model
+- **THEN** the script is refused with `422` naming the piece, `objects[0].file` and the file
+
+#### Scenario: A clip the file does not have
+- **WHEN** a 3D piece plays `run` and the file has `idle`, `sprint` and `walk`
+- **THEN** the script is refused with `422` naming the place and listing the clips the file has
+
+#### Scenario: A font file
+- **WHEN** a 3D piece's text names a `.ttf` file as its `font`
+- **THEN** it is refused as before: a piece has no font files
+
+### Requirement: The catalog announces the models of pieces
+
+`GET /api/music-motion/catalog` SHALL list `blender-models` in `features` when a piece can keep models and its 3D pieces can place them. It SHALL be a different entry from `blender-motion` (a 3D piece at all) and from `blender` (the 3D scenes of the datasets), so that a dashboard can tell a server that places models in pieces from one that draws only primitives.
+
+#### Scenario: A server with models in pieces
+- **WHEN** the catalog is read
+- **THEN** `features` has `blender-motion` and `blender-models`
+
+### Requirement: A library model can be added to a piece
+
+`POST /api/music-motion/pieces/{id}/models` with `{from, name?}` SHALL copy a model of the library into the piece's models exactly as `POST /api/projects/{id}/sources/model` does for a project (the `.glb`, its pictures renamed `<pack>--<name>` with the addresses inside rewritten, reuse of what is already there, `409` for another file of the same name, `404` for an unknown model, `409` while a render of the piece is queued or running) and answer `201 {name, pictures}`. The copy SHALL appear in `GET /api/music-motion/pieces/{id}/models` and SHALL be placeable by the 3D pieces of the script like any model of the piece.
+
+#### Scenario: A character from the library in a chorus
+- **WHEN** a library character is added to a piece and a 3D piece of the script places it
+- **THEN** the script is saved, previewed and rendered as for a model that was uploaded

@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"mediaOrquestator/internal/assistant/llm"
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/assistant/llm"
+	"veritmo/internal/platform/settings"
 )
 
 const (
@@ -96,7 +96,7 @@ func (c *Client) Prepare(ctx context.Context, req llm.Request) llm.Request {
 	if !cfg.Enabled || len(req.User) < cfg.MinChars {
 		return req
 	}
-	if out, ok := c.compress(ctx, cfg, request{Text: req.User, Kind: "prose", Preserve: []string{fenced}, Context: map[string]string{"client": "mediaorquestator", "tool": "compress_text"}}); ok {
+	if out, ok := c.compress(ctx, cfg, request{Text: req.User, Kind: "prose", Preserve: []string{fenced}, Context: map[string]string{"client": "veritmo", "tool": "compress_text"}}); ok {
 		req.User = out
 	}
 	return req
@@ -113,7 +113,7 @@ func (c *Client) CompressHTML(ctx context.Context, text, kind string) string {
 	if !cfg.Enabled {
 		return text
 	}
-	if out, ok := c.compress(ctx, cfg, request{Text: text, Kind: kind, Profile: AnimationProfile, Context: map[string]string{"client": "mediaorquestator", "tool": "compress_text"}}); ok {
+	if out, ok := c.compress(ctx, cfg, request{Text: text, Kind: kind, Profile: AnimationProfile, Context: map[string]string{"client": "veritmo", "tool": "compress_text"}}); ok {
 		return out
 	}
 	return text

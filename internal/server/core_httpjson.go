@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"mediaOrquestator/internal/server/api"
+	"veritmo/internal/server/api"
 )
 
 // jsonErrorWriter rewrites plain-text 404/405 responses produced below the

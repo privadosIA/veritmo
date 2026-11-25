@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"math"
 
-	"mediaOrquestator/internal/music/videoclip"
+	"veritmo/internal/music/videoclip"
 )
 
 // WordMove moves the word at Index of Map.Words to start at Start (song seconds). End, when not nil, is where it ends; without

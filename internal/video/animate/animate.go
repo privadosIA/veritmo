@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"mediaOrquestator/internal/platform/runner"
-	"mediaOrquestator/internal/project/config"
-	"mediaOrquestator/internal/video/render"
-	"mediaOrquestator/internal/video/sdlog"
+	"veritmo/internal/platform/runner"
+	"veritmo/internal/project/config"
+	"veritmo/internal/video/render"
+	"veritmo/internal/video/sdlog"
 )
 
 // SDMode is sd's video-generation run mode.

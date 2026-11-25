@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"mediaOrquestator/internal/platform/settings"
+	"veritmo/internal/platform/settings"
 )
 
 func TestDatabase_DefaultsToSQLiteAndNeverShowsThePassword(t *testing.T) {
@@ -22,7 +22,7 @@ func TestDatabase_DefaultsToSQLiteAndNeverShowsThePassword(t *testing.T) {
 	}
 
 	rec = doJSON(t, h, http.MethodPut, "/api/settings/database", map[string]any{
-		"driver": "mysql", "host": "db.lan", "name": "mediaorquestator", "user": "mo", "password": "s3cret", "server_name": "estudio",
+		"driver": "mysql", "host": "db.lan", "name": "veritmo", "user": "mo", "password": "s3cret", "server_name": "estudio",
 	})
 	if rec.Code != http.StatusOK || strings.Contains(rec.Body.String(), "s3cret") {
 		t.Fatalf("%d %s", rec.Code, rec.Body)
@@ -33,11 +33,11 @@ func TestDatabase_DefaultsToSQLiteAndNeverShowsThePassword(t *testing.T) {
 	}
 
 	// Saving again without the password keeps it; another host does not.
-	doJSON(t, h, http.MethodPut, "/api/settings/database", map[string]any{"driver": "mysql", "host": "db.lan", "name": "mediaorquestator", "user": "mo"})
+	doJSON(t, h, http.MethodPut, "/api/settings/database", map[string]any{"driver": "mysql", "host": "db.lan", "name": "veritmo", "user": "mo"})
 	if got := settings.GetDatabase(); got.Password != "s3cret" {
 		t.Errorf("the password is kept for the same server: %+v", got)
 	}
-	doJSON(t, h, http.MethodPut, "/api/settings/database", map[string]any{"driver": "mysql", "host": "otra.lan", "name": "mediaorquestator", "user": "mo"})
+	doJSON(t, h, http.MethodPut, "/api/settings/database", map[string]any{"driver": "mysql", "host": "otra.lan", "name": "veritmo", "user": "mo"})
 	if got := settings.GetDatabase(); got.Password != "" {
 		t.Errorf("another host does not inherit the password: %+v", got)
 	}
@@ -86,7 +86,7 @@ func TestDatabase_ATestOfAServerNobodyAnswersOnIsANormalAnswer(t *testing.T) {
 }
 
 func TestDatabase_TestsAndCopiesToMySQL(t *testing.T) {
-	d := remoteDB(t, settings.DBMySQL, "MO_TEST_MYSQL")
+	d := remoteDB(t, settings.DBMySQL, "VERITMO_TEST_MYSQL")
 	isolateSettings(t)
 	s, _ := newProjectsServer(t)
 	s.cfg.ServerName = "estudio"
@@ -149,11 +149,11 @@ func TestDatabase_TestsAndCopiesToMySQL(t *testing.T) {
 
 func TestDatabase_TheEnvironmentIsTheDefaultAndTheAnswerSaysSo(t *testing.T) {
 	isolateSettings(t)
-	t.Setenv("MO_DB_DRIVER", "mysql")
-	t.Setenv("MO_DB_HOST", "db.internal")
-	t.Setenv("MO_DB_NAME", "mediaorquestator")
-	t.Setenv("MO_DB_USER", "mo")
-	t.Setenv("MO_DB_PASSWORD", "secret-from-env")
+	t.Setenv("VERITMO_DB_DRIVER", "mysql")
+	t.Setenv("VERITMO_DB_HOST", "db.internal")
+	t.Setenv("VERITMO_DB_NAME", "veritmo")
+	t.Setenv("VERITMO_DB_USER", "mo")
+	t.Setenv("VERITMO_DB_PASSWORD", "secret-from-env")
 	s, _ := newProjectsServer(t)
 	h := s.Handler()
 	var a DatabaseAnswer
@@ -165,7 +165,7 @@ func TestDatabase_TheEnvironmentIsTheDefaultAndTheAnswerSaysSo(t *testing.T) {
 		t.Fatal("the password of the environment is in the answer")
 	}
 	// saving a database makes the file the source, and the environment's password is not carried into it
-	rec = doJSON(t, h, http.MethodPut, "/api/settings/database", map[string]any{"driver": "mysql", "host": "db.internal", "name": "mediaorquestator", "user": "mo"})
+	rec = doJSON(t, h, http.MethodPut, "/api/settings/database", map[string]any{"driver": "mysql", "host": "db.internal", "name": "veritmo", "user": "mo"})
 	_ = json.Unmarshal(rec.Body.Bytes(), &a)
 	if rec.Code != http.StatusOK || a.Source != "setting" || a.Saved.PasswordSet {
 		t.Fatalf("%d %+v", rec.Code, a)

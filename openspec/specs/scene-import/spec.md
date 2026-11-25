@@ -7,7 +7,7 @@ Converts external scene datasets — a JSON array of `[id, title, lora_info, ful
 
 ### Requirement: The import subcommand converts a dataset without running the pipeline
 
-The CLI SHALL accept `orchestrator import <input> -o <output>` as a subcommand. It SHALL read the dataset at `<input>`, write a `scenes.yaml` to `<output>`, print a mapping report to stdout, and exit. It SHALL NOT invoke `piper`, `sd`, `ffmpeg`, or `ffprobe`, and SHALL NOT read or write `tmp/`, `out/`, or any cache manifest.
+The CLI SHALL accept `veritmo import <input> -o <output>` as a subcommand. It SHALL read the dataset at `<input>`, write a `scenes.yaml` to `<output>`, print a mapping report to stdout, and exit. It SHALL NOT invoke `piper`, `sd`, `ffmpeg`, or `ffprobe`, and SHALL NOT read or write `tmp/`, `out/`, or any cache manifest.
 
 Flags:
 
@@ -21,7 +21,7 @@ Invoking `orchestrator` without the `import` subcommand SHALL behave exactly as 
 
 #### Scenario: import never launches pipeline binaries
 
-- **WHEN** `orchestrator import testdata/demo_prompts.html -o /tmp/scenes.yaml` runs
+- **WHEN** `veritmo import testdata/demo_prompts.html -o /tmp/scenes.yaml` runs
 - **THEN** no `piper`, `sd`, `ffmpeg`, or `ffprobe` subprocess is spawned
 - **AND** the process exits 0 with the YAML written and the report on stdout
 
@@ -33,7 +33,7 @@ Invoking `orchestrator` without the `import` subcommand SHALL behave exactly as 
 
 #### Scenario: pipeline invocation is unaffected by the subcommand's existence
 
-- **WHEN** `orchestrator --json scenes.yaml` runs (no `import` argument)
+- **WHEN** `veritmo --json scenes.yaml` runs (no `import` argument)
 - **THEN** the pipeline behaves exactly as before this change
 
 ### Requirement: JSON and HTML inputs yield identical results for equivalent data
@@ -164,7 +164,7 @@ An entry SHALL be rejected, with its reason, and the others imported, when its s
 
 ### Requirement: The command line imports music
 
-`orchestrator import --mode music <input> -o <scenes.yaml>` SHALL run the music mode and print the same per-entry report, ending with a summary of tracks imported, instrumental and rejected. Without `--mode` the importer SHALL behave exactly as before.
+`veritmo import --mode music <input> -o <scenes.yaml>` SHALL run the music mode and print the same per-entry report, ending with a summary of tracks imported, instrumental and rejected. Without `--mode` the importer SHALL behave exactly as before.
 
 #### Scenario: Music import from the command line
 - **WHEN** the user runs the command with `--mode music`
@@ -252,7 +252,7 @@ In the scene dataset (video and images), a line `Graphic: <text>` SHALL make the
 
 ### Requirement: The command line imports animated graphics
 
-`orchestrator import --mode motion <input> -o <scenes.yaml>` SHALL run the motion mode and print the same per-entry report, ending with a summary of graphics imported and rejected. `--mode` SHALL accept `video`, `music` and `motion`; any other value SHALL be an error naming them.
+`veritmo import --mode motion <input> -o <scenes.yaml>` SHALL run the motion mode and print the same per-entry report, ending with a summary of graphics imported and rejected. `--mode` SHALL accept `video`, `music` and `motion`; any other value SHALL be an error naming them.
 
 #### Scenario: Motion import from the command line
 - **WHEN** the user runs the command with `--mode motion`
@@ -285,3 +285,35 @@ Exporting the scenes of a project in the animated-graphics format SHALL write `P
 #### Scenario: A round trip
 - **WHEN** a project with scenes made from parts is exported and imported again
 - **THEN** the scenes have the same part, parameters, text and tempo
+
+### Requirement: A scene entry may name a 3D scene
+
+In video mode and in the animated-graphics mode a line `Blender: <name>.scene.json` in the `full_prompt` of an entry SHALL make the scene a 3D scene: it gets `blender: {build: <name>}`, with `name` a plain file name ending in `.scene.json`. The line SHALL be one of the settings of an entry (at most one per entry). The text of the entry that is not a setting SHALL be kept as the scene's prompt when there is one, and an entry with a `Blender:` line and no other text SHALL be valid. The keys the configuration refuses beside `blender` (`Motion:` and, in the animated-graphics mode, `Part:` and `Graphic:`; own pictures and clips do not come through a dataset) SHALL not be applied and the report of the entry SHALL say which were discarded. A name that is not a plain `.scene.json` file name, a second `Blender:` line or an empty one SHALL reject the entry with the reason. In the animated-graphics mode the length of the scene is the entry's `Duration:` (or the default silence), `Part:`, `Graphic:` and the text before the markers are discarded with a report line, and an entry with only a `Blender:` line is valid. The music mode SHALL leave the line as it was.
+
+#### Scenario: A 3D scene in a storyboard
+- **WHEN** an entry has `Dialogue: "Hola"` and `Blender: hola.scene.json`
+- **THEN** the scene has `tts_text: Hola` and `blender: {build: hola.scene.json}`, and the report says `blender.build ← hola.scene.json`
+
+#### Scenario: A line that is not a file name
+- **WHEN** the line is `Blender: ../x.scene.json` or `Blender: x.blend`
+- **THEN** the entry is rejected with a reason naming the line, and the others are imported
+
+#### Scenario: What cannot go beside it
+- **WHEN** the entry also has `Motion: slow zoom`
+- **THEN** `animate` is not applied and the report lists the discarded `Motion` line
+
+#### Scenario: A 3D graphic in a graphics dataset
+- **WHEN** an entry of the animated-graphics mode has `Duration: 6` and `Blender: logo.scene.json`
+- **THEN** the scene is `blender: {build: logo.scene.json}` of 6 seconds and the report says what was discarded
+
+### Requirement: The export writes the 3D scenes back
+
+Exporting a project in the dataset format SHALL write `Blender: <name>` for every scene with `blender.build`, with the scene's dialogue or silence and the other settings it already writes, so that importing the export with its description files gives the same scenes. A scene with `blender.file` (a `.blend`) SHALL not be written as a scene and `X-Export-Notes` SHALL say that the scene was left out because the dataset cannot carry it. `X-Export-Notes` SHALL also say, once, that the dataset keeps the line and not the description file, naming the files, which travel in the zip of the project.
+
+#### Scenario: A round trip with the package
+- **WHEN** a project with two 3D scenes is exported as a dataset and as a zip, and the dataset is imported with the descriptions found in the zip's `sources/`
+- **THEN** the new project has the same two scenes with the same `blender.build`
+
+#### Scenario: A scene from a .blend file
+- **WHEN** a scene has `blender.file: set.blend`
+- **THEN** the dataset has no entry for it and `X-Export-Notes` says why

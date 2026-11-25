@@ -12,8 +12,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"mediaOrquestator/internal/platform/settings"
-	"mediaOrquestator/internal/server/assistant"
+	"veritmo/internal/platform/settings"
+	"veritmo/internal/server/assistant"
 )
 
 const secretKey = "sk-test-DO-NOT-LEAK-123456"
@@ -147,7 +147,7 @@ func TestProviders_KeyOnlyInKeysFile(t *testing.T) {
 	doJSON(t, s.Handler(), http.MethodPost, "/api/providers", map[string]any{
 		"name": "A", "type": "openai", "base_url": "https://api.example.com/v1", "key": secretKey,
 	})
-	cfg := filepath.Join(dir, "mediaorquestator")
+	cfg := filepath.Join(dir, "veritmo")
 	keys, err := os.ReadFile(filepath.Join(cfg, "keys.json"))
 	if err != nil || !strings.Contains(string(keys), secretKey) {
 		t.Fatalf("the key must be in keys.json: %v %s", err, keys)
@@ -369,7 +369,7 @@ func databaseSettingsServer(t *testing.T, legacy string, keys map[string]string)
 	t.Helper()
 	dir := isolateSettings(t)
 	t.Setenv("HOME", dir)
-	cfgDir := filepath.Join(dir, "mediaorquestator")
+	cfgDir := filepath.Join(dir, "veritmo")
 	if err := os.MkdirAll(cfgDir, 0o700); err != nil {
 		t.Fatal(err)
 	}

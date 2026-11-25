@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"mediaOrquestator/internal/platform/runner"
+	"veritmo/internal/platform/runner"
 )
 
 func putSource(t *testing.T, s *testServer, project, name string, body []byte) *httptest.ResponseRecorder {

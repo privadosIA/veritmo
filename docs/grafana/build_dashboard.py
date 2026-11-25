@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generates the two Grafana dashboards. Edit it here and regenerate:
-  python3 docs/grafana/build_dashboard.py history > docs/grafana/mediaorquestator-dashboard.json   (MySQL data source)
-  python3 docs/grafana/build_dashboard.py machine > docs/grafana/mediaorquestator-machine.json     (Prometheus data source)"""
+  python3 docs/grafana/build_dashboard.py history > docs/grafana/veritmo-dashboard.json   (MySQL data source)
+  python3 docs/grafana/build_dashboard.py machine > docs/grafana/veritmo-machine.json     (Prometheus data source)"""
 import json
 import sys
 
@@ -68,9 +68,9 @@ panels.append(panel(11, "Latest failures", "table", 0, 29, 24, 8,
     "table"))
 
 dash = {
-    "__inputs": [{"name": "DS_MYSQL", "label": "mediaOrquestator MySQL", "description": "A user with SELECT on runs, run_samples and calibration_samples", "type": "datasource", "pluginId": "mysql", "pluginName": "MySQL"}],
+    "__inputs": [{"name": "DS_MYSQL", "label": "Veritmo MySQL", "description": "A user with SELECT on runs, run_samples and calibration_samples", "type": "datasource", "pluginId": "mysql", "pluginName": "MySQL"}],
     "__requires": [{"type": "datasource", "id": "mysql", "name": "MySQL", "version": "1.0.0"}],
-    "title": "mediaOrquestator", "uid": "mediaorquestator-history", "tags": ["mediaorquestator"],
+    "title": "Veritmo", "uid": "veritmo-history", "tags": ["veritmo"],
     "schemaVersion": 39, "version": 1, "editable": True, "timezone": "browser",
     "time": {"from": "now-30d", "to": "now"}, "refresh": "",
     "templating": {"list": [{
@@ -101,56 +101,56 @@ def pp(pid, title, kind, x, y, w, h, targets, desc="", defaults=None, options=No
             "datasource": PDS, "targets": targets, "fieldConfig": {"defaults": defaults or {}, "overrides": overrides or []}, "options": options or {}}
 
 
-# Each series carries the labels Prometheus adds (job, instance); `server` comes from mediaorquestator_info, joined by instance.
+# Each series carries the labels Prometheus adds (job, instance); `server` comes from veritmo_info, joined by instance.
 def with_server(metric):
-    return f'{metric} * on(instance) group_left(server) max by (instance, server) (mediaorquestator_info{{server=~"$server"}})'
+    return f'{metric} * on(instance) group_left(server) max by (instance, server) (veritmo_info{{server=~"$server"}})'
 
 
 def machine():
     ps = []
-    ps.append(pp(1, "Server", "stat", 0, 0, 4, 4, [pq('count(mediaorquestator_info{server=~"$server"})', instant=True)],
+    ps.append(pp(1, "Server", "stat", 0, 0, 4, 4, [pq('count(veritmo_info{server=~"$server"})', instant=True)],
         desc="Servers Prometheus sees right now."))
-    ps.append(pp(2, "Runs in progress", "stat", 4, 0, 4, 4, [pq(with_server('sum by (instance) (mediaorquestator_runs{state=~"running|queued"})'), instant=True)],
+    ps.append(pp(2, "Runs in progress", "stat", 4, 0, 4, 4, [pq(with_server('sum by (instance) (veritmo_runs{state=~"running|queued"})'), instant=True)],
         defaults={"decimals": 0}))
-    ps.append(pp(3, "Database", "stat", 8, 0, 4, 4, [pq(with_server('mediaorquestator_database_up'), "{{server}}", instant=True)],
+    ps.append(pp(3, "Database", "stat", 8, 0, 4, 4, [pq(with_server('veritmo_database_up'), "{{server}}", instant=True)],
         defaults={"mappings": [{"type": "value", "options": {"0": {"text": "down", "color": "red"}, "1": {"text": "ok", "color": "green"}}}]}))
     ps.append(pp(4, "Music services running", "stat", 12, 0, 6, 4,
-        [pq(with_server('mediaorquestator_music_service_running'), "{{server}} · {{service}}", instant=True)],
+        [pq(with_server('veritmo_music_service_running'), "{{server}} · {{service}}", instant=True)],
         defaults={"mappings": [{"type": "value", "options": {"0": {"text": "stopped"}, "1": {"text": "running", "color": "green"}}}]}))
-    ps.append(pp(5, "Available RAM", "stat", 18, 0, 6, 4, [pq(with_server('mediaorquestator_memory_available_bytes'), "{{server}}", instant=True)],
+    ps.append(pp(5, "Available RAM", "stat", 18, 0, 6, 4, [pq(with_server('veritmo_memory_available_bytes'), "{{server}}", instant=True)],
         defaults={"unit": "bytes"}))
     ps.append(pp(6, "VRAM used per card", "timeseries", 0, 4, 12, 9,
-        [pq(with_server('mediaorquestator_gpu_memory_used_bytes'), "{{server}} · GPU {{gpu}} {{name}}")],
+        [pq(with_server('veritmo_gpu_memory_used_bytes'), "{{server}} · GPU {{gpu}} {{name}}")],
         defaults={"unit": "bytes", "custom": {"lineWidth": 1, "fillOpacity": 10}}))
     ps.append(pp(7, "Card utilization", "timeseries", 12, 4, 12, 9,
-        [pq(with_server('mediaorquestator_gpu_utilization_ratio'), "{{server}} · GPU {{gpu}}")],
+        [pq(with_server('veritmo_gpu_utilization_ratio'), "{{server}} · GPU {{gpu}}")],
         defaults={"unit": "percentunit", "min": 0, "max": 1}))
     ps.append(pp(8, "Card temperature", "timeseries", 0, 13, 12, 8,
-        [pq(with_server('mediaorquestator_gpu_temperature_celsius'), "{{server}} · GPU {{gpu}}")], defaults={"unit": "celsius"}))
+        [pq(with_server('veritmo_gpu_temperature_celsius'), "{{server}} · GPU {{gpu}}")], defaults={"unit": "celsius"}))
     ps.append(pp(9, "Card power draw", "timeseries", 12, 13, 12, 8,
-        [pq(with_server('mediaorquestator_gpu_power_watts'), "{{server}} · GPU {{gpu}}")], defaults={"unit": "watt"}))
+        [pq(with_server('veritmo_gpu_power_watts'), "{{server}} · GPU {{gpu}}")], defaults={"unit": "watt"}))
     ps.append(pp(10, "RAM in use", "timeseries", 0, 21, 12, 8,
-        [pq(with_server('mediaorquestator_memory_used_bytes'), "{{server}} used"), pq(with_server('mediaorquestator_memory_total_bytes'), "{{server}} total", "B")],
+        [pq(with_server('veritmo_memory_used_bytes'), "{{server}} used"), pq(with_server('veritmo_memory_total_bytes'), "{{server}} total", "B")],
         defaults={"unit": "bytes"}))
     ps.append(pp(11, "Free disk space", "timeseries", 12, 21, 12, 8,
-        [pq(with_server('mediaorquestator_disk_free_bytes'), "{{server}} · {{folder}}")], defaults={"unit": "bytes"}))
+        [pq(with_server('veritmo_disk_free_bytes'), "{{server}} · {{folder}}")], defaults={"unit": "bytes"}))
     ps.append(pp(12, "Runs per state", "timeseries", 0, 29, 12, 8,
-        [pq(with_server('sum by (instance, state) (mediaorquestator_runs)').replace("by (instance, state)", "by (instance, state)"), "{{server}} · {{state}}")],
+        [pq(with_server('sum by (instance, state) (veritmo_runs)').replace("by (instance, state)", "by (instance, state)"), "{{server}} · {{state}}")],
         desc="The runs in each server's history, by state; deleting runs lowers them.", defaults={"decimals": 0}))
     ps.append(pp(13, "Duration of succeeded runs (p50 and p95)", "timeseries", 12, 29, 12, 8, [
-        pq('histogram_quantile(0.5, sum by (le, instance) (mediaorquestator_run_duration_seconds_bucket))', "{{instance}} p50"),
-        pq('histogram_quantile(0.95, sum by (le, instance) (mediaorquestator_run_duration_seconds_bucket))', "{{instance}} p95", "B")],
+        pq('histogram_quantile(0.5, sum by (le, instance) (veritmo_run_duration_seconds_bucket))', "{{instance}} p50"),
+        pq('histogram_quantile(0.95, sum by (le, instance) (veritmo_run_duration_seconds_bucket))', "{{instance}} p95", "B")],
         desc="From the last 1000 succeeded runs of each server.", defaults={"unit": "s"}))
     return {
-        "__inputs": [{"name": "DS_PROMETHEUS", "label": "Prometheus", "description": "The one that scrapes mediaOrquestator's /api/metrics", "type": "datasource", "pluginId": "prometheus", "pluginName": "Prometheus"}],
+        "__inputs": [{"name": "DS_PROMETHEUS", "label": "Prometheus", "description": "The one that scrapes Veritmo's /api/metrics", "type": "datasource", "pluginId": "prometheus", "pluginName": "Prometheus"}],
         "__requires": [{"type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0"}],
-        "title": "mediaOrquestator · machine", "uid": "mediaorquestator-machine", "tags": ["mediaorquestator"],
+        "title": "Veritmo · machine", "uid": "veritmo-machine", "tags": ["veritmo"],
         "schemaVersion": 39, "version": 1, "editable": True, "timezone": "browser",
         "time": {"from": "now-6h", "to": "now"}, "refresh": "30s",
         "templating": {"list": [{
             "name": "server", "label": "Server", "type": "query", "datasource": PDS,
-            "query": {"query": "label_values(mediaorquestator_info, server)", "refId": "S"},
-            "definition": "label_values(mediaorquestator_info, server)", "refresh": 2, "multi": True, "includeAll": True,
+            "query": {"query": "label_values(veritmo_info, server)", "refId": "S"},
+            "definition": "label_values(veritmo_info, server)", "refresh": 2, "multi": True, "includeAll": True,
             "current": {"selected": True, "text": ["All"], "value": ["$__all"]}, "allValue": ".+",
         }]},
         "panels": ps,
