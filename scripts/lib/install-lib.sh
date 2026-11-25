@@ -137,8 +137,9 @@ il_services_tier() { echo "${SERVICES_TIER:-$(il_recommended_tier)}"; }
 # Tiers of the 3D services (one picture to a 3D model), apart from the music ones because they answer to other things: the card.
 #   none      nothing
 #   triposr   TripoSR
-#   all       TripoSR and Stable Fast 3D (its weights are gated: the service builds without the licence, the weights need the
-#             licence accepted on Hugging Face and the key in the Models screen; without them it says so when asked for a model)
+#   all       TripoSR and Stable Fast 3D. Stable Fast 3D is under the Stability AI Community License: building it needs the
+#             acceptance (--accept-licence stability-community, or typing "accept" when asked), and its weights also need the
+#             licence accepted on Hugging Face and the key in the Models screen. It is never the recommended tier.
 il_tier3d_services() { # tier: the services it builds, comma separated ("" for none)
     case "$1" in
         none) echo "" ;;
@@ -148,8 +149,8 @@ il_tier3d_services() { # tier: the services it builds, comma separated ("" for n
     esac
 }
 
-# il_recommended_3d: Stable Fast 3D was measured at 8 GB of VRAM, so "all" from a card of 8 GB or more and nothing without one
-# (a 3D model on the CPU is not a thing worth building for).
+# il_recommended_3d: "triposr" from a card of 8 GB or more and nothing without one (a 3D model on the CPU is not a thing worth
+# building for). Never "all": Stable Fast 3D needs a licence accepted on purpose, so it is never taken by Enter or --yes.
 il_recommended_3d() {
     il_has_gpu || { echo none; return; }
     local g mem max=0
@@ -157,7 +158,7 @@ il_recommended_3d() {
         mem="${g##*|}"; mem="${mem%%.*}"
         [[ "$mem" =~ ^[0-9]+$ ]] && (( mem > max )) && max=$mem
     done
-    if (( max >= 8000 )); then echo all; else echo none; fi
+    if (( max >= 8000 )); then echo triposr; else echo none; fi
 }
 
 il_services_3d() { echo "${SERVICES_3D:-$(il_recommended_3d)}"; }

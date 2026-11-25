@@ -32,6 +32,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=lib/licence-stability.sh
+source "${SCRIPT_DIR}/lib/licence-stability.sh"
 if [[ -n "${VERITMO_SERVICES_SRC:-}" ]]; then SRC="${VERITMO_SERVICES_SRC}"; else SRC="${ROOT}/dotnet"; fi
 OUT="${ROOT}/bin/services"
 BACKEND="cuda-linux"
@@ -91,11 +93,7 @@ fi
 
 # The licences that need an explicit yes: service name -> licence id. What the person is told is the same wherever the refusal comes from.
 declare -A LICENCE_OF=( [stable-fast-3d]="stability-community" )
-licence_message() {
-    echo "[get-services] Stable Fast 3D is under the Stability AI Community License (https://stability.ai/community-license-agreement)." >&2
-    echo "[get-services]   Free for research and non-commercial use, and for commercial use under US\$1M of yearly revenue (register with Stability AI);" >&2
-    echo "[get-services]   above that you need a licence from Stability AI. Read it, and if you agree: --accept-licence stability-community" >&2
-}
+licence_message() { stability_licence_message "[get-services]"; }
 accepted() { [[ "${ACCEPTED}" == "${LICENCE_OF[$1]}" ]]; }
 # asked for by name, without the acceptance: nothing is built, not even the others named with it
 for asked in ${ONLY//,/ }; do

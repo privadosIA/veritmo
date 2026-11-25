@@ -74,20 +74,38 @@ cleanup_sandbox
 # --- the 3D services: their own tiers, apart from the music ones ----------------------------------------
 machine   # a 12 GB card and a 16 GB one: both are 8 GB or more
 dry --services recognition
-assert_contains "3D follows the card" "$out" "--only lionclap,videovision,triposr,stable-fast-3d"
+assert_contains "3D follows the card: TripoSR" "$out" "--only lionclap,videovision,triposr"
+assert_not_contains "and never Stable Fast 3D by itself" "$out" "stable-fast-3d"
 dry --services recognition --3d triposr
 assert_contains "only TripoSR" "$out" "--only lionclap,videovision,triposr"
 assert_not_contains "and not Stable Fast 3D" "$out" "stable-fast-3d"
 dry --services recognition --3d=none
 assert_not_contains "none: no 3D" "$out" "triposr"
+dry --services none --3d all --accept-licence stability-community
+assert_contains "3D alone, with the acceptance" "$out" "get-services.sh --only triposr,stable-fast-3d --accept-licence stability-community"
 dry --services none --3d all
-assert_contains "3D alone" "$out" "get-services.sh --only triposr,stable-fast-3d"
+assert_status "--3d all without the acceptance is a usage error" 2 "$st"
+assert_contains "naming the flag" "$out" "--accept-licence stability-community"
+out="$(bash "$INSTALL" --yes --only services --3d all </dev/null 2>&1)"; st=$?
+assert_status "--yes --3d all without the acceptance" 2 "$st"
+assert_contains "names the flag too" "$out" "--accept-licence stability-community"
+out="$(bash "$INSTALL" --yes --only services --services none --3d all --accept-licence stability-community </dev/null 2>&1)"
+assert_contains "--yes with the flag builds both" "$out" "get-services.sh --only triposr,stable-fast-3d --accept-licence stability-community"
+bash "$INSTALL" --dry-run --accept-licence mit </dev/null >/dev/null 2>&1; st=$?
+assert_status "another licence id is not accepted" 2 "$st"
 bash "$INSTALL" --dry-run --3d nonsense </dev/null >/dev/null 2>&1; st=$?
 assert_status "an unknown 3D tier" 2 "$st"
 ask 'recognition\n\ny\n'
 assert_contains "the question lists the 3D tiers" "$out" "none | triposr | all"
-assert_contains "and the recommendation" "$out" "Recommended here: all"
-assert_contains "Enter takes it" "$out" "--only lionclap,videovision,triposr,stable-fast-3d"
+assert_contains "and the recommendation" "$out" "Recommended here: triposr"
+assert_contains "Enter builds TripoSR only" "$out" "--only lionclap,videovision,triposr"
+assert_not_contains "Enter does not build Stable Fast 3D" "$out" "stable-fast-3d"
+ask 'recognition\nall\naccept\ny\n'
+assert_contains "all asks for the licence" "$out" "Stability AI Community License"
+assert_contains "typing accept builds both" "$out" "--only lionclap,videovision,triposr,stable-fast-3d --accept-licence stability-community"
+ask 'recognition\nall\nyes\ny\n'
+assert_contains "anything but accept falls back to TripoSR" "$out" "--only lionclap,videovision,triposr"
+assert_not_contains "and builds no Stable Fast 3D" "$out" "stable-fast-3d"
 ask 'recognition\nbogus\ntriposr\ny\n'
 assert_contains "a wrong answer asks again" "$out" "none, triposr or all"
 assert_contains "then the right one counts" "$out" "--only lionclap,videovision,triposr"
@@ -105,7 +123,7 @@ cleanup_sandbox
 # a built music tier with 3D still to build
 machine
 for n in lionclap videovision; do fake_repo_file "bin/services/$n/$n.dll"; done
-dry --services recognition --3d all
+dry --services recognition --3d all --accept-licence stability-community
 assert_contains "3D is missing" "$out" "not built: triposr stable-fast-3d"
 cleanup_sandbox
 

@@ -13,7 +13,9 @@
 #   bash scripts/install.sh --services TIER     # the music services to build: none, recognition, generator or all
 #                                               # (default: asks; --yes takes the one that fits this machine)
 #   bash scripts/install.sh --3d TIER           # the 3D services (one picture to a 3D model): none, triposr or all (+ Stable Fast 3D)
-#                                               # (default: asks; --yes takes the one that fits the card: all from 8 GB, else none)
+#                                               # (default: asks; --yes takes the one that fits the card: triposr from 8 GB, else none)
+#   bash scripts/install.sh --accept-licence stability-community   # you read the Stability AI Community License and agree:
+#                                               # the only way --yes or --3d all build Stable Fast 3D without being asked
 #
 # Components: git cmake cc make curl ffmpeg go cuda sd piper voice acestep
 # dotnet services ytdlp gsap hflibs upscalers browser blender model veritmo hfblocks node hfruntime ollama (groups: system, models).
@@ -25,6 +27,8 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/install-lib.sh
 source "$SCRIPT_DIR/lib/install-lib.sh"
+# shellcheck source=lib/licence-stability.sh
+source "$SCRIPT_DIR/lib/licence-stability.sh"
 
 MODE=""        # check | dry-run | install
 ASSUME_YES=0
@@ -33,6 +37,7 @@ CPU_SD=0
 ONLY=""
 SERVICES_TIER=""   # none | recognition | generator | all; empty: ask, or the recommended one
 SERVICES_3D=""     # none | triposr | all; empty: ask, or the recommended one
+ACCEPT_LICENCE=""  # the licence id given with --accept-licence (stability-community)
 
 usage() { sed -n '2,/^$/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
@@ -51,6 +56,8 @@ while (( $# )); do
             il_tier3d_services "$SERVICES_3D" >/dev/null 2>&1 || { echo "install: --3d is none, triposr or all" >&2; exit 2; } ;;
         --3d=*) SERVICES_3D="${1#--3d=}"
             il_tier3d_services "$SERVICES_3D" >/dev/null 2>&1 || { echo "install: --3d is none, triposr or all" >&2; exit 2; } ;;
+        --accept-licence) shift; ACCEPT_LICENCE="${1:-}" ;;
+        --accept-licence=*) ACCEPT_LICENCE="${1#--accept-licence=}" ;;
         --only) shift; ONLY="${1:-}"; [[ -n "$ONLY" ]] || { echo "install: --only needs a list" >&2; exit 2; } ;;
         --only=*) ONLY="${1#--only=}" ;;
         -h|--help) usage; exit 0 ;;
@@ -58,6 +65,19 @@ while (( $# )); do
     esac
     shift
 done
+
+# The only licence there is to accept is the Stability AI one, and Stable Fast 3D is built only with it accepted on purpose.
+if [[ -n "$ACCEPT_LICENCE" && "$ACCEPT_LICENCE" != "$STABILITY_LICENCE_ID" ]]; then
+    echo "install: --accept-licence takes $STABILITY_LICENCE_ID" >&2; exit 2
+fi
+if [[ "$SERVICES_3D" == all && "$ACCEPT_LICENCE" != "$STABILITY_LICENCE_ID" ]]; then
+    # asked for by name without the acceptance: only a person at a terminal can give it, by typing "accept" (see il_pick_services_tier)
+    if (( ASSUME_YES )) || [[ "$MODE" == dry-run ]] || [[ ! -t 0 && -z "${IL_FORCE_INTERACTIVE:-}" ]]; then
+        echo "install: --3d all builds Stable Fast 3D, which is under the Stability AI Community License and is not built unless you accept it." >&2
+        stability_licence_message "install:"
+        exit 2
+    fi
+fi
 
 # --only: names to ids (groups expand), validated before anything runs.
 declare -A SELECTED=()
@@ -224,7 +244,8 @@ il_cmds() {
         services)
             local only; only="$(il_services_list)"
             [[ -n "$only" ]] || return 0
-            if [[ -n "${CPU_BUILD:-}" ]]; then echo "bash scripts/get-services.sh --cpu --only $only"; else echo "bash scripts/get-services.sh --only $only"; fi ;;
+            local lic=""; [[ ",$only," == *,stable-fast-3d,* ]] && lic=" --accept-licence $STABILITY_LICENCE_ID"
+            if [[ -n "${CPU_BUILD:-}" ]]; then echo "bash scripts/get-services.sh --cpu --only $only$lic"; else echo "bash scripts/get-services.sh --only $only$lic"; fi ;;
         ytdlp) echo "bash scripts/get-ytdlp.sh" ;;
         gsap) echo "bash scripts/get-gsap.sh" ;;
         hflibs) echo "bash scripts/get-hyperframes-libs.sh" ;;
@@ -290,16 +311,27 @@ il_pick_services_tier() {
             echo "    none, recognition, generator or all"
         done
     fi
-    [[ -n "$SERVICES_3D" ]] && return 0
+    if [[ -n "$SERVICES_3D" ]]; then il_confirm_stable_fast_3d; return 0; fi
     rec="$(il_recommended_3d)"
-    echo "  - 3D services (one picture to a 3D model): none | triposr | all (+ Stable Fast 3D: its weights need the licence accepted on Hugging Face). Recommended here: $rec"
+    echo "  - 3D services (one picture to a 3D model): none | triposr | all (+ Stable Fast 3D: it needs its licence accepted here, and its weights the licence accepted on Hugging Face). Recommended here: $rec"
     while true; do
         printf '    3D [%s]: ' "$rec"
         read -r ans || ans=""
         ans="${ans:-$rec}"
-        if il_tier3d_services "$ans" >/dev/null 2>&1; then SERVICES_3D="$ans"; return 0; fi
+        if il_tier3d_services "$ans" >/dev/null 2>&1; then SERVICES_3D="$ans"; il_confirm_stable_fast_3d; return 0; fi
         echo "    none, triposr or all"
     done
+}
+
+# il_confirm_stable_fast_3d: the tier "all" builds Stable Fast 3D, which needs its licence accepted on purpose. Without the flag the
+# person reads the same message as get-services.sh and types "accept"; anything else falls back to TripoSR alone.
+il_confirm_stable_fast_3d() {
+    [[ "$SERVICES_3D" == all && "$ACCEPT_LICENCE" != "$STABILITY_LICENCE_ID" ]] || return 0
+    local ans
+    stability_licence_message "   "
+    printf '    type accept to build Stable Fast 3D (anything else builds TripoSR only): '
+    read -r ans || ans=""
+    if [[ "$ans" == accept ]]; then ACCEPT_LICENCE="$STABILITY_LICENCE_ID"; else SERVICES_3D=triposr; echo "    TripoSR only."; fi
 }
 
 il_sudo_ok() { # a command using sudo can run: root, a cached password, or a terminal to type it in

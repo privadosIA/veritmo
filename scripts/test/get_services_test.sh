@@ -6,6 +6,7 @@ setup() {
     sandbox
     SVC="$IL_ROOT/bin/services"
     cp "$TEST_REPO/scripts/get-services.sh" "$IL_ROOT/scripts/get-services.sh"
+    mkdir -p "$IL_ROOT/scripts/lib" && cp "$TEST_REPO/scripts/lib/licence-stability.sh" "$IL_ROOT/scripts/lib/licence-stability.sh"
     local p
     for p in dotnet/diffrhythm2/src/DiffRhythm2.Service/DiffRhythm2.Service.csproj \
              dotnet/diffrhythm2/src/DiffRhythm2.Cli/DiffRhythm2.Cli.csproj \
