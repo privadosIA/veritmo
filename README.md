@@ -6,6 +6,10 @@
 
 *A 30-second clip made entirely with Veritmo: 15 scenes of one script, [how it was made](docs/OVERVIEW.md#an-example).*
 
+![The Veritmo dashboard: opening a piece and playing it, with the preview, the controls and the timeline](docs/media/hero.gif)
+
+*The dashboard, with example data.*
+
 > **Live examples:** videos, songs, animation and images made with Veritmo on a local machine, with how they were made: [veritmo.xuxo.net](https://veritmo.xuxo.net/) (es/en).
 
 ## What it does
