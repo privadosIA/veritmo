@@ -68,7 +68,7 @@ Commit: `Tabla de la familia de repositorios, igual en todos`
 ## 8. Public README (public worktree)
 
 - [x] 8.1 Rewrite the top as in the design (done in the public worktree, `public-release`: the hero is the picture of the existing example clip, `docs/media/cats-karate-shots.jpg`, until the dashboard delivers `docs/media/hero.gif` (a request is in `dashboards-lab`: `docs/server-ready-hero-gif.md`) and the line is swapped); the long introduction is in `docs/OVERVIEW.md` (in `main`, with the public example; sync carries it); link checking: `scripts/check-docs.sh` on `main` and on the staged public tree (`sync-public.sh --dry-run`) both pass.
-- [ ] 8.2 **(owner)** GitHub settings (2026-11-25: description, topics and website of `privadosIA/veritmo` are set; the social preview image is left, by hand in Settings, once the GIF exists): description (the tagline), topics (`self-hosted`, `local-ai`, `music-video`, `kinetic-typography`, `text-to-video`, `image-to-3d`, `stable-diffusion`, `blender`, `golang`), social preview (1280×640 from the GIF), website.
+- [x] 8.2 GitHub settings (done 2026-11-25: description, topics, website and the social preview image, uploaded by the owner): description (the tagline), topics (`self-hosted`, `local-ai`, `music-video`, `kinetic-typography`, `text-to-video`, `image-to-3d`, `stable-diffusion`, `blender`, `golang`), social preview (1280×640 from the GIF), website.
 
 Commit (public worktree): `README: qué es, un vídeo, qué hace, requisitos y arranque rápido`
 

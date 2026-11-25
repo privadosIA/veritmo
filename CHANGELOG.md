@@ -6,7 +6,7 @@ How a release is made, and the line a finished change adds to `[Unreleased]`, is
 
 ## [Unreleased]
 
-## [0.1.0] - unreleased
+## [0.1.0] - 2026-11-25
 
 The first numbered version: the server, its API and the dashboard's contract, the pipelines (video, images, music, 3D) and the
 installation as it is after the rename to Veritmo. It runs on Linux x86_64 with an NVIDIA card; see
