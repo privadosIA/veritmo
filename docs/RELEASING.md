@@ -26,15 +26,20 @@ major version is 0, a new feature raises the minor number and a fix raises the p
    `bash scripts/check-image.sh` passes on the images built from the tree (see *The images* below).
 2. **Date the changelog.** In `CHANGELOG.md` turn `## [Unreleased]` into `## [X.Y.Z] - YYYY-MM-DD`, start a new empty
    `## [Unreleased]` above it, and commit (`Changelog de la X.Y.Z`).
-3. **Tag the private edition.** `git tag -a vX.Y.Z -m "Veritmo X.Y.Z"` on that commit. The binary built from `main` then says
-   `veritmo X.Y.Z (private edition)` (`scripts/version.sh` reads the tag).
+3. **Do not tag `main` with the release name.** The private repository and the public worktree (`../veritmo-public`) are one git
+   repository and share one list of tags, and `publish-github.sh` refuses a tag that already exists. The release tag `vX.Y.Z`
+   therefore lives only on the public commit (step 5), which is also the one the workflow needs. A binary built from `main`
+   says `dev` (`scripts/version.sh` reads the tag it is on or after). To stamp private builds, tag `main` after step 5 with another
+   name, for example `git tag -a vX.Y.Z-private -m "Veritmo X.Y.Z (private edition)"`: `version.sh` accepts it, and it is never
+   pushed to GitHub.
 4. **Sync the public edition.** `bash scripts/sync-public.sh "X.Y.Z"` commits the public tree on `public-release`. Read what it says
    about the README, which the public edition owns.
 5. **Publish and tag.** `bash scripts/publish-github.sh --tag vX.Y.Z "Release X.Y.Z"` (first with `--dry-run`). It puts one new commit
    on GitHub and tags it; the push of the tag starts the workflow.
 6. **Watch the workflow** `release-images.yml` on GitHub (Actions). It checks that no image holds a model, the source of Stable Fast
    3D or Chrome, builds `veritmo-server` and `veritmo-tools` for `linux/amd64` and pushes them as `X.Y.Z`, `X.Y` and `latest`. If
-   the check fails, nothing is pushed: fix it in `main`, delete the tag on GitHub and here, and start again from step 2.
+   the check fails, nothing is pushed: fix it in `main`, delete the tag on GitHub and here (`git tag -d vX.Y.Z` and
+   `git push github :refs/tags/vX.Y.Z` from the public worktree), and start again from step 2.
 7. **Make the GitHub release.** The notes are the section of this version:
 
    ```bash
@@ -46,7 +51,7 @@ major version is 0, a new feature raises the minor number and a fix raises the p
    organisation's package settings once.
 9. **Try it on a machine that never built them:** follow only the public README (`bash scripts/compose-init.sh`, then
    `docker compose up -d`), and check `GET /api/health`. What got stuck is fixed before the release is announced.
-10. **Push the private repository** (`git push origin main --tags`) and update the site's requirements and its link to the release.
+10. **Push the private repository** (`git push origin main public-release github-main --tags`; the release tag goes to Gitea too, on the public commit) and update the site's requirements and its link to the release.
 
 ## The images
 

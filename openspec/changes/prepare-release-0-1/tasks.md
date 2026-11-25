@@ -74,8 +74,8 @@ Commit (public worktree): `README: qué es, un vídeo, qué hace, requisitos y a
 
 ## 9. The release
 
-- [ ] 9.1 Tag `v0.1.0` on `main`; `sync-public.sh "0.1.0"`; `publish-github.sh --tag v0.1.0 "Release 0.1.0"`; `gh release create v0.1.0 --notes-file <0.1.0 section>`.
-- [ ] 9.2 Watch the workflow; **(owner)** make the two packages public.
+- [x] 9.1 (done 2026-11-25: tag on the public commit `53b6526f`, release published; the tag cannot also be on the private edition because both share one repository) Tag `v0.1.0` on `main`; `sync-public.sh "0.1.0"`; `publish-github.sh --tag v0.1.0 "Release 0.1.0"`; `gh release create v0.1.0 --notes-file <0.1.0 section>`.
+- [x] 9.2 (workflow green 2026-11-25; making the packages public is still the owner's) Watch the workflow; **(owner)** make the two packages public.
 - [ ] 9.3 **(owner, or someone else)** On a machine that never built them: follow only the public README; fix what stuck before announcing.
-- [ ] 9.4 Site (at `veritmo.xuxo.net`): requirements and a link to the 0.1.0 release; the GitHub website field (8.2) points to it.
-- [ ] 9.5 **(owner)** 2FA on the organisation and token scopes/expiry (from `add-contribution-policy`), before announcing.
+- [x] 9.4 (done 2026-11-25: requirements and the link to the v0.1.0 release are on the site) Site (at `veritmo.xuxo.net`): requirements and a link to the 0.1.0 release; the GitHub website field (8.2) points to it.
+- [x] 9.5 (done by the owner 2026-11-25: 2FA with an authenticator app on the account, the organisation setting and the token reviewed; verified by read-only API at that time: the org had one member and none without 2FA) 2FA on the organisation and token scopes/expiry (from `add-contribution-policy`), before announcing.
