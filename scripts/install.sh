@@ -235,9 +235,9 @@ il_cmds() {
         veritmo)
             # The private edition has its own files; the public tree does not, so the tag follows them.
             if [[ -f "$IL_ROOT/internal/platform/edition/edition_private.go" ]]; then
-                echo "mkdir -p bin && go build -tags private -o bin/veritmo ./cmd/veritmo"
+                echo "mkdir -p bin && go build -tags private -ldflags \"-X veritmo/internal/platform/edition.Version=\$(bash scripts/version.sh)\" -o bin/veritmo ./cmd/veritmo"
             else
-                echo "mkdir -p bin && go build -o bin/veritmo ./cmd/veritmo"
+                echo "mkdir -p bin && go build -ldflags \"-X veritmo/internal/platform/edition.Version=\$(bash scripts/version.sh)\" -o bin/veritmo ./cmd/veritmo"
             fi ;;
         ollama)
             if [[ "$IL_PM" == pacman ]]; then il_pm_cmd ollama; return 0; fi

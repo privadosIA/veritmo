@@ -72,7 +72,7 @@ func main() {
 	// parsing, so the existing CLI surface is untouched (see
 	// specs/scene-import and specs/http-server).
 	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "version") {
-		fmt.Fprintf(os.Stdout, "veritmo (%s edition)\n", edition.Name)
+		fmt.Fprintln(os.Stdout, edition.VersionLine())
 		os.Exit(0)
 	}
 	if len(os.Args) > 1 && os.Args[1] == "import" {

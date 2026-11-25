@@ -6,6 +6,9 @@
 !cmd/
 !internal/
 !scripts/
+!LICENSE
+!NOTICE
+!THIRD_PARTY.md
 !deploy/compose/
 !docker/
 # the tests' fixtures are not part of what the server needs to run

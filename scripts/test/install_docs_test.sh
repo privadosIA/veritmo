@@ -10,6 +10,7 @@ cp -r "$TEST_REPO/docs" "$T_DIR/tree/docs"
 cp "$TEST_REPO/README.md" "$T_DIR/tree/README.old"
 # docs link to files at the repository root (../THIRD_PARTY.md), so the copy needs them too
 cp "$TEST_REPO/THIRD_PARTY.md" "$T_DIR/tree/THIRD_PARTY.md"
+cp "$TEST_REPO/CHANGELOG.md" "$T_DIR/tree/CHANGELOG.md"
 # and to a few files deeper in the tree (the workflow that migrates, the API description)
 for f in .gitea/workflows/migrar.yml internal/server/openapi.yaml; do
     [[ -f "$TEST_REPO/$f" ]] || continue

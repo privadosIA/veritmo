@@ -91,7 +91,31 @@ func withService(t *testing.T, d *docker, key string) (*server, string) {
 	fr.SetHandler(d.handle)
 	dir := filepath.Join(t.TempDir(), "model3d")
 	s.h.SetService(&generate.Service{Runner: fr, ModelsDir: dir, NoStart: true, HFKey: func() string { return key }})
+	s.h.Acceptances = &fakeAcceptances{} // never the settings of the machine that runs the tests
 	return s, dir
+}
+
+// fakeAcceptances keeps the acceptances in memory.
+type fakeAcceptances struct {
+	mu   sync.Mutex
+	done map[string]string
+}
+
+func (f *fakeAcceptances) Accept(id, client string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.done == nil {
+		f.done = map[string]string{}
+	}
+	f.done[id] = client
+	return nil
+}
+
+func (f *fakeAcceptances) Accepted(id string) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	_, ok := f.done[id]
+	return ok
 }
 
 func fillWeights(t *testing.T, dir, engine string) {
@@ -187,7 +211,7 @@ func TestInstallShowsThePlanThenRunsTheFetchOfTheImage(t *testing.T) {
 	var plan struct {
 		Plan InstallPlan
 	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &plan); err != nil || rec.Code != http.StatusOK || len(plan.Plan.Missing) != 4 || plan.Plan.Licence != "MIT" || plan.Plan.Gated || plan.Plan.Path != dir {
+	if err := json.Unmarshal(rec.Body.Bytes(), &plan); err != nil || rec.Code != http.StatusOK || len(plan.Plan.Missing) != 4 || plan.Plan.Licence.Name != "MIT" || plan.Plan.Licence.Commercial != "yes" || plan.Plan.Gated || plan.Plan.Path != dir {
 		t.Fatalf("plan: %d %s", rec.Code, rec.Body)
 	}
 	if d.ran("run", "--rm") != nil {
@@ -241,7 +265,7 @@ func TestInstallOfAGatedEngineNeedsTheKeyAndNeverPutsItInTheArguments(t *testing
 		fillWeights(t, dir, generate.EngineSF3D)
 		return nil
 	}
-	rec := s.do(http.MethodPost, "/api/models3d/engines/sf3d/install", []byte(`{"confirm":true}`))
+	rec := s.do(http.MethodPost, "/api/models3d/engines/sf3d/install", []byte(`{"confirm":true,"accept_licence":"stability-community"}`))
 	if rec.Code != http.StatusAccepted {
 		t.Fatalf("%d %s", rec.Code, rec.Body)
 	}
@@ -425,6 +449,10 @@ func TestInstallOfStableFastForTheDotnetBackendNeedsTheKeyForItsGatedWeights(t *
 	if plan.Backend != "dotnet" || strings.Join(plan.Parts, ",") != "weights" || strings.Join(plan.Missing, ",") != "sf3d/160_tets.npz" {
 		t.Fatalf("plan: %+v", plan)
 	}
+	// the plan carries the licence with its conditions, for the client to show before the person confirms
+	if l := plan.Licence; l.ID != "stability-community" || !strings.Contains(l.Name, "Stability AI Community License") || l.URL == "" || l.Commercial != "conditions" || l.Summary == "" {
+		t.Errorf("licence of the plan: %+v", l)
+	}
 	// a gated file missing and no key saved
 	os.Remove(filepath.Join(dir, "sf3d/model.safetensors"))
 	rec := s.do(http.MethodPost, "/api/models3d/engines/sf3d/install", []byte(`{"backend":"dotnet"}`))
@@ -433,5 +461,114 @@ func TestInstallOfStableFastForTheDotnetBackendNeedsTheKeyForItsGatedWeights(t *
 	}
 	if rec := s.do(http.MethodPost, "/api/models3d/engines/triposr/install", []byte(`{"backend":"podman"}`)); rec.Code != http.StatusUnprocessableEntity {
 		t.Errorf("another backend: %d", rec.Code)
+	}
+}
+
+// The licence of Stable Fast 3D has conditions: confirming the install is not accepting it. The request has to carry the acceptance, the server never gives it,
+// and it records each one it receives.
+func TestInstallOfStableFastNeedsTheExplicitAcceptanceOfItsLicence(t *testing.T) {
+	hf := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusFound) }))
+	defer hf.Close()
+	d := &docker{image: true, label: "triposr,sf3d"}
+	s, dir := withService(t, d, "")
+	svc := s.h.Service()
+	svc.HFKey, svc.HFBase = func() string { return "hf_key" }, hf.URL
+	d.fetch = func(args []string) error { fillWeights(t, dir, generate.EngineSF3D); return nil }
+	acc := s.h.Acceptances.(*fakeAcceptances)
+
+	// the plan says what the licence is and that nothing was accepted
+	plan := planOf(t, s.do(http.MethodPost, "/api/models3d/engines/sf3d/install", nil))
+	if plan.Licence.ID != "stability-community" || plan.Licence.Accepted == nil || *plan.Licence.Accepted {
+		t.Fatalf("licence of the plan: %+v", plan.Licence)
+	}
+
+	// confirming alone, or with another id, is refused with the licence named, and nothing runs or is recorded
+	for _, body := range []string{`{"confirm":true}`, `{"confirm":true,"accept_licence":"mit"}`, `{"confirm":true,"accept_licence":true}`} {
+		rec := s.do(http.MethodPost, "/api/models3d/engines/sf3d/install", []byte(body))
+		if body == `{"confirm":true,"accept_licence":true}` {
+			if rec.Code != http.StatusBadRequest {
+				t.Errorf("%s: a wrong type is an invalid body: %d", body, rec.Code)
+			}
+			continue
+		}
+		if rec.Code != http.StatusBadRequest || bodyReason(t, rec) != ReasonLicenceAcceptanceRequired {
+			t.Fatalf("%s: %d %s", body, rec.Code, rec.Body)
+		}
+		var refusal struct{ Error struct{ Message string } }
+		json.Unmarshal(rec.Body.Bytes(), &refusal)
+		for _, want := range []string{"Stability AI Community License", "https://stability.ai/community-license-agreement", `accept_licence: "stability-community"`, "never accepts a licence for anyone"} {
+			if !strings.Contains(refusal.Error.Message, want) {
+				t.Errorf("%s: the refusal lacks %q: %s", body, want, refusal.Error.Message)
+			}
+		}
+	}
+	if d.ran("run", "--rm") != nil || len(acc.done) != 0 {
+		t.Fatalf("a refusal runs and records nothing: %v %v", d.ran("run", "--rm"), acc.done)
+	}
+
+	// with the acceptance it starts, and the acceptance is recorded with the client that sent it
+	rec := s.do(http.MethodPost, "/api/models3d/engines/sf3d/install", []byte(`{"confirm":true,"accept_licence":"stability-community","client":"model-studio"}`))
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("%d %s", rec.Code, rec.Body)
+	}
+	if acc.done["stability-community"] != "model-studio" {
+		t.Errorf("recorded: %v", acc.done)
+	}
+	var job struct{ Install InstallJob }
+	json.Unmarshal(rec.Body.Bytes(), &job)
+	waitFor(t, func() bool {
+		var j InstallJob
+		json.Unmarshal(s.do(http.MethodGet, "/api/models3d/installs/"+job.Install.ID, nil).Body.Bytes(), &j)
+		return j.State == "done"
+	})
+	// and the plan now says so
+	d.fetch = nil
+	os.Remove(filepath.Join(dir, "sf3d/model.safetensors"))
+	if plan := planOf(t, s.do(http.MethodPost, "/api/models3d/engines/sf3d/install", nil)); plan.Licence.Accepted == nil || !*plan.Licence.Accepted {
+		t.Errorf("the plan after the acceptance: %+v", plan.Licence)
+	}
+}
+
+// TripoSR is MIT: its plan carries no acceptance and its install needs none.
+func TestInstallOfTripoSRNeedsNoAcceptance(t *testing.T) {
+	d := &docker{image: true, label: "triposr"}
+	s, dir := withService(t, d, "")
+	d.fetch = func(args []string) error { fillWeights(t, dir, generate.EngineTripoSR); return nil }
+	plan := planOf(t, s.do(http.MethodPost, "/api/models3d/engines/triposr/install", nil))
+	if plan.Licence.ID != "" || plan.Licence.Accepted != nil {
+		t.Errorf("TripoSR's plan: %+v", plan.Licence)
+	}
+	if rec := s.do(http.MethodPost, "/api/models3d/engines/triposr/install", []byte(`{"confirm":true}`)); rec.Code != http.StatusAccepted {
+		t.Errorf("%d %s", rec.Code, rec.Body)
+	}
+}
+
+// The build of the .NET service is run with the acceptance the request carried, which is the one thing that lets scripts/get-services.sh build it.
+func TestInstallOfStableFastPassesTheAcceptanceToTheServiceBuild(t *testing.T) {
+	hf := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusFound) }))
+	defer hf.Close()
+	d := &docker{image: true, label: "triposr,sf3d"}
+	s, _ := withService(t, d, "hf_key")
+	s.h.Service().HFBase = hf.URL
+	withDotnet(t, s, false)
+	rec := s.do(http.MethodPost, "/api/models3d/engines/sf3d/install", []byte(`{"backend":"dotnet","parts":["service"],"confirm":true,"accept_licence":"stability-community"}`))
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("%d %s", rec.Code, rec.Body)
+	}
+	var job struct{ Install InstallJob }
+	json.Unmarshal(rec.Body.Bytes(), &job)
+	waitFor(t, func() bool {
+		var j InstallJob
+		json.Unmarshal(s.do(http.MethodGet, "/api/models3d/installs/"+job.Install.ID, nil).Body.Bytes(), &j)
+		return j.State != "running"
+	})
+	var build string
+	for _, c := range s.h.Service().Runner.(*runner.FakeRunner).Calls() {
+		if c.Name == "bash" {
+			build = strings.Join(c.Args, " ")
+		}
+	}
+	if !strings.Contains(build, "--only stable-fast-3d") || !strings.Contains(build, "--accept-licence stability-community") {
+		t.Errorf("the build runs as %q", build)
 	}
 }

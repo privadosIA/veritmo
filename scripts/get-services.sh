@@ -16,7 +16,13 @@
 #   bash scripts/get-services.sh --cpu                 # CPU build (no CUDA libraries)
 #   bash scripts/get-services.sh --no-share            # keep a separate copy of every library (see below)
 #   bash scripts/get-services.sh --share-only          # build nothing: share the libraries of the services already in bin/services
+#   bash scripts/get-services.sh --only stable-fast-3d --accept-licence stability-community   # Stable Fast 3D (see below)
 #   VERITMO_SERVICES_SRC=~/src bash scripts/get-services.sh # where the repositories are (default: the folder above this one)
+#
+# Stable Fast 3D is under the Stability AI Community License (https://stability.ai/community-license-agreement): free for research and non-commercial use and
+# for commercial use under US$1M of yearly revenue (registering with Stability AI), a licence from Stability AI above that. It is built only when you say you
+# read it and agree: --accept-licence stability-community. Asked for with --only and without that, nothing is built and the exit is 1; in a build of every
+# service it is skipped (the others are built) and the script says so.
 #
 # The source of the ports (heartmula, diffrhythm2, lion-clap, video-vision, triposr, stable-fast-3d and the musicgen-core they share) is in dotnet/ of this
 # repository (revisions in dotnet/REVISIONS.txt); VERITMO_SERVICES_SRC uses other checkouts instead. The CUDA libraries are the same
@@ -30,6 +36,7 @@ if [[ -n "${VERITMO_SERVICES_SRC:-}" ]]; then SRC="${VERITMO_SERVICES_SRC}"; els
 OUT="${ROOT}/bin/services"
 BACKEND="cuda-linux"
 ONLY=""
+ACCEPTED=""
 SHARE=1
 SHARE_ONLY=0
 
@@ -37,9 +44,11 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --cpu) BACKEND="cpu"; shift ;;
         --only) ONLY="${2:?--only needs a name}"; shift 2 ;;
+        --accept-licence) ACCEPTED="${2:?--accept-licence needs the licence id}"; shift 2 ;;
+        --accept-licence=*) ACCEPTED="${1#--accept-licence=}"; shift ;;
         --no-share) SHARE=0; shift ;;
         --share-only) SHARE_ONLY=1; shift ;;
-        -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,29p' "$0"; exit 0 ;;
         *) echo "unknown option '$1' (try --help)" >&2; exit 2 ;;
     esac
 done
@@ -80,6 +89,23 @@ if [[ "${SHARE_ONLY}" == 1 ]]; then
     exit 0
 fi
 
+# The licences that need an explicit yes: service name -> licence id. What the person is told is the same wherever the refusal comes from.
+declare -A LICENCE_OF=( [stable-fast-3d]="stability-community" )
+licence_message() {
+    echo "[get-services] Stable Fast 3D is under the Stability AI Community License (https://stability.ai/community-license-agreement)." >&2
+    echo "[get-services]   Free for research and non-commercial use, and for commercial use under US\$1M of yearly revenue (register with Stability AI);" >&2
+    echo "[get-services]   above that you need a licence from Stability AI. Read it, and if you agree: --accept-licence stability-community" >&2
+}
+accepted() { [[ "${ACCEPTED}" == "${LICENCE_OF[$1]}" ]]; }
+# asked for by name, without the acceptance: nothing is built, not even the others named with it
+for asked in ${ONLY//,/ }; do
+    if [[ -n "${LICENCE_OF[${asked}]:-}" ]] && ! accepted "${asked}"; then
+        echo "[get-services] ✗  ${asked} is not built: its licence has not been accepted." >&2
+        licence_message
+        exit 1
+    fi
+done
+
 command -v dotnet >/dev/null || { echo "[get-services] dotnet is not installed (the .NET SDK 8 or newer is needed)" >&2; exit 1; }
 
 # name | repository | project | extra project published into the same folder (optional)
@@ -96,6 +122,11 @@ done_any=0
 for entry in "${SERVICES[@]}"; do
     IFS='|' read -r name repo project extra <<<"${entry}"
     [[ -n "${ONLY}" && ",${ONLY}," != *",${name},"* ]] && continue
+    if [[ -n "${LICENCE_OF[${name}]:-}" ]] && ! accepted "${name}"; then
+        echo "[get-services] -  ${name} is skipped: its licence has not been accepted." >&2
+        licence_message
+        continue
+    fi
     csproj="${SRC}/${repo}/${project}"
     if [[ ! -f "${csproj}" ]]; then
         echo "[get-services] ✗  ${name}: ${csproj} is not there (dotnet/ is incomplete; or set VERITMO_SERVICES_SRC)" >&2

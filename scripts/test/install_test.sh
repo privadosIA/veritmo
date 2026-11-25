@@ -138,8 +138,9 @@ run_install --yes
 assert_status "yes run" 0 "$st"
 order="$(calls | tr '\n' ' ')"
 assert_contains "sd, piper, acestep, ytdlp, gsap, hflibs, upscalers, models" "$order" "build-sd SD_CUDA= get-piper build-acestep get-ytdlp get-gsap get-hflibs get-upscalers get-models"
-assert_contains "veritmo, built without a UI tag" "$order" "go build -o bin/veritmo ./cmd/veritmo"
-assert_contains "hfblocks after the veritmo" "$order" "go build -o bin/veritmo ./cmd/veritmo get-hfblocks"
+assert_contains "veritmo, built without a UI tag" "$order" "-o bin/veritmo ./cmd/veritmo"
+assert_contains "veritmo, stamped with its version" "$order" "go build -ldflags -X veritmo/internal/platform/edition.Version="
+assert_contains "hfblocks after the veritmo" "$order" "-o bin/veritmo ./cmd/veritmo get-hfblocks"
 assert_not_contains "no Node steps" "$order" "npm"
 assert_contains "final report says ok" "$out" "every required component is ok"
 cleanup_sandbox

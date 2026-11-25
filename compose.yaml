@@ -43,12 +43,15 @@ x-required:
   veritmo_token: ${VERITMO_TOKEN:?set VERITMO_TOKEN in .env (bash scripts/compose-init.sh makes it)}
 
 x-server-image: &server-image
-  image: veritmo/server:${VERSION:-dev}
+  # The public edition pulls the published image and builds it only when it cannot (Compose tries the pull first, then `build:`); the private one
+  # is always built here, with its own build tag, and must never be replaced by the public image.
+  image: ghcr.io/privadosia/veritmo-server:${VERSION:-latest}
   build:
     context: .
     target: runtime
     args:
       EDITION_TAG: ${EDITION_TAG:-}
+      VERSION: ${VERSION:-dev}
 
 x-database-env: &database-env
   VERITMO_DB_DRIVER: mysql
@@ -172,10 +175,12 @@ services:
   installer:
     <<: *gpu
     profiles: [install]
-    image: veritmo/tools:${VERSION:-dev}
+    image: ghcr.io/privadosia/veritmo-tools:${VERSION:-latest}
     build:
       context: .
       target: tools
+      args:
+        VERSION: ${VERSION:-dev}
     restart: "no"
     user: *user
     environment:
@@ -283,7 +288,7 @@ services:
       - ${MODELS_PATH:-./compose-data/models}/music/diffrhythm2:/ckpt
 
   # ─── Profile `model3d`: the 3D model generator ──────────────────────────
-  # TripoSR (MIT) makes a 3D model from a picture; Stable Fast 3D is only in the image when it is built with SF3D=1 (see docker/model3d/README.md). The
+  # TripoSR (MIT) makes a 3D model from a picture; Stable Fast 3D is only in the image when it is built with SF3D=1 and SF3D_LICENCE=stability-community, which says you accepted its licence (see docker/model3d/README.md). The
   # weights are a folder of this machine (MODELS_PATH/model3d), mounted read-only. The server finds the service by MODEL3D_HOST and asks for the music token.
   #   docker compose --profile model3d-weights run --rm model3d-weights            # about 1.9 GB, once (TripoSR, no account)
   #   docker compose --profile model3d up -d

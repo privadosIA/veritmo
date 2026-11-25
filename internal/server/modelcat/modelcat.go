@@ -3,6 +3,13 @@
 // families that read it (workspace, models, generation) share only these types.
 package modelcat
 
+import (
+	"net/url"
+	"strings"
+
+	"veritmo/internal/platform/licence"
+)
+
 // File is one file of an entry: its name, its role in a bundle of several files, where it is downloaded from and, when
 // the download is not the file that gets installed, how it is converted.
 type File struct {
@@ -36,6 +43,9 @@ type Entry struct {
 	License          string `json:"license,omitempty"`
 	CommercialNote   string `json:"commercial_note,omitempty"`
 	CommercialNoteEN string `json:"commercial_note_en,omitempty"`
+	// Licence is the same, as the terms a client shows before the person downloads the entry: set for every entry whose license is not plainly
+	// permissive (see FillLicence). URL is the page of the model, where its license text is.
+	Licence *licence.Terms `json:"licence,omitempty"`
 	// Starter marks a sensible first install for newcomers.
 	Starter   bool  `json:"starter,omitempty"`
 	SizeBytes int64 `json:"size_bytes"`
@@ -104,4 +114,40 @@ type Preset struct {
 	Steps      int      `json:"steps,omitempty"`
 	CfgScale   *float64 `json:"cfg_scale,omitempty"`
 	Resolution string   `json:"resolution,omitempty"`
+}
+
+// FillLicence sets Licence from the license fields of the entry, for an entry whose license is not plainly permissive (Commercial is not "yes"). The
+// terms carry the English note when there is one, and the address of the model's page (the repository of its first file on Hugging Face or GitHub),
+// where the license text is. An entry with no license, or a plainly permissive one, gets none.
+func (e *Entry) FillLicence() {
+	e.Licence = nil
+	if strings.TrimSpace(e.License) == "" || e.Commercial == "" || e.Commercial == licence.Yes {
+		return
+	}
+	summary := strings.TrimSpace(e.CommercialNoteEN)
+	if summary == "" {
+		summary = strings.TrimSpace(e.CommercialNote)
+	}
+	page := ""
+	if len(e.Files) > 0 {
+		page = ModelPage(e.Files[0].URL)
+	}
+	e.Licence = &licence.Terms{Name: e.License, URL: page, Summary: summary, Commercial: e.Commercial}
+}
+
+// ModelPage is the page of the repository a file is downloaded from ("https://huggingface.co/owner/repo/resolve/main/f.gguf" is
+// "https://huggingface.co/owner/repo"), or "" for an address that is not on Hugging Face or GitHub.
+func ModelPage(fileURL string) string {
+	u, err := url.Parse(fileURL)
+	if err != nil || u.Scheme != "https" {
+		return ""
+	}
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	switch u.Host {
+	case "huggingface.co", "github.com":
+		if len(parts) >= 2 {
+			return "https://" + u.Host + "/" + parts[0] + "/" + parts[1]
+		}
+	}
+	return ""
 }

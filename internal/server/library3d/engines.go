@@ -19,10 +19,34 @@ import (
 	"time"
 
 	"veritmo/internal/assets3d/generate"
+	"veritmo/internal/platform/licence"
 	"veritmo/internal/platform/musicsvc"
 	"veritmo/internal/platform/runner"
+	"veritmo/internal/platform/settings"
 	"veritmo/internal/server/api"
 )
+
+// ReasonLicenceAcceptanceRequired means the install of an engine whose licence has conditions was confirmed without the person's explicit acceptance.
+// It is not licence_not_accepted, which says Hugging Face refuses the saved key because its account has not accepted the licence there.
+const ReasonLicenceAcceptanceRequired = "licence_acceptance_required"
+
+// Acceptances records and reads the explicit acceptances of the licences with conditions (Stable Fast 3D's). The settings of the server are the default.
+type Acceptances interface {
+	Accept(id, client string) error
+	Accepted(id string) bool
+}
+
+type settingsAcceptances struct{}
+
+func (settingsAcceptances) Accept(id, client string) error { return settings.AcceptLicence(id, client) }
+func (settingsAcceptances) Accepted(id string) bool        { return settings.LicenceAccepted(id) }
+
+func (h *Handler) acceptances() Acceptances {
+	if h.Acceptances != nil {
+		return h.Acceptances
+	}
+	return settingsAcceptances{}
+}
 
 // SetService gives the handler the 3D service; without it the routes of the engines answer that there is none.
 func (h *Handler) SetService(svc *generate.Service) { h.svc = svc }
@@ -139,8 +163,8 @@ type InstallPlan struct {
 	// Missing are the files of the weights folder that are not there; Bytes is about how much they take.
 	Missing []string `json:"missing"`
 	Bytes   int64    `json:"bytes"`
-	// Licence is the engine's, which the weights come under.
-	Licence string `json:"licence"`
+	// Licence is the engine's, which the weights come under, as a client shows it before the person confirms.
+	Licence licence.Terms `json:"licence"`
 	// Gated says the weights come from a repository whose licence the person's own account has to accept.
 	Gated bool `json:"gated"`
 	// Backend is the way the engine runs that the install is for (dotnet or docker); Parts what it would run, in order: service, image, weights.
@@ -222,6 +246,9 @@ func (h *Handler) handleEngineInstall(w http.ResponseWriter, r *http.Request) {
 		Backend string   `json:"backend"`
 		Parts   []string `json:"parts"`
 		Confirm bool     `json:"confirm"`
+		// AcceptLicence is the id of the licence the person accepted (`stability-community`): sent by a client only after they agreed. Client labels who sent it.
+		AcceptLicence string `json:"accept_licence"`
+		Client        string `json:"client"`
 	}
 	if r.ContentLength != 0 {
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&req); err != nil && err != io.EOF {
@@ -250,10 +277,25 @@ func (h *Handler) handleEngineInstall(w http.ResponseWriter, r *http.Request) {
 		api.WriteJSON(w, http.StatusOK, map[string]any{"plan": plan.InstallPlan})
 		return
 	}
+	// An engine whose licence has conditions is never installed on the strength of a confirmation alone: the request carries the acceptance, or it is refused.
+	if id := plan.Licence.ID; id != "" {
+		if strings.TrimSpace(req.AcceptLicence) != id {
+			api.WriteJSON(w, http.StatusBadRequest, api.APIError{Error: api.APIErrorBody{Code: api.CodeInvalid, Reason: ReasonLicenceAcceptanceRequired,
+				Message: fmt.Sprintf("%s is under the %s (%s): %s Read it and, if the person agrees, send accept_licence: %q with the confirmation. "+
+					"The server never accepts a licence for anyone.", plan.Name, plan.Licence.Name, plan.Licence.URL, plan.Licence.Summary, id)}})
+			return
+		}
+	}
 	if len(plan.Missing) > 0 && plan.Bytes > 0 && plan.FreeBytes < plan.Bytes {
 		api.WriteJSON(w, http.StatusUnprocessableEntity, api.APIError{Error: api.APIErrorBody{Code: api.CodeValidation, Reason: "no_disk",
 			Message: fmt.Sprintf("%s needs %.1f GB free and has %.1f GB", plan.Path, float64(plan.Bytes)/(1<<30), float64(plan.FreeBytes)/(1<<30))}})
 		return
+	}
+	if id := plan.Licence.ID; id != "" {
+		if err := h.acceptances().Accept(id, req.Client); err != nil {
+			api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, fmt.Sprintf("cannot record the acceptance: %v", err))
+			return
+		}
 	}
 	job, ok := h.startInstall(name, backend, plan.Parts)
 	if !ok {
@@ -349,7 +391,11 @@ func (h *Handler) planInstall(ctx context.Context, name, backend string, asked [
 	if parts == nil {
 		parts = []string{}
 	}
-	plan := InstallPlan{Engine: name, Backend: backend, Parts: parts, Missing: missing, Licence: info.Licence, Gated: info.Gated, Path: h.svc.ModelsDir}
+	plan := InstallPlan{Engine: name, Backend: backend, Parts: parts, Missing: missing, Licence: info.Terms, Gated: info.Gated, Path: h.svc.ModelsDir}
+	if info.Terms.ID != "" {
+		accepted := h.acceptances().Accepted(info.Terms.ID)
+		plan.Licence.Accepted = &accepted
+	}
 	if len(missing) > 0 {
 		_ = os.MkdirAll(h.svc.ModelsDir, 0o755)
 		plan.Bytes, plan.FreeBytes = generate.Spec(name).Sizes.Weights, freeBytes(h.svc.ModelsDir)
@@ -413,7 +459,11 @@ func (h *Handler) runInstall(ctx context.Context, job *InstallJob) {
 		case partService:
 			script, _ := filepath.Abs("scripts/get-services.sh")
 			var out []byte
-			out, err = h.svc.Runner.Run(ctx, "bash", []string{script, "--only", generate.Spec(job.Engine).Service.Dir})
+			args := []string{script, "--only", generate.Spec(job.Engine).Service.Dir}
+			if info, _ := generate.Info(job.Engine); info.Terms.ID != "" {
+				args = append(args, "--accept-licence", info.Terms.ID) // the job exists only because the request carried that acceptance
+			}
+			out, err = h.svc.Runner.Run(ctx, "bash", args)
 			logLines(out)
 		case partImage:
 			dir, _ := filepath.Abs("docker/model3d")

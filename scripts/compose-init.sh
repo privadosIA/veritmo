@@ -53,6 +53,29 @@ else
     done < <(grep -E '^[A-Z0-9_]*(PASSWORD|TOKEN)=$' .env.example | cut -d= -f1)
     sed -i "s|^UID=.*|UID=$(id -u)|; s|^GID=.*|GID=$(id -g)|" .env
     echo ".env made, with generated secrets (mode 600)"
+    # The images are the ones of the release this checkout is, when it is exactly one (v0.1.0, not three commits after it).
+    release="$(bash "$ROOT/scripts/version.sh" 2>/dev/null || echo dev)"
+    if [[ "$release" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ && ! "$release" =~ -[0-9]+-g[0-9a-f]+$ ]]; then
+        sed -i "s|^#\?VERSION=.*|VERSION=${release#v}|" .env
+        grep -q '^VERSION=' .env || echo "VERSION=${release#v}" >> .env
+        echo "VERSION=${release#v}: the images of this release"
+    else
+        echo "VERSION left unset: the images are the latest release (this checkout is not exactly a release)"
+    fi
+    # The server's memory cap must fit in the machine: the example's default (48g) is above the RAM of a 32 GB machine, where the kernel would
+    # kill the server before the cap ever applied. On 40 GiB or less the cap is 24g; above that the default stays.
+    mem_kb="$(awk '/^MemTotal:/ {print $2}' "${PROC_MEMINFO:-/proc/meminfo}" 2>/dev/null || true)"
+    if [[ "$mem_kb" =~ ^[0-9]+$ ]]; then
+        mem_gib="$(awk -v k="$mem_kb" 'BEGIN { printf "%.0f", k / 1048576 }')"
+        if (( mem_kb <= 41943040 )); then
+            sed -i 's|^SERVER_MEM_LIMIT=.*|SERVER_MEM_LIMIT=24g|' .env
+            echo "SERVER_MEM_LIMIT=24g: this machine has ${mem_gib} GiB of RAM (40 or less), so the server is capped at 24g; raise it in .env if you want"
+        else
+            echo "SERVER_MEM_LIMIT left at its default, $(grep -E '^SERVER_MEM_LIMIT=' .env | cut -d= -f2): this machine has ${mem_gib} GiB of RAM"
+        fi
+    else
+        echo "SERVER_MEM_LIMIT left at its default: the RAM of this machine could not be read"
+    fi
 fi
 
 # ── 3. The folders of this machine ───────────────────────────────────────────

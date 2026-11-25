@@ -30,6 +30,9 @@ var catalog = func() []catalogEntry {
 		}
 		c = append(c, extra...)
 	}
+	for i := range c {
+		c[i].FillLicence()
+	}
 	return c
 }()
 

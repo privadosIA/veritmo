@@ -30,6 +30,18 @@ A `v*` tag on the public repository SHALL build and push `ghcr.io/privadosia/ver
 - **WHEN** a change to the `Dockerfile` copies a `.safetensors` file into the runtime image
 - **THEN** the release workflow fails before pushing and names the file
 
+### Requirement: The browser for motion graphics is not redistributed without permission
+
+The published images SHALL NOT contain Chrome for Testing unless `docs/IMAGES.md` records that its terms plainly allow redistributing it. Otherwise the installer SHALL download it into the host's `bin/`, the server SHALL find it there, and the image check SHALL fail naming the path if the browser is in an image.
+
+#### Scenario: Chrome in an image without permission
+- **WHEN** the runtime image holds `chrome-linux64` and `docs/IMAGES.md` records no permission
+- **THEN** the image check fails before pushing and names the path
+
+#### Scenario: Motion graphics on a Compose install
+- **WHEN** the stack runs from the published images and the installer has put Chrome in `bin/`
+- **THEN** a motion-graphic scene renders
+
 ### Requirement: Compose limits the server on small machines
 
 `compose-init.sh` SHALL set `SERVER_MEM_LIMIT=24g` in `.env` on a machine with 40 GiB of RAM or less, and leave the default otherwise, and SHALL say which it did.
@@ -48,15 +60,23 @@ The install plan of a catalog model or a 3D engine whose licence is not plainly 
 
 ### Requirement: Stable Fast 3D is under its own licence, said the same everywhere, and never installed without acceptance
 
-Every README, table and document of the family that names Stable Fast 3D SHALL say that it, its port and its weights are under the Stability AI Community License (free under US$1M of yearly revenue, registration with Stability AI for commercial use, a commercial licence above), and the port's `LICENSE` SHALL hold that licence. Building its .NET service, building the `model3d` container with it, and installing its weights SHALL each be refused unless the request carries the explicit acceptance `stability-community`, and the refusal SHALL name the licence and its address. The server SHALL record each acceptance and SHALL never accept on the user's behalf; the weights SHALL still need the user's own Hugging Face account to have accepted the licence.
+Every README, table and document of the family that names Stable Fast 3D SHALL say that it, its port and its weights are under the Stability AI Community License (free under US$1M of yearly revenue, registration with Stability AI for commercial use, a commercial licence above), and the port's `LICENSE` SHALL hold that licence. Building its .NET service, building the `model3d` container with it, and installing its weights SHALL each be refused unless the request carries the explicit acceptance `stability-community` (a build of every service skips it instead of failing), and the refusal SHALL name the licence and its address. The server SHALL record each acceptance and SHALL never accept on the user's behalf; the weights SHALL still need the user's own Hugging Face account to have accepted the licence.
 
 #### Scenario: Building the service without accepting
 - **WHEN** `scripts/get-services.sh --only stable-fast-3d` runs without `--accept-licence stability-community`
 - **THEN** nothing is built and the message names the Stability AI Community License, its address and the flag
 
+#### Scenario: Building the container with it
+- **WHEN** `docker build` of `docker/model3d` runs with `--build-arg SF3D=1` and without `--build-arg SF3D_LICENCE=stability-community`
+- **THEN** the build fails and the message names the Stability AI Community License, its address and the argument
+
 #### Scenario: Installing from the dashboard
-- **WHEN** a client confirms the install of `sf3d` without `accept_licence`
-- **THEN** the server answers 400 naming the licence, and with `accept_licence: "stability-community"` it proceeds and records the acceptance
+- **WHEN** a client confirms `POST /api/models3d/engines/sf3d/install` without `accept_licence`
+- **THEN** the server answers 400 naming the licence and its address, and with `accept_licence: "stability-community"` it proceeds and records the acceptance (the licence, the date and the client)
+
+#### Scenario: A build of every service
+- **WHEN** `scripts/get-services.sh` runs without `--only` and without the acceptance
+- **THEN** every other service is built, Stable Fast 3D is skipped, and the message names the licence and the flag
 
 #### Scenario: Reading the family table
 - **WHEN** someone reads the repositories table in any README of the family
@@ -69,6 +89,10 @@ The project's site SHALL be served at `veritmo.xuxo.net`, the old address SHALL 
 #### Scenario: An old link
 - **WHEN** someone opens `https://orquestator.xuxo.net/` or any path under it
 - **THEN** they land on the same path under `https://veritmo.xuxo.net/`
+
+#### Scenario: Nothing in the family names the old address
+- **WHEN** `grep -rn orquestator.xuxo.net` runs over the nine repositories
+- **THEN** it finds only the redirect's configuration (and the OpenSpec records of what was decided)
 
 ### Requirement: The requirements are stated from measures
 

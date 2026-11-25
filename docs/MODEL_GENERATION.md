@@ -6,7 +6,7 @@ downloaded one. Two engines, run by an optional service: each as a **.NET servic
 | Engine | Licence | Needs |
 |---|---|---|
 | `triposr` (default) | MIT | about 1.9 GB of weights, no account |
-| `sf3d` (Stable Fast 3D) | Stability AI Community License: free up to US$1M of yearly revenue, with its terms to follow | the Hugging Face key of an account that has accepted its licence |
+| `sf3d` (Stable Fast 3D) | Stability AI Community License (not Apache-2.0): free for research and non-commercial use and under US$1M of yearly revenue (registering with Stability AI for commercial use), a commercial licence above; its port and weights are under it too. Installing it needs your explicit acceptance (`accept_licence: stability-community`, `--accept-licence`, `SF3D_LICENCE`) | the Hugging Face key of an account that has accepted its licence |
 
 Nothing here is installed by the program on its own: the service or the container image is built by you, and the weights are fetched when you ask.
 
@@ -153,11 +153,17 @@ the category come with `add-models3d-datasets`.
 
 ## Licences and what each person does for Stable Fast 3D
 
-TripoSR and its weights are MIT. Stable Fast 3D is under the Stability AI Community License: free for individuals and organisations under US$1M of yearly
-revenue, with attribution and terms to follow, and above that a commercial licence is needed; read it at <https://stability.ai/license>. Its weights are on a
+TripoSR and its weights are MIT. Stable Fast 3D is under the Stability AI Community License: free for research and non-commercial use and for individuals and
+organisations under US$1M of yearly revenue (who register with Stability AI for commercial use), with attribution and terms to follow, and above that a commercial licence is needed; read it at <https://stability.ai/community-license-agreement>.
+The port of it to .NET and its weights are under the same licence (not Apache-2.0). It is **never installed on the strength of a confirmation alone**: building its service
+(`scripts/get-services.sh --accept-licence stability-community`), building the container with it (`--build-arg SF3D_LICENCE=stability-community`) and installing it from the
+dashboard (`accept_licence` in the body, sent only after the person agreed) each need that acceptance, and the server records the ones it receives. Its weights are on a
 repository that asks every account to accept that licence, so **each person manages their own**: accept it on <https://huggingface.co/stabilityai/stable-fast-3d>
-with your account, save that account's key (`PUT /api/tokens/huggingface`, or `HF_TOKEN`), build the image with `SF3D=1` and fetch the weights. The server
+with your account, save that account's key (`PUT /api/tokens/huggingface`, or `HF_TOKEN`), build the image with `SF3D=1 SF3D_LICENCE=stability-community` (the second says you read the licence and agree: without it the build stops) and fetch the weights. The server
 only checks, with a `HEAD` of one file of the repository and the saved key, and says what is missing; it never accepts a licence, creates an account or asks for a key.
+The install plan (`POST .../engines/{engine}/install` without `confirm`) carries `licence` as `{name, url, summary, commercial}` (and, for Stable Fast 3D, `id` and `accepted`), and every
+catalog entry of the Models screen whose licence is not plainly permissive carries the same `licence` (with the page of the model as `url`), so a dashboard can show the
+conditions before the person confirms a download.
 Stable Fast 3D was built and run here once (2026-11-24, an account that had accepted the licence, an RTX 5060 Ti): the check answered `200`, the weights were fetched and
 five objects were made (below). The answer for a key whose account has **not** accepted the licence (`403` → `licence_not_accepted`) is still checked against a fake service
 only, and a key Hugging Face does not know (`401` → `key_rejected`) against the real one.

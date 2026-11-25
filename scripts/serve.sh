@@ -136,7 +136,7 @@ CAN_BUILD=1
 BIN=bin/veritmo-api
 if [ "$CAN_BUILD" = "1" ] || [ ! -x "$BIN" ]; then
   echo "Building $BIN..."
-  go build ${EDITION_TAG:+-tags "$EDITION_TAG"} -o "$BIN" ./cmd/veritmo
+  go build ${EDITION_TAG:+-tags "$EDITION_TAG"} -ldflags "-X veritmo/internal/platform/edition.Version=$(bash scripts/version.sh)" -o "$BIN" ./cmd/veritmo
 fi
 
 if [ "$SHOW_TOKEN" = "1" ]; then TOKEN_SHOWN="$VERITMO_TOKEN"; else TOKEN_SHOWN="(hidden: read it with: cat $TOKEN_FILE, or start with --show-token)"; fi

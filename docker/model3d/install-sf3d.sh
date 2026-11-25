@@ -2,6 +2,13 @@
 # Adds Stable Fast 3D (https://github.com/Stability-AI/stable-fast-3d) to the image. It follows the repository's own instructions; it needs nvcc to
 # build the two extensions of the repository (texture_baker and uv_unwrapper); without it this stops saying so.
 set -eu
+# Stable Fast 3D is under the Stability AI Community License: it is added to an image only when the person who builds it said they read it and agree.
+if [ "${SF3D_LICENCE:-}" != "stability-community" ]; then
+    echo "Stable Fast 3D is under the Stability AI Community License (https://stability.ai/community-license-agreement):" >&2
+    echo "free for research and non-commercial use, and for commercial use under US\$1M of yearly revenue (register with Stability AI); above that you need a licence from Stability AI." >&2
+    echo "Read it, and if you agree: --build-arg SF3D_LICENCE=stability-community" >&2
+    exit 1
+fi
 command -v nvcc >/dev/null 2>&1 || { echo "Stable Fast 3D needs the CUDA toolchain (nvcc) to build: use --build-arg BASE=<a CUDA devel image with Python 3.11 or later>" >&2; exit 1; }
 git clone https://github.com/Stability-AI/stable-fast-3d.git /opt/stable-fast-3d
 cd /opt/stable-fast-3d

@@ -35,7 +35,7 @@ was built and run once here (2026-11-24, with an account that had accepted the l
 
     docker build -t veritmo/model3d:1 docker/model3d                          # TripoSR only (about 14 GB with torch)
     docker build -f docker/model3d/base-cuda.Dockerfile -t vt-model3d-base:cuda128 docker/model3d                      # for Stable Fast 3D: a base with nvcc
-    docker build -t veritmo/model3d:1 --build-arg BASE=vt-model3d-base:cuda128 --build-arg SF3D=1 --build-arg ENGINES=triposr,sf3d docker/model3d   # (about 29 GB)
+    docker build -t veritmo/model3d:1 --build-arg BASE=vt-model3d-base:cuda128 --build-arg SF3D=1 --build-arg SF3D_LICENCE=stability-community --build-arg ENGINES=triposr,sf3d docker/model3d   # (about 29 GB; SF3D_LICENCE says you read the Stability AI Community License and agree: without it the build stops)
     docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -v "$PWD/models/model3d:/ckpt" veritmo/model3d:1 python /opt/fetch.py            # TripoSR
     docker run --rm --user $(id -u):$(id -g) -e HOME=/tmp -e HF_TOKEN -v "$PWD/models/model3d:/ckpt" veritmo/model3d:1 python /opt/fetch.py sf3d
 

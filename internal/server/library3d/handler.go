@@ -39,6 +39,8 @@ type Handler struct {
 	installs installs
 	// Fetcher downloads the weights of TripoSR for the .NET service (the zero value goes to Hugging Face and GitHub).
 	Fetcher generate.Fetcher
+	// Acceptances keeps the explicit acceptances of licences with conditions; nil is the settings of the server.
+	Acceptances Acceptances
 }
 
 // SetHost gives the handler the server's answers; without one it behaves as a server that hides what is for adults.

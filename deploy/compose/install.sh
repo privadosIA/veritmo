@@ -8,12 +8,12 @@
 #   INSTALL_COMPONENTS="sd piper" docker compose --profile install run --rm installer
 #
 # Components (INSTALL_COMPONENTS, space separated; default: the required ones):
-#   required   sd piper ytdlp gsap hflibs hfruntime acestep
+#   required   sd piper ytdlp gsap hflibs hfruntime acestep chrome
 #   optional   whisper demucs upscalers hfblocks models
 set -euo pipefail
 cd /app
 mkdir -p "${HOME:-/tmp/home}"
-COMPONENTS=${INSTALL_COMPONENTS:-"sd piper ytdlp gsap hflibs hfruntime acestep"}
+COMPONENTS=${INSTALL_COMPONENTS:-"sd piper ytdlp gsap hflibs hfruntime acestep chrome"}
 MODE=${1:-install}
 
 # present NAME: whether the component is already installed (the file or folder its script leaves)
@@ -26,6 +26,7 @@ present() {
         hflibs)    [[ -d third_party/hyperframes-libs ]] && [[ -n "$(ls -A third_party/hyperframes-libs 2>/dev/null)" ]] ;;
         hfruntime) [[ -s third_party/hyperframes-runtime/hyperframe.runtime.iife.js ]] ;;
         acestep)   [[ -x bin/ace-synth && -x bin/ace-lm ]] ;;
+        chrome)    [[ -x bin/chromium && -x bin/chrome-for-testing/chrome-linux64/chrome ]] ;;
         hfblocks)  [[ -d hyperframes/blocks ]] && [[ -n "$(ls -A hyperframes/blocks 2>/dev/null)" ]] ;;
         whisper)   [[ -x bin/whisper-cli ]] ;;
         demucs)    [[ -x bin/demucs ]] ;;
@@ -45,6 +46,7 @@ script() {
         hflibs)    echo "bash scripts/get-hyperframes-libs.sh" ;;
         hfruntime) echo "bash scripts/get-hyperframes-runtime.sh" ;;
         acestep)   echo "bash scripts/build-acestep.sh" ;;
+        chrome)    echo "bash scripts/get-chrome.sh" ;;
         hfblocks)  echo "bash scripts/get-hyperframes-blocks.sh" ;;
         whisper)   echo "bash scripts/get-whisper.sh" ;;
         demucs)    echo "bash scripts/get-demucs.sh" ;;

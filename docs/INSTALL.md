@@ -11,6 +11,44 @@ This guide takes a Linux machine from nothing to a working `veritmo serve`. The 
 - **Enough memory and disk.** The development machine has 30 GB of RAM, which is comfortable for the large models: a model is copied to RAM as well as to VRAM while it loads, and the large video set needs about 21 GB. `./serve.sh` caps the server and everything it launches at 85% of the RAM (`MEM_MAX`; see [Machines with 32 GB of RAM](#machines-with-32-gb-of-ram)). Count about 3 GB of disk for the tools, plus the models you choose (see [Models](#models)): from 4 GB for a single Stable Diffusion checkpoint up to 50 GB or more for the large video and music sets. The projects themselves (scenes, sources, cache and results) can live on another, bigger disk: `MEDIA_DIR=/big/disk/media ./serve.sh` keeps them there (or write the path once in `~/.config/veritmo/media-dir`), and `MEDIA_DIR=off` keeps them in `projects/` (see [SERVER.md](SERVER.md)). The models can be moved the same way with `MODELS_DIR` and `veritmo models migrate` (see [SERVER.md](SERVER.md)).
 - **Network access** to GitHub, Hugging Face and your distribution's package mirrors while installing. Nothing is downloaded at run time except the models you ask for.
 
+## What runs with how much video memory
+
+Pick your card's column. The figures are the peak video memory of each engine: the `vram_mb` of its entry in the model catalog (which the planner uses to
+decide what fits) and the runs recorded in the guides, on a 12 GB RTX 4070 and a 16 GB RTX 5060 Ti. A desktop session takes about 0.4 GB of the card.
+
+- **yes**: the figure is under the card's memory. **tight**: it fits, with less than 1 GB to spare (close other programs that use the card).
+- **no**: the figure is above the card's memory. **not measured**: nobody has run it, and the catalog has no figure.
+- The **8 GB** and **24 GB** columns are worked out from the figures: no 8 GB or 24 GB card has run these engines. The 12 and 16 GB columns are measured.
+- RAM matters too: a model is copied to RAM as well as to VRAM while it loads. The RAM column says what the heavy ones need (32 GB is enough for everything here, with the
+  memory cap described under [Troubleshooting](#troubleshooting)).
+
+| What | Peak VRAM | 8 GB | 12 GB | 16 GB | 24 GB | Needs RAM |
+|---|---|---|---|---|---|---|
+| Pictures: Stable Diffusion 1.5 | 4 GB | yes | yes | yes | yes | |
+| Pictures: SDXL, Juggernaut XL, Pony | 10 GB | no | yes | yes | yes | |
+| Pictures: Krea 2 Turbo (Q4) | 14 GB | no | no | yes | yes | |
+| Retouch: FLUX.1 Kontext (Q4) | 8 GB | no | yes | yes | yes | 16 GB |
+| Retouch: Qwen-Image-Edit (Q4) | 11.5 GB | no | tight | yes | yes | 24 GB |
+| Video: Wan 2.2 5B (Q4) | 6 GB | yes | yes | yes | yes | |
+| Video: Wan 2.2 5B (Q8) | not measured | not measured | not measured | not measured | not measured | |
+| Video: Wan 2.2 A14B (Q4) | 11 GB | no | tight | yes | yes | 21 GB |
+| Video: MiniMax H3 (Q4) | 14 GB; 11.2 GB at 768x416 | no | at 768x416 | yes | yes | 24 GB |
+| Video: LTX 2.3 (Q4, with sound) | 11.5 GB; 11.1 GB measured | no | tight | yes | yes | 24 GB |
+| Video: AnimateDiff v3 | 6 GB; 5.6 GB measured | yes | yes | yes | yes | |
+| Video: motion control (Wan VACE 1.3B) | 6 GB | yes | yes | yes | yes | |
+| Music: ACE-Step 1.5 | 9 GB; 8.4 GB measured | no | yes | yes | yes | |
+| Music: HeartMuLa 3B | 8 GB measured | no | yes | yes | yes | |
+| Music: DiffRhythm2 | 5.6 GB measured | yes | yes | yes | yes | |
+| 3D models: TripoSR | about 6 GB measured | yes | yes | yes | yes | |
+| 3D models: Stable Fast 3D | 7.5 GiB measured | tight | yes | yes | yes | 4 GB |
+| Motion graphics (Chrome) | no video memory | yes | yes | yes | yes | |
+| 3D scenes (Blender) | not measured | not measured | not measured | not measured | not measured | |
+| Lyrics (Whisper), song recognition | on the CPU by default | yes | yes | yes | yes | |
+
+On a 12 GB card the planner picks the settings that fit (a lower resolution for H3, the 5B set rather than the A14B for video), and the easy mode limits every
+level to what the card holds; with several cards each engine uses the one a run gives it. If Ollama is on the same card it keeps a model resident for a while (see
+[the note below](#requirements-reference)) and takes memory from the render.
+
 ## Other platforms (Windows and macOS)
 
 Only Linux x86_64 with an NVIDIA GPU is supported and tested. Nothing below has been tried yet: it is the plan for testing, not a promise.
@@ -272,7 +310,7 @@ Optional: only the scenes made from a `.blend` file (`blender:` in `docs/SCENES_
 
 ## Chrome or Chromium
 
-Optional: only the motion-graphic scenes and the overlays (animated titles and lower thirds) need it, to draw the pages the model writes. The installer offers it (`bash scripts/install.sh --only browser`) with your package manager's `chromium`; it counts as present when any of the names below is in the `PATH`. The orchestrator finds `google-chrome-stable`, `google-chrome`, `chromium` or `chromium-browser` in the `PATH`; install one with your system package manager (`sudo pacman -S chromium`, `sudo apt install chromium`, …) or point to another with the **Browser** card of Settings. The Environment screen shows which one is used. Nothing is downloaded and no Node.js or Playwright is needed at run time.
+Optional: only the motion-graphic scenes and the overlays (animated titles and lower thirds) need it, to draw the pages the model writes. The installer offers it (`bash scripts/install.sh --only browser`) with your package manager's `chromium`; it counts as present when any of the names below is in the `PATH`. The orchestrator finds `google-chrome-stable`, `google-chrome`, `chromium` or `chromium-browser` in the `PATH`; install one with your system package manager (`sudo pacman -S chromium`, `sudo apt install chromium`, …) or point to another with the **Browser** card of Settings. The Environment screen shows which one is used. Nothing is downloaded at run time and no Node.js or Playwright is needed. If you would rather have Google's Chrome for Testing than your package manager's browser (the Compose stack does), `bash scripts/get-chrome.sh` downloads the pinned version from Google into `bin/chrome-for-testing/` with a launcher at `bin/chromium`, checked against a SHA-256; it is Google software under its own terms (`chrome://terms`), which is why no image or archive of this project carries it.
 
 ## Models
 

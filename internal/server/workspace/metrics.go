@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"veritmo/internal/platform/edition"
 	"veritmo/internal/platform/sched"
 )
 
@@ -153,7 +154,7 @@ func (h *Handler) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	if h.cfg.Database.IsRemote() {
 		driver = h.cfg.Database.Driver
 	}
-	m.gauge("veritmo_info", "This server, and the engine its history is kept in.", 1, "server", server, "database", driver)
+	m.gauge("veritmo_info", "This server, the engine its history is kept in and the version of the program.", 1, "server", server, "database", driver, "version", edition.VersionNumber())
 	m.gauge("veritmo_uptime_seconds", "Seconds since the server started.", time.Since(h.host.Started()).Seconds())
 
 	// The history.

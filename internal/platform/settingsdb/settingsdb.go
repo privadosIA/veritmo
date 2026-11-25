@@ -115,6 +115,12 @@ var fields = []field{
 	{"motion_model", func(f settings.File) any { return nonEmpty(f.MotionModel) }},
 	{"routing", func(f settings.File) any { return nonEmptyMap(f.Routing) }},
 	{"consent", func(f settings.File) any { return nonEmptyMap(f.Consent) }},
+	{"licence_acceptances", func(f settings.File) any {
+		if len(f.LicenceAcceptances) == 0 {
+			return nil
+		}
+		return f.LicenceAcceptances
+	}},
 	{"remote", func(f settings.File) any {
 		if f.Remote == nil || f.Remote.MaxCalls == 0 {
 			return nil

@@ -74,6 +74,44 @@ assert_eq "now they are one file" "$(inode "$SVC/heartmula/libshared.so")" "$(in
 assert_contains "reports the saving" "$out" "MB saved"
 cleanup_sandbox
 
+# --- Stable Fast 3D: its licence has to be accepted on purpose ------------------------------------
+setup
+: >"$T_DIR/calls"
+out="$(bash "$IL_ROOT/scripts/get-services.sh" 2>&1)"; st=$?
+assert_status "a full build without the acceptance still builds the others" 0 "$st"
+assert_eq "Stable Fast 3D is not built" "" "$(ls "$SVC" | grep stable)"
+assert_eq "the others are" "1" "$(ls "$SVC" | grep -c lionclap)"
+assert_not_contains "no publish of it" "$(cat "$T_DIR/calls")" "StableFast3D"
+assert_contains "it says it skipped it" "$out" "stable-fast-3d is skipped"
+assert_contains "names the licence" "$out" "Stability AI Community License"
+assert_contains "gives its address" "$out" "https://stability.ai/community-license-agreement"
+assert_contains "and the flag" "$out" "--accept-licence stability-community"
+cleanup_sandbox
+
+setup
+: >"$T_DIR/calls"
+out="$(bash "$IL_ROOT/scripts/get-services.sh" --only stable-fast-3d 2>&1)"; st=$?
+assert_status "asked for by name without the acceptance" 1 "$st"
+assert_eq "nothing was built" "0" "$(wc -l <"$T_DIR/calls" | tr -d ' ')"
+assert_contains "names the licence" "$out" "Stability AI Community License"
+assert_contains "gives its address" "$out" "https://stability.ai/community-license-agreement"
+assert_contains "and the flag" "$out" "--accept-licence stability-community"
+out="$(bash "$IL_ROOT/scripts/get-services.sh" --only lionclap,stable-fast-3d 2>&1)"; st=$?
+assert_status "named with another one" 1 "$st"
+assert_eq "not even the other is built" "0" "$(wc -l <"$T_DIR/calls" | tr -d ' ')"
+out="$(bash "$IL_ROOT/scripts/get-services.sh" --only stable-fast-3d --accept-licence mit 2>&1)"; st=$?
+assert_status "another licence id is not the acceptance" 1 "$st"
+assert_eq "still nothing built" "0" "$(wc -l <"$T_DIR/calls" | tr -d ' ')"
+out="$(bash "$IL_ROOT/scripts/get-services.sh" --only stable-fast-3d --accept-licence stability-community 2>&1)"; st=$?
+assert_status "with the acceptance it builds" 0 "$st"
+assert_eq "one publish" "1" "$(wc -l <"$T_DIR/calls" | tr -d ' ')"
+assert_eq "it is there" "1" "$(ls "$SVC" | grep -c stable)"
+rm -rf "$SVC/stable-fast-3d"; : >"$T_DIR/calls"
+out="$(bash "$IL_ROOT/scripts/get-services.sh" --accept-licence=stability-community 2>&1)"; st=$?
+assert_status "the = form, in a full build" 0 "$st"
+assert_eq "it is built with the others" "1" "$(ls "$SVC" | grep -c stable)"
+cleanup_sandbox
+
 # --- no dotnet and no --share-only: the script says so -----------------------------------------
 setup
 rm -f "$T_BIN/dotnet"

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"veritmo/internal/platform/licence"
 	"veritmo/internal/platform/musicsvc"
 )
 
@@ -61,13 +62,17 @@ type EngineInfo struct {
 	// Licence is the engine's, recorded with each model it makes; Attribution says whether its terms ask to be followed.
 	Licence     string
 	Attribution bool
+	// Terms is the licence as a client shows it before an install; for a licence that needs an explicit acceptance it carries its id.
+	Terms licence.Terms
 	// Gated says its weights need a Hugging Face key whose account accepted the licence.
 	Gated bool
 }
 
 var infos = map[string]EngineInfo{
-	EngineTripoSR: {ID: EngineTripoSR, Name: "TripoSR", Licence: "MIT"},
-	EngineSF3D:    {ID: EngineSF3D, Name: "Stable Fast 3D", Licence: "Stability AI Community License (free up to US$1M of yearly revenue; see its terms)", Attribution: true, Gated: true},
+	EngineTripoSR: {ID: EngineTripoSR, Name: "TripoSR", Licence: "MIT",
+		Terms: licence.Terms{Name: "MIT", URL: "https://github.com/VAST-AI-Research/TripoSR/blob/main/LICENSE", Commercial: licence.Yes}},
+	EngineSF3D: {ID: EngineSF3D, Name: "Stable Fast 3D", Licence: "Stability AI Community License (free up to US$1M of yearly revenue; see its terms)", Attribution: true, Gated: true,
+		Terms: licence.StabilityCommunityTerms},
 }
 
 // Info is the description of an engine; false when it is not one.

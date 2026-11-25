@@ -101,7 +101,7 @@ func TestMetrics_CountsOnlyThisServersRunsAndTheirDurations(t *testing.T) {
 		`veritmo_run_duration_seconds_bucket{client="embedded",kind="project",le="+Inf"} 2`, // the other server's 9999 s is not here
 		`veritmo_run_duration_seconds_sum{client="embedded",kind="project"} 545`,
 		`veritmo_run_duration_seconds_count{client="embedded",kind="project"} 2`,
-		`veritmo_info{server="estudio",database="sqlite"} 1`,
+		`veritmo_info{server="estudio",database="sqlite",version="dev"} 1`,
 		`veritmo_database_up 1`,
 	} {
 		if !strings.Contains(out, want+"\n") {

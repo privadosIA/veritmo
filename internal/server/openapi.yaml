@@ -6675,6 +6675,11 @@ paths:
         `GET /api/models3d/installs/{id}`. `409` when nothing is missing, while another install runs, and for an external service; `422` with the `reason` when it
         cannot be done that way (`no_service` without .NET, `no_docker`, `no_gpu_runtime`, `not_built`, an image of `sf3d` that is not built, a part the backend does
         not have, and `key_missing`, `key_rejected` or `licence_not_accepted` for `sf3d`) or `no_disk`.
+        **An engine whose licence has conditions** (`sf3d`: the plan's `licence.id` is `stability-community`) is never installed on the strength of `confirm` alone: the request
+        has to carry `accept_licence` with that id, which a client sends only after the person read the licence and agreed. Without it the answer is `400` with the reason
+        `licence_acceptance_required` that names the licence and its address (not `licence_not_accepted`, which says Hugging Face refuses the key because its account has not
+        accepted the licence there: that is the person's own step on huggingface.co). With it the acceptance is recorded in the settings (the licence, the date and `client`)
+        and the job starts; `licence.accepted` of the plan says it was recorded. The server never accepts a licence for anyone: there is no default and no setting that does.
       parameters:
         - { name: engine, in: path, required: true, schema: { type: string, enum: [triposr, sf3d] } }
       requestBody:
@@ -6687,6 +6692,8 @@ paths:
                 backend: { type: string, enum: [dotnet, docker], description: "The way to install for (default: the one the engine runs on now)." }
                 parts: { type: array, items: { type: string, enum: [service, image, weights] }, description: "Only these parts (default: all that are missing)." }
                 confirm: { type: boolean, description: "The person read the plan, including the licence: start the job." }
+                accept_licence: { type: string, description: "The `licence.id` of the plan (`stability-community`), sent only after the person agreed to that licence. Required with `confirm` where the plan's licence has an `id`." }
+                client: { type: string, maxLength: 64, description: "A label for the dashboard that sends the acceptance, kept with its record." }
       responses:
         "200":
           description: The plan (no `confirm`).
@@ -6706,6 +6713,7 @@ paths:
                 required: [install]
                 properties:
                   install: { $ref: "#/components/schemas/Model3DInstall" }
+        "400": { description: "The body is not valid, or `confirm` came without the `accept_licence` that the engine's licence needs (`reason: licence_acceptance_required`).", content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
@@ -7764,10 +7772,24 @@ components:
         parts: { type: array, items: { type: string, enum: [service, image, weights] }, description: "What the job would run, in order." }
         missing: { type: array, items: { type: string }, description: "Files of the weights folder that are not there." }
         bytes: { type: integer, format: int64, description: "About how much they take (0 when it was never measured)." }
-        licence: { type: string, description: "The engine's licence, which the weights come under." }
+        licence: { $ref: "#/components/schemas/LicenceTerms" }
         gated: { type: boolean, description: "The weights come from a repository whose licence the person's own Hugging Face account has to accept." }
         path: { type: string, description: "The weights folder." }
         free_bytes: { type: integer, format: int64 }
+    LicenceTerms:
+      type: object
+      required: [name, commercial]
+      description: >-
+        A licence as a client shows it, above the button that confirms an install: show `name`, `commercial` and `summary`, and link `url`. The server only describes
+        the licence; it never accepts one for anyone. Where an acceptance is required (`id` is set) the install is refused until the request carries `accept_licence`
+        with that `id`, which a client sends only after the person agreed.
+      properties:
+        id: { type: string, description: "Set where an explicit acceptance is required (`stability-community`): the value to send back as `accept_licence`." }
+        name: { type: string, description: "The licence's name." }
+        url: { type: string, description: "Where its text is (the model's page for a catalog entry)." }
+        summary: { type: string, description: "Its conditions in one line." }
+        commercial: { type: string, enum: [yes, conditions, no, unknown], description: "Whether it allows commercial use." }
+        accepted: { type: boolean, description: "An acceptance was recorded on this server; present only where one is required." }
     Model3DInstall:
       type: object
       required: [id, engine, backend, parts, state, log, created_at]

@@ -20,6 +20,13 @@ docker compose up -d                                      # the server, MySQL, t
 docker compose ps                                         # every service healthy
 ```
 
+**Which images are downloaded and which are built.** The server and the installation step are published with each release
+(`ghcr.io/privadosia/veritmo-server` and `veritmo-tools`, see [IMAGES.md](IMAGES.md)): `docker compose up` and the `installer` pull them, and
+build them from this checkout only when they cannot be pulled (a version that is not published). `VERSION` in `.env` pins the release
+(`compose-init.sh` writes it when the checkout is exactly one; empty is the latest). The generators (`heartmula`, `diffrhythm2`), the
+3D-model service (`model3d`) and the compression service are never published by this project: they carry large stacks or
+software with terms of their own, so `docker compose build <service>` makes them on your machine the first time their profile is used.
+
 `docker compose up -d` brings up, in this order: `mysql`, `mysql-users` and `migrate` (one-shot steps that end), then `server`, then `prometheus` and `grafana`. The server starts only after the migration ended well, and **never migrates by itself**: a new version that brings migrations has them applied by `migrate` when the stack is started with the new image. If the migration fails, the server is not started and `docker compose logs migrate` says why.
 
 | What | Where |
@@ -112,7 +119,9 @@ docker compose --profile install run --rm installer check   # what is installed 
 docker compose --profile install run --rm installer         # installs what is missing
 ```
 
-It runs the pinned scripts of the repository (the ones `scripts/install.sh` uses) in an image with the build chain, and writes what they build into the host folders above, so the programs are built against the libraries of the image that runs them. What is installed is not built again. `INSTALL_COMPONENTS` in `.env` chooses the components: `sd piper ytdlp gsap hflibs hfruntime acestep` by default; `whisper demucs upscalers hfblocks models` are optional. The server starts with whatever is installed and reports each task whose element is missing as unavailable, with the reason.
+It runs the pinned scripts of the repository (the ones `scripts/install.sh` uses) in an image with the build chain, and writes what they build into the host folders above, so the programs are built against the libraries of the image that runs them. What is installed is not built again. `INSTALL_COMPONENTS` in `.env` chooses the components: `sd piper ytdlp gsap hflibs hfruntime acestep chrome` by default; `whisper demucs upscalers hfblocks models` are optional. The server starts with whatever is installed and reports each task whose element is missing as unavailable, with the reason.
+
+**Chrome is not in the image.** The motion-graphic scenes and overlays draw their pages with Chrome, which is Google software that may not be redistributed (it carries a proprietary decryption module), so no image of this project holds it. The `chrome` component downloads Chrome for Testing from Google's own server into `bin/` of the host (`scripts/get-chrome.sh`, checked against a pinned SHA-256) and the server finds `bin/chromium` on its `PATH`. The image only carries the system libraries Chrome needs. Without the component, motion-graphic scenes are reported as unavailable and everything else works.
 
 ## Secrets and the token
 
@@ -165,7 +174,7 @@ Prometheus reads the metrics of the server (`/api/metrics`) with its token. Graf
 | `MYSQL_PORT`, `HEARTMULA_PORT`, `DIFFRHYTHM2_PORT`, `OLLAMA_PORT`, `REDIS_PORT`, `LOKI_PORT` | only `compose.services.yaml`: the ports the pieces are published on for the server on this machine |
 | `DASHBOARD_ORIGIN` | the browser origin of the dashboard |
 | `SERVER_ARGS` | options added to the command line of the server; empty by default (the server starts as it does by default) |
-| `SERVER_MEM_LIMIT` | the most RAM the server and what it launches may use |
+| `SERVER_MEM_LIMIT` | the most RAM the server and what it launches may use. `compose-init.sh` sets `24g` on a machine with 40 GiB of RAM or less (the example's default is above what a 32 GB machine has) and says so; it never changes an existing `.env`. It is the same idea as `MEM_MAX` of the native `scripts/serve.sh` |
 | `EDITION_TAG` | the Go build tag of the edition built into the image; empty for the default edition |
 | `INSTALL_COMPONENTS` | what the installation step installs; empty: the default ones |
 | `VERITMO_DB_NAME`, `VERITMO_DB_USER` | the name of the database and its user |
@@ -183,7 +192,7 @@ It looks at what is up from the outside, with the token of `.env`: the server an
 ## Backing up and updating
 
 - **The database:** `docker compose exec mysql sh -c 'mysqldump -uroot -p"$(cat /run/secrets/mysql_root_password)" --single-transaction --all-databases' > backup.sql`. The files (projects, models, library) are plain folders of this machine: back them up as any folder.
-- **Updating:** `git pull`, `docker compose build`, `docker compose up -d`. A version with migrations has them applied by `migrate` before the new server starts.
+- **Updating:** `git pull`, then `docker compose pull` (or `docker compose build` for a version that is not published), `docker compose up -d`. A version with migrations has them applied by `migrate` before the new server starts.
 
 ## Troubleshooting
 

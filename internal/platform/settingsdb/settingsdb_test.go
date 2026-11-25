@@ -55,7 +55,8 @@ func fullFile() settings.File {
 			"loki":    {Address: "http://l:3100"},
 		},
 		CORSOrigins: []string{"http://a:4200"}, CORSNetworks: []string{"100.64.0.0/10"}, ReviewDrafts: true,
-		Ctxpress: &settings.CtxpressSettings{Enabled: true, URL: "http://127.0.0.1:8080", MinChars: 2000},
+		Ctxpress:           &settings.CtxpressSettings{Enabled: true, URL: "http://127.0.0.1:8080", MinChars: 2000},
+		LicenceAcceptances: map[string]settings.LicenceAcceptance{"stability-community": {At: time.Date(2026, 11, 25, 10, 0, 0, 0, time.UTC), Client: "model-studio"}},
 	}
 }
 

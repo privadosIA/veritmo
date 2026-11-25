@@ -1,0 +1,94 @@
+name: Release images
+
+# A tag like v0.1.0 builds the two images this project publishes, checks that neither holds a model, the source of Stable Fast 3D or
+# Chrome, and only then pushes them to the GitHub Container Registry. See docs/RELEASING.md and docs/IMAGES.md.
+#
+# Only `veritmo-server` and `veritmo-tools` are published. The music, 3D and compression images carry large stacks or software
+# with terms of their own and are built by whoever uses them (`docker compose build ...`).
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  images:
+    # The public repository only: the private Gitea has its own workflows (.gitea/workflows) and publishes nothing.
+    if: github.repository == 'privadosIA/veritmo'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: server
+            target: runtime
+          - name: tools
+            target: tools
+    env:
+      LOCAL_IMAGE: veritmo-check/${{ matrix.name }}:ci
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # The CUDA layers are large: the runner's own tool caches are not needed.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force >/dev/null
+          df -h /
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/veritmo-${{ matrix.name }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      # 1. Build it here, without pushing, and look inside.
+      - name: Build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: ${{ env.LOCAL_IMAGE }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            SOURCE=${{ github.server_url }}/${{ github.repository }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,scope=${{ matrix.name }},mode=max
+
+      # 2. The guard: no model, no Stable Fast 3D, no Chrome (unless docs/IMAGES.md records permission). A failure stops here.
+      - name: Check what is inside
+        run: bash scripts/check-image.sh "$LOCAL_IMAGE"
+
+      # 3. Push the same layers (they come from the cache).
+      - name: Push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            SOURCE=${{ github.server_url }}/${{ github.repository }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}

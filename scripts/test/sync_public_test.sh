@@ -18,6 +18,8 @@ fake_project() {
     printf '# Private readme\n' >README.md
     printf '# Guide\n\nKeep this line.\n<!-- private:start -->\nonly private\n<!-- private:end -->\nA <!--[private]-->hidden<!--[/private]-->visible sentence.\n| row | private |<!--[private-line]-->\n| row | kept |\n' >docs/guide.md
     printf '# Private readme\n' >README.md
+    # the markers are written in two pieces so that this file, which is exported, does not hold one
+    printf 'services:\n  a:\n    image: local/a:dev # [private''-line]\n    # [public''-line] image: ghcr.io/x/a:latest\n    build: .\n' >compose.yaml
     git add -A && git commit -q -m main-1
     git branch public-release && git worktree add -q "$W" public-release
     ( cd "$W" && printf '# Public readme\n' >README.md && git add -A && git commit -q -m pub-1 )
@@ -42,6 +44,11 @@ assert_contains "inline neighbours stay" "$doc" "A visible sentence."
 assert_not_contains "line cut" "$doc" "| row | private |"
 assert_contains "other rows stay" "$doc" "| row | kept |"
 assert_not_contains "no marker is left" "$doc" "private"
+compose="$(cat "$W/compose.yaml")"
+assert_contains "the public line becomes the line" "$compose" "    image: ghcr.io/x/a:latest"
+assert_not_contains "the private line is cut" "$compose" "local/a"
+assert_not_contains "no [public-line] marker is left" "$compose" "public-line"
+assert_contains "the build stays" "$compose" "build: ."
 assert_eq "one new commit" "Sync with the main branch: first sync" "$(git -C "$W" log -1 --format=%s)"
 assert_eq "the commit is on public-release" "public-release" "$(git -C "$W" rev-parse --abbrev-ref HEAD)"
 

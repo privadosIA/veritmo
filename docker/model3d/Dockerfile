@@ -5,9 +5,11 @@ FROM ${BASE}
 
 # The commit of https://github.com/VAST-AI-Research/TripoSR the service was made and tested with (MIT licence).
 ARG TRIPOSR_COMMIT=107cefdc244c39106fa830359024f6a2f1c78871
-# Stable Fast 3D (Stability AI Community License) is NOT in the image unless it is asked for: --build-arg SF3D=1 --build-arg ENGINES=triposr,sf3d.
+# Stable Fast 3D (Stability AI Community License) is NOT in the image unless it is asked for: --build-arg SF3D=1 --build-arg ENGINES=triposr,sf3d, and
+# --build-arg SF3D_LICENCE=stability-community to say you read the licence and agree (https://stability.ai/community-license-agreement): without it the build stops.
 # It needs the CUDA toolchain to build its extensions: use a BASE image that has nvcc (base-cuda.Dockerfile makes one; see README.md).
 ARG SF3D=0
+ARG SF3D_LICENCE=
 ARG SF3D_COMMIT=ff21fc491b4dc5314bf6734c7c0dabd86b5f5bb2
 ARG ENGINES=triposr
 ARG MODEL3D_VERSION=1
@@ -29,7 +31,7 @@ RUN git clone https://github.com/VAST-AI-Research/TripoSR.git /opt/TripoSR \
     && cd /opt/TripoSR && git checkout "${TRIPOSR_COMMIT}" && git apply /opt/triposr-local.patch
 
 COPY install-sf3d.sh /opt/install-sf3d.sh
-RUN if [ "${SF3D}" = "1" ]; then SF3D_COMMIT="${SF3D_COMMIT}" sh /opt/install-sf3d.sh; fi
+RUN if [ "${SF3D}" = "1" ]; then SF3D_LICENCE="${SF3D_LICENCE}" SF3D_COMMIT="${SF3D_COMMIT}" sh /opt/install-sf3d.sh; fi
 # The two things Stable Fast 3D would download when it loads (the DINOv2 and CLIP models, whose weights are inside its own checkpoint): the service
 # stays offline, so its code builds them from the small config in the weights folder / without weights (SF3D_DINO_CONFIG, SF3D_OFFLINE).
 COPY sf3d-local.patch /opt/sf3d-local.patch
