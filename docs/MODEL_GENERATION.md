@@ -15,7 +15,8 @@ Nothing here is installed by the program on its own: the service or the containe
 Each engine runs by default as its own .NET service, `bin/services/triposr` and `bin/services/stable-fast-3d` (the .NET SDK 8 or newer and the ASP.NET Core runtime are needed, like for the music services):
 
 ```bash
-bash scripts/get-services.sh --only triposr,stable-fast-3d   # once; --cpu builds them without the CUDA libraries
+bash scripts/get-services.sh --only triposr                  # once; --cpu builds it without the CUDA libraries
+bash scripts/get-services.sh --only stable-fast-3d --accept-licence stability-community   # only if you accept its licence (below)
 ```
 
 A service reads the same weights folder as the container (`models/model3d`), listens on a free port of loopback, sees the one card it was started on

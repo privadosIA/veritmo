@@ -3,7 +3,7 @@
 Makes a 3D model (a binary glTF, `.glb`) from **a picture**. The orchestrator makes the picture from a text first when it is asked a text
 (`orchestrator models3d generate --prompt "..."`), so the whole path is text → picture → model. It is Python and PyTorch, so it lives here, in a
 container, and the veritmo talks to it over HTTP, as it does with HeartMuLa. It is optional. Both engines also have a C# port that runs without Python
-(`dotnet/triposr` and `dotnet/stable-fast-3d`, `bash scripts/get-services.sh --only triposr,stable-fast-3d`), the default way to run them; this container is then the fallback
+(`dotnet/triposr` and `dotnet/stable-fast-3d`, `bash scripts/get-services.sh --only triposr`, and `--only stable-fast-3d --accept-licence stability-community` once you accept its licence), the default way to run them; this container is then the fallback
 (`model3d_backend` = `docker`).
 
 | Engine | Licence | In the image | Needs |

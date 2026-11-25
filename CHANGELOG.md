@@ -69,7 +69,9 @@ installation as it is after the rename to Veritmo. It runs on Linux x86_64 with 
 - **Blender scenes**: a scene of a video can be a Blender file or a description (a JSON of objects, lights, cameras and
   keyframes) that a writer model can produce and revise; models of your own can be placed in it, fitted by height or width.
 - **A library of 3D models** in packs, with thumbnails, a `.glb` download, a 3D project mode and its datasets, and generation of
-  a model from a picture with TripoSR or Stable Fast 3D (the latter under its own licence, see [THIRD_PARTY.md](THIRD_PARTY.md)).
+  a model from a picture with TripoSR (MIT) or Stable Fast 3D. Stable Fast 3D is under the Stability AI Community License, not
+  Apache-2.0 (see [THIRD_PARTY.md](THIRD_PARTY.md)): the installer builds only TripoSR unless you accept that licence on purpose
+  (`--accept-licence stability-community`, or typing `accept` when asked), and its weights also need your Hugging Face acceptance.
 
 ### Editing a video you have
 
