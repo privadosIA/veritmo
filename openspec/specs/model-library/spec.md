@@ -69,6 +69,26 @@ The server SHALL ship a list of 3D model packs that a person can install, each w
 - **WHEN** a pack holds a `.glb` that is not a valid binary glTF
 - **THEN** it is not in the catalog, the pack is still installed and the pack says which file was left out
 
+### Requirement: The binary glTF of a model can be downloaded
+
+`GET /api/models3d/models/{pack}/{name}/file` SHALL answer the model's `.glb` as the library stores it: `200` with `Content-Type: model/gltf-binary`, `Content-Length`, an `ETag` and `Cache-Control: private, max-age=…`. `If-None-Match` with the current `ETag` SHALL be answered with `304` and no body, and a `Range` with `206`. A model that is not in the library SHALL be `404` with the usual error body, and so SHALL a model marked for adults on a server that does not show them. The route SHALL need the same token as the rest of `/api/models3d/` and SHALL also accept `?ticket=`, and SHALL be described in the OpenAPI document.
+
+#### Scenario: A model
+- **WHEN** the file of a model of the library is asked
+- **THEN** the answer is `200` with the bytes of the `.glb`, `model/gltf-binary`, its length and an `ETag`
+
+#### Scenario: Not modified
+- **WHEN** it is asked again with the `ETag` in `If-None-Match`
+- **THEN** the answer is `304` with no body
+
+#### Scenario: A model that is not there
+- **WHEN** the file of a model or a pack that is not in the library is asked
+- **THEN** the answer is `404`
+
+#### Scenario: A viewer that cannot send headers
+- **WHEN** the file is asked with a valid `?ticket=` and no `Authorization` header
+- **THEN** it is served; with no ticket and no token the answer is `401`
+
 ### Requirement: The library is behind the same access as the rest of the API
 
 The routes under `/api/models3d/` SHALL need the same token as the rest of `/api/`, SHALL NOT be about any project (a hidden project's content mode does not apply to them), and SHALL be described in the OpenAPI document.

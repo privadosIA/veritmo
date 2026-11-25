@@ -62,5 +62,5 @@ func refused(model string) error {
 		return fmt.Errorf("%w: %s refused to write this text. The refusal comes from the model, not from the application", ErrRefused, model)
 	}
 	return fmt.Errorf("%w: %s refused to write this text. The refusal comes from the model, not from the application: "+
-		"choose another installed model (the model selector, --model or ORCHESTRATOR_ASSIST_MODEL)", ErrRefused, model)
+		"choose another installed model (the model selector, --model or VERITMO_ASSIST_MODEL)", ErrRefused, model)
 }

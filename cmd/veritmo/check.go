@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"veritmo/internal/platform/legacyname"
 
 	"veritmo/internal/assistant/llm"
 	"veritmo/internal/platform/cache"
@@ -41,12 +42,12 @@ func (o checkOptions) newVision(model string) quality.Vision {
 	return quality.NewOllama(settings.OllamaURL(), model)
 }
 
-// visionModelFrom resolves the vision model: the flag, else $ORCHESTRATOR_VISION_MODEL.
+// visionModelFrom resolves the vision model: the flag, else $VERITMO_VISION_MODEL.
 func visionModelFrom(flagValue string) string {
 	if flagValue != "" {
 		return flagValue
 	}
-	return strings.TrimSpace(os.Getenv("ORCHESTRATOR_VISION_MODEL"))
+	return strings.TrimSpace(legacyname.Getenv("VISION_MODEL"))
 }
 
 // checkProject checks the animated scenes of a project whose clips exist and
@@ -72,7 +73,7 @@ func checkProject(ctx context.Context, cfg *config.Config, base string, o checkO
 		} else if model != "" {
 			vision = o.newVision(model)
 		} else if names, err := quality.VisionModels(ctx, settings.OllamaURL()); err == nil && len(names) > 0 {
-			fmt.Fprintf(out, "note: no vision model named, so only colour and sharpness are checked; to check the people too, use --check-model <name> (or $ORCHESTRATOR_VISION_MODEL). Vision models in Ollama: %s\n", strings.Join(names, ", "))
+			fmt.Fprintf(out, "note: no vision model named, so only colour and sharpness are checked; to check the people too, use --check-model <name> (or $VERITMO_VISION_MODEL). Vision models in Ollama: %s\n", strings.Join(names, ", "))
 		}
 	}
 	if u, ok := vision.(interface{ Unload(context.Context) }); ok {
@@ -161,7 +162,7 @@ func (dp deps) check(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	var o checkOptions
 	o.NewVision = dp.newVision
-	fs.StringVar(&o.Model, "model", "", "Ollama vision model that judges the frames (default: $ORCHESTRATOR_VISION_MODEL; none checks only colour and sharpness)")
+	fs.StringVar(&o.Model, "model", "", "Ollama vision model that judges the frames (default: $VERITMO_VISION_MODEL; none checks only colour and sharpness)")
 	fs.StringVar(&o.Provider, "provider", "", "provider for this run instead of the one routed to the quality check (a remote one needs the acknowledgement given in Settings)")
 	fs.BoolVar(&o.NoVision, "no-vision", false, "check only colour and sharpness, even if a model is named")
 	fs.BoolVar(&o.Fix, "fix", false, "edit scenes.yaml: cut the silent scenes to their clean part and give the others a new seed (scenes.yaml.bak keeps the original)")

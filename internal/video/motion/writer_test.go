@@ -18,7 +18,7 @@ import (
 // built-in Ollama, served by a fake that records the request.
 func TestWriterAsksTheRoutedProvider(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "writer-model:1b")
+	t.Setenv("VERITMO_ASSIST_MODEL", "writer-model:1b")
 	var got map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/chat" {
@@ -57,7 +57,7 @@ func mustJSON(v any) []byte { b, _ := json.Marshal(v); return b }
 func TestWriterUsesTheModelSavedForTheTask(t *testing.T) {
 	cfg := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", cfg)
-	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "assistant-model:8b")
+	t.Setenv("VERITMO_ASSIST_MODEL", "assistant-model:8b")
 	if err := os.MkdirAll(filepath.Join(cfg, "veritmo"), 0o700); err != nil {
 		t.Fatal(err)
 	}

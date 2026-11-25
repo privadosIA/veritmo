@@ -155,7 +155,7 @@ func main() {
 	flag.BoolVar(&check.Fix, "fix", false, "With --check: edit scenes.yaml to cut or remake the bad scenes and run the project again (a backup is kept)")
 	flag.IntVar(&check.Attempts, "check-attempts", 2, "With --check --fix: rounds of fixing and making again")
 	flag.StringVar(&check.Provider, "check-provider", "", "provider for the vision judgement of --check, instead of the one routed to the quality check (a remote one needs the acknowledgement given in Settings)")
-	flag.StringVar(&check.Model, "check-model", "", "Ollama vision model for --check (default: $ORCHESTRATOR_VISION_MODEL; none checks only colour and sharpness)")
+	flag.StringVar(&check.Model, "check-model", "", "Ollama vision model for --check (default: $VERITMO_VISION_MODEL; none checks only colour and sharpness)")
 	flag.BoolVar(&check.NoVision, "no-vision", false, "With --check: only colour and sharpness")
 	proj.register(flag.CommandLine)
 	flag.Usage = func() {

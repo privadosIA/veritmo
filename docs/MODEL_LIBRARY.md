@@ -47,6 +47,8 @@ engine (`MIT` for `triposr`, the Stability AI Community License for `sf3d`, with
 
 `GET /api/models3d/models/{pack}/{name}/thumbnail` is the picture the pack has for the model (Kenney's `Previews/`, or the `Isometric/` and `Side/` views some kits have) or, when it has none, one 256-pixel frame of the model drawn by Blender on the CPU (about 0.5 s) and kept in `thumbs/`; `503` with how to install Blender when it has none and Blender is missing.
 
+`GET /api/models3d/models/{pack}/{name}/file` is the model's binary glTF as the library stores it (`model/gltf-binary`, with `Content-Length`, an `ETag` and `Cache-Control: private, max-age=3600`; `If-None-Match` is answered with `304` and a `Range` with `206`), for a viewer or a download. It accepts `?ticket=` like the thumbnail. The pictures a model `needs` are not part of the answer. `404` for a model that is not in the library.
+
 ## Using a model
 
 - In a project: `POST /api/projects/{id}/sources/model` with `{"from": "kenney-mini-characters/character-female-a", "name"?}`.

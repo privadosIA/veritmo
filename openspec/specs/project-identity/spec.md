@@ -48,3 +48,19 @@ Every setting read from a `VERITMO_<X>` variable SHALL fall back to `MO_<X>` whe
 #### Scenario: Both set
 - **WHEN** `VERITMO_DB_NAME=a` and `MO_DB_NAME=b`
 - **THEN** the database is `a`
+
+### Requirement: The ORCHESTRATOR_* variables are called VERITMO_*, and the old names are still read with a warning
+
+The variables the program read under the name of its first command SHALL be `VERITMO_TOKEN`, `VERITMO_TOKEN_FILE`, `VERITMO_WEB_DIR`, `VERITMO_MIN_FREE_GB`, `VERITMO_STORE_MB`, `VERITMO_ASSIST_MODEL`, `VERITMO_VISION_MODEL` and `VERITMO_DESCRIBE_CPU`. Each SHALL fall back to its former `ORCHESTRATOR_<X>` name when the new one is unset, and the first use of a fallback in a process SHALL log `ORCHESTRATOR_<X> is obsolete, use VERITMO_<X>`; when both are set the new one SHALL win. The compose files, the scripts, the workflow and the documentation SHALL use only the new names.
+
+#### Scenario: A deploy with the old token variable
+- **WHEN** the server starts with `ORCHESTRATOR_TOKEN` set and no `VERITMO_TOKEN`
+- **THEN** it requires that token on `/api/*` and logs one line saying `ORCHESTRATOR_TOKEN` is obsolete and naming `VERITMO_TOKEN`
+
+#### Scenario: Both set
+- **WHEN** `VERITMO_MIN_FREE_GB=50` and `ORCHESTRATOR_MIN_FREE_GB=100`
+- **THEN** the low-space threshold is 50 GB and nothing is logged about the old variable
+
+#### Scenario: A secret in a file
+- **WHEN** only `ORCHESTRATOR_TOKEN_FILE` names a readable file
+- **THEN** its content is the token, and the obsolete-variable line names `VERITMO_TOKEN_FILE`

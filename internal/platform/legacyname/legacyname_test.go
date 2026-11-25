@@ -121,3 +121,32 @@ func TestGetenv_TheOldNameAnswersWithAWarningAndTheNewOneWins(t *testing.T) {
 		t.Errorf("new only: %q", got)
 	}
 }
+
+// ORCHESTRATOR_<X> is the second former name: it answers after MO_<X>, with its own warning, and the new name wins over both.
+func TestGetenv_TheOrchestratorNameAnswersAfterTheMONameAndTheNewOneWins(t *testing.T) {
+	resetEnv()
+	t.Setenv("VERITMO_Y_TEST", "")
+	t.Setenv("MO_Y_TEST", "")
+	t.Setenv("ORCHESTRATOR_Y_TEST", "orch")
+	out := logs(t, func() {
+		if got := Getenv("Y_TEST"); got != "orch" {
+			t.Errorf("orchestrator only: %q", got)
+		}
+		Getenv("Y_TEST")
+	})
+	if strings.Count(out, "ORCHESTRATOR_Y_TEST is obsolete, use VERITMO_Y_TEST") != 1 {
+		t.Errorf("one warning naming the new variable: %q", out)
+	}
+	t.Setenv("MO_Y_TEST", "mo")
+	if got := Getenv("Y_TEST"); got != "mo" {
+		t.Errorf("MO_ answers before ORCHESTRATOR_: %q", got)
+	}
+	t.Setenv("VERITMO_Y_TEST", "new")
+	if out := logs(t, func() {
+		if got := Getenv("Y_TEST"); got != "new" {
+			t.Errorf("all three set: %q", got)
+		}
+	}); out != "" {
+		t.Errorf("the new variable wins without a warning: %q", out)
+	}
+}

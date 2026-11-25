@@ -256,7 +256,7 @@ func TestData_ConnectionFlagsAreCheckedAndThePasswordComesFromTheEnvironment(t *
 
 func TestServe_RefusesToStartWhileMigrationsArePendingAndNamesTheCommand(t *testing.T) {
 	isolate(t)
-	t.Setenv("ORCHESTRATOR_TOKEN", "")
+	t.Setenv("VERITMO_TOKEN", "")
 	var out, errb bytes.Buffer
 	db := filepath.Join(t.TempDir(), "o.db")
 	code := runServe([]string{"--addr", "127.0.0.1:0", "--token", "t", "--projects-dir", t.TempDir(), "--db", db}, &out, &errb)

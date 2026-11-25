@@ -29,7 +29,7 @@ func runReferences(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("references "+args[0], flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	server := fs.String("server", "http://127.0.0.1:4666", "Address of the running server")
-	token := fs.String("token", "", "Bearer token of the server (or ORCHESTRATOR_TOKEN, or the token file the serve script keeps)")
+	token := fs.String("token", "", "Bearer token of the server (or VERITMO_TOKEN, or the token file the serve script keeps)")
 	var tags stringList
 	fs.Var(&tags, "tag", "Tag for the references added (repeatable)")
 	if err := fs.Parse(args[1:]); err != nil {
@@ -37,7 +37,7 @@ func runReferences(args []string, stdout, stderr io.Writer) int {
 	}
 	tok := *token
 	if tok == "" {
-		tok = os.Getenv("ORCHESTRATOR_TOKEN")
+		tok = legacyname.Getenv("TOKEN")
 	}
 	if tok == "" {
 		base := os.Getenv("XDG_CONFIG_HOME")

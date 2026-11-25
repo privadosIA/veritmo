@@ -7,7 +7,7 @@ Defines how the management API is protected when it is reachable beyond the loca
 
 ### Requirement: An optional Bearer token protects the API
 
-When a token is configured (by flag or by the `ORCHESTRATOR_TOKEN` environment variable; the flag wins), every `/api/*` request SHALL carry `Authorization: Bearer <token>` or be rejected with HTTP 401 and the standard structured error body. The token SHALL be compared in constant time. `GET /api/health` and CORS preflight requests SHALL NOT require the token. When no token is configured, the API SHALL behave exactly as before this change.
+When a token is configured (by flag or by the `VERITMO_TOKEN` environment variable; the flag wins), every `/api/*` request SHALL carry `Authorization: Bearer <token>` or be rejected with HTTP 401 and the standard structured error body. The token SHALL be compared in constant time. `GET /api/health` and CORS preflight requests SHALL NOT require the token. When no token is configured, the API SHALL behave exactly as before this change.
 
 #### Scenario: valid token
 

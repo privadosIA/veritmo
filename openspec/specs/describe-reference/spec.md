@@ -116,7 +116,7 @@ The uploaded file SHALL be used only as input to the vision model. It SHALL NOT 
 
 ### Requirement: The describe step needs free memory and says so
 
-Before loading the model the step SHALL check that Ollama is reachable and that the machine has enough free memory: 4 GiB when the model runs on a GPU (its weights go to VRAM), and the model's size times 1.3 plus 4 GiB when it is kept on the CPU (`ORCHESTRATOR_DESCRIBE_CPU=1`). The server SHALL refuse the step while a pipeline run is queued or active, with a message saying to wait for it. After the answer, the model SHALL be unloaded (`keep_alive: 0`) whether it succeeded or failed.
+Before loading the model the step SHALL check that Ollama is reachable and that the machine has enough free memory: 4 GiB when the model runs on a GPU (its weights go to VRAM), and the model's size times 1.3 plus 4 GiB when it is kept on the CPU (`VERITMO_DESCRIBE_CPU=1`). The server SHALL refuse the step while a pipeline run is queued or active, with a message saying to wait for it. After the answer, the model SHALL be unloaded (`keep_alive: 0`) whether it succeeded or failed.
 
 #### Scenario: render in progress
 - **WHEN** a run is queued or active and the user runs describe

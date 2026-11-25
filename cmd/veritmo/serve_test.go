@@ -21,7 +21,7 @@ func TestIsLoopbackAddr(t *testing.T) {
 }
 
 func TestServe_RefusesNonLoopbackWithoutToken(t *testing.T) {
-	t.Setenv("ORCHESTRATOR_TOKEN", "")
+	t.Setenv("VERITMO_TOKEN", "")
 	var out, errb bytes.Buffer
 	if code := runServe([]string{"--addr", "0.0.0.0:0", "--projects-dir", t.TempDir(), "--db", t.TempDir() + "/o.db"}, &out, &errb); code == 0 {
 		t.Fatal("expected non-zero exit")
@@ -34,7 +34,7 @@ func TestServe_RefusesNonLoopbackWithoutToken(t *testing.T) {
 func TestServe_TokenNeverPrinted(t *testing.T) {
 	// A bind failure on a non-local address exits right after the startup checks, which
 	// lets us inspect output without running a server.
-	t.Setenv("ORCHESTRATOR_TOKEN", "")
+	t.Setenv("VERITMO_TOKEN", "")
 	var out, errb bytes.Buffer
 	const tok = "very-secret-token"
 	isolate(t)
@@ -51,7 +51,7 @@ func TestServe_TokenNeverPrinted(t *testing.T) {
 }
 
 func TestServe_InsecureOptOutWarns(t *testing.T) {
-	t.Setenv("ORCHESTRATOR_TOKEN", "")
+	t.Setenv("VERITMO_TOKEN", "")
 	var out, errb bytes.Buffer
 	isolate(t)
 	runServe([]string{"--addr", "192.0.2.1:1", "--insecure-no-auth", "--projects-dir", t.TempDir(), "--db", migrated(t)}, &out, &errb)
@@ -61,8 +61,8 @@ func TestServe_InsecureOptOutWarns(t *testing.T) {
 }
 
 func TestServe_WebDirMustBeADirectory(t *testing.T) {
-	t.Setenv("ORCHESTRATOR_TOKEN", "")
-	t.Setenv("ORCHESTRATOR_WEB_DIR", "")
+	t.Setenv("VERITMO_TOKEN", "")
+	t.Setenv("VERITMO_WEB_DIR", "")
 	missing := t.TempDir() + "/nope"
 	var out, errb bytes.Buffer
 	if code := runServe([]string{"--web-dir", missing, "--projects-dir", t.TempDir(), "--db", t.TempDir() + "/o.db"}, &out, &errb); code != 2 {
@@ -74,9 +74,9 @@ func TestServe_WebDirMustBeADirectory(t *testing.T) {
 }
 
 func TestServe_WebDirFromTheEnvironment(t *testing.T) {
-	t.Setenv("ORCHESTRATOR_TOKEN", "")
+	t.Setenv("VERITMO_TOKEN", "")
 	missing := t.TempDir() + "/nope"
-	t.Setenv("ORCHESTRATOR_WEB_DIR", missing)
+	t.Setenv("VERITMO_WEB_DIR", missing)
 	var out, errb bytes.Buffer
 	if code := runServe([]string{"--projects-dir", t.TempDir(), "--db", t.TempDir() + "/o.db"}, &out, &errb); code != 2 || !strings.Contains(errb.String(), missing) {
 		t.Fatalf("exit %d, stderr %q", code, errb.String())
@@ -93,13 +93,13 @@ func TestServe_UsageListsWebDir(t *testing.T) {
 
 func TestServe_TheTokenCanBeAFileAndIsNeverPrinted(t *testing.T) {
 	isolate(t)
-	t.Setenv("ORCHESTRATOR_TOKEN", "")
+	t.Setenv("VERITMO_TOKEN", "")
 	const tok = "token-in-a-docker-secret"
 	file := filepath.Join(t.TempDir(), "token")
 	if err := os.WriteFile(file, []byte(tok+"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("ORCHESTRATOR_TOKEN_FILE", file)
+	t.Setenv("VERITMO_TOKEN_FILE", file)
 	var out, errb bytes.Buffer
 	// a bind failure on a non-local address, after the startup checks: the token of the file satisfies the non-loopback rule
 	code := runServe([]string{"--addr", "192.0.2.1:1", "--projects-dir", t.TempDir(), "--db", migrated(t)}, &out, &errb)
@@ -110,10 +110,10 @@ func TestServe_TheTokenCanBeAFileAndIsNeverPrinted(t *testing.T) {
 		t.Fatal("the token of the file leaked in output")
 	}
 	// a file that cannot be read stops the start and names the file, not a value
-	t.Setenv("ORCHESTRATOR_TOKEN_FILE", filepath.Join(t.TempDir(), "missing"))
+	t.Setenv("VERITMO_TOKEN_FILE", filepath.Join(t.TempDir(), "missing"))
 	out.Reset()
 	errb.Reset()
-	if code := runServe([]string{"--addr", "192.0.2.1:1", "--projects-dir", t.TempDir(), "--db", migrated(t)}, &out, &errb); code != 2 || !strings.Contains(errb.String(), "ORCHESTRATOR_TOKEN_FILE") {
+	if code := runServe([]string{"--addr", "192.0.2.1:1", "--projects-dir", t.TempDir(), "--db", migrated(t)}, &out, &errb); code != 2 || !strings.Contains(errb.String(), "VERITMO_TOKEN_FILE") {
 		t.Fatalf("%d %q", code, errb.String())
 	}
 }

@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 	"veritmo/internal/platform/httpclient"
+	"veritmo/internal/platform/legacyname"
 
 	"veritmo/internal/assistant/llm"
 	"veritmo/internal/platform/edition"
@@ -133,12 +134,12 @@ func ValidateText(text string) error {
 }
 
 // ModelFromEnv resolves the model: the flag value when given, else
-// ORCHESTRATOR_ASSIST_MODEL, else DefaultModel.
+// VERITMO_ASSIST_MODEL, else DefaultModel.
 func ModelFromEnv(flagValue string, getenv func(string) string) string {
 	if flagValue != "" {
 		return flagValue
 	}
-	if m := strings.TrimSpace(getenv("ORCHESTRATOR_ASSIST_MODEL")); m != "" {
+	if m := strings.TrimSpace(legacyname.Lookup(getenv, "ASSIST_MODEL")); m != "" {
 		return m
 	}
 	return DefaultModel

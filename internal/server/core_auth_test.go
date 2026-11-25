@@ -119,7 +119,8 @@ func TestAuth_Tickets(t *testing.T) {
 	// Allowed routes: past auth (404 project/run not found is fine).
 	for _, path := range []string{"/api/runs/1/events?ticket=" + tk, "/api/downloads/1/events?ticket=" + tk, "/api/projects/p/artifacts/out/x.png?ticket=" + tk, "/api/motions/m1/preview?ticket=" + tk,
 		"/api/music-motion/references/ref-20260101-000000-abcdef/frames/00.jpg?ticket=" + tk, "/api/music-motion/part-drafts/draft-20260101-000000-abcdef/preview/00.png?ticket=" + tk,
-		"/api/models3d/models/kenney-mini-characters/character-female-a/thumbnail?ticket=" + tk} {
+		"/api/models3d/models/kenney-mini-characters/character-female-a/thumbnail?ticket=" + tk,
+		"/api/models3d/models/kenney-mini-characters/character-female-a/file?ticket=" + tk} {
 		if rec := do(h, "GET", path, nil); rec.Code == 401 {
 			t.Errorf("%s: valid ticket rejected", path)
 		}

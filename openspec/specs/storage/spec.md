@@ -55,7 +55,7 @@ The projects list SHALL show the size of each project in a column that can be so
 
 ### Requirement: A low disk is warned about
 
-The server SHALL report the free and total space of the disk that holds the projects, the threshold below which the space is low (20 GB, or the value of `ORCHESTRATOR_MIN_FREE_GB` in GB, where 0 disables the warning) and whether it is low, in the storage overview and in the environment report. The Environment screen SHALL show the disk with a warning when it is low, the projects list SHALL mark its free-space line when low, and the launch form of Runs SHALL show a warning before a run when low. The answer to launching a run SHALL carry a `warnings` list with the low-space message when it applies. A low disk SHALL NOT prevent a run from starting.
+The server SHALL report the free and total space of the disk that holds the projects, the threshold below which the space is low (20 GB, or the value of `VERITMO_MIN_FREE_GB` in GB, where 0 disables the warning) and whether it is low, in the storage overview and in the environment report. The Environment screen SHALL show the disk with a warning when it is low, the projects list SHALL mark its free-space line when low, and the launch form of Runs SHALL show a warning before a run when low. The answer to launching a run SHALL carry a `warnings` list with the low-space message when it applies. A low disk SHALL NOT prevent a run from starting.
 
 #### Scenario: Low space
 - **WHEN** less than the threshold is free
@@ -66,11 +66,11 @@ The server SHALL report the free and total space of the disk that holds the proj
 - **THEN** no warning appears and the launch answer has none
 
 #### Scenario: Changing the threshold
-- **WHEN** the server starts with `ORCHESTRATOR_MIN_FREE_GB=100`
+- **WHEN** the server starts with `VERITMO_MIN_FREE_GB=100`
 - **THEN** a disk with 80 GB free is reported as low
 
 #### Scenario: Disabled
-- **WHEN** `ORCHESTRATOR_MIN_FREE_GB=0`
+- **WHEN** `VERITMO_MIN_FREE_GB=0`
 - **THEN** the disk is never reported as low
 
 ### Requirement: The storage report gives the space of the media disk

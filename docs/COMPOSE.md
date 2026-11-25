@@ -122,10 +122,10 @@ A variable exported in your shell wins over `.env`: if a change in `.env` seems 
 
 ## The dashboard connects from outside
 
-The server is published on `BIND:SERVER_PORT`. Give the dashboard that address and the token of the server, which is `ORCHESTRATOR_TOKEN` in `.env`:
+The server is published on `BIND:SERVER_PORT`. Give the dashboard that address and the token of the server, which is `VERITMO_TOKEN` in `.env`:
 
 ```bash
-grep ^ORCHESTRATOR_TOKEN= .env
+grep ^VERITMO_TOKEN= .env
 ```
 
 and write the origin the dashboard is served from in `DASHBOARD_ORIGIN`: it becomes an allowed browser origin when the server starts, with no command to run in the container. With it empty no origin is allowed besides the server's own. With `BIND=127.0.0.1` only a dashboard on this machine can connect; for another machine set `BIND` to an address of this one (the server asks for its token on every call anyway).
@@ -154,7 +154,7 @@ Prometheus reads the metrics of the server (`/api/metrics`) with its token. Graf
 | Variable | What it is |
 |---|---|
 | `MYSQL_ROOT_PASSWORD`, `VERITMO_DB_PASSWORD`, `GRAFANA_DB_PASSWORD`, `GRAFANA_RO_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`, `REDIS_PASSWORD` | the passwords of the database, Grafana and Redis |
-| `ORCHESTRATOR_TOKEN` | the token of the server: the dashboard and Prometheus use it |
+| `VERITMO_TOKEN` | the token of the server: the dashboard and Prometheus use it |
 | `MUSIC_TOKEN` | the token the server gives the music generators and they ask for |
 | `UID`, `GID` | who writes the host folders (set by `compose-init.sh`) |
 | `PROJECTS_PATH`, `MEDIA_PATH`, `MEDIA_DIR`, `MODELS_PATH`, `VOICES_PATH`, `HYPERFRAMES_PATH`, `INSTALL_PATH`, `CONFIG_PATH` | the host folders (above) |

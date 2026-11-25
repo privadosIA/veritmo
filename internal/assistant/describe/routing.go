@@ -2,9 +2,9 @@ package describe
 
 import (
 	"context"
-	"os"
 	"time"
 	"veritmo/internal/platform/httpclient"
+	"veritmo/internal/platform/legacyname"
 
 	"veritmo/internal/assistant/llm"
 	"veritmo/internal/platform/settings"
@@ -24,7 +24,7 @@ func TaskOf(kind Kind) string {
 // provider (other than the built-in Ollama) gets the call cap.
 func FromResolved(res llm.Resolved) *Describer {
 	d := &Describer{
-		Host: res.Host, HTTP: httpclient.Long, CPU: os.Getenv("ORCHESTRATOR_DESCRIBE_CPU") == "1",
+		Host: res.Host, HTTP: httpclient.Long, CPU: legacyname.Getenv("DESCRIBE_CPU") == "1",
 		ProviderID: res.ID, ProviderName: res.Name, ModelName: res.Model,
 		Others: othersFor(res.ID),
 	}

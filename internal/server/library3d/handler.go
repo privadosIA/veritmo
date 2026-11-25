@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 
 	"veritmo/internal/assets3d"
@@ -61,6 +63,7 @@ func (h *Handler) Register(handle api.HandleFunc) {
 	handle("GET /api/models3d/models", h.handleModels)
 	handle("GET /api/models3d/models/{pack}/{name}", h.handleModel)
 	handle("GET /api/models3d/models/{pack}/{name}/thumbnail", h.handleThumbnail)
+	handle("GET /api/models3d/models/{pack}/{name}/file", h.handleFile)
 	h.registerEngines(handle)
 	handle("POST /api/models3d/generations", h.handleGenerationCreate)
 	handle("GET /api/models3d/generations", h.handleGenerationList)
@@ -217,4 +220,36 @@ func (h *Handler) handleThumbnail(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", ct)
 	w.Header().Set("Cache-Control", "public, max-age=3600")
 	_, _ = w.Write(b)
+}
+
+// GET /api/models3d/models/{pack}/{name}/file
+//
+// The binary glTF as the library keeps it. A model does not change until it is removed or replaced, so the answer carries an ETag (its size
+// and modification time) and http.ServeContent answers If-None-Match with 304 and a Range with 206.
+func (h *Handler) handleFile(w http.ResponseWriter, r *http.Request) {
+	pack, name := r.PathValue("pack"), r.PathValue("name")
+	if m, err := h.lib.Model(pack, name); err == nil && m.Adult && !h.showsAdult() {
+		fail(w, fmt.Errorf("%w: model %q", assets3d.ErrNotFound, pack+"/"+name))
+		return
+	}
+	path, err := h.lib.ModelFile(pack, name)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		fail(w, fmt.Errorf("%w: the file of model %q is gone", assets3d.ErrNotFound, pack+"/"+name))
+		return
+	}
+	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil || fi.IsDir() {
+		fail(w, fmt.Errorf("%w: the file of model %q is gone", assets3d.ErrNotFound, pack+"/"+name))
+		return
+	}
+	w.Header().Set("Content-Type", "model/gltf-binary")
+	w.Header().Set("Cache-Control", "private, max-age=3600")
+	w.Header().Set("ETag", `"`+strconv.FormatInt(fi.Size(), 16)+"-"+strconv.FormatInt(fi.ModTime().UnixNano(), 16)+`"`)
+	http.ServeContent(w, r, name+".glb", fi.ModTime(), f)
 }

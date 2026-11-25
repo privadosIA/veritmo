@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 	"veritmo/internal/platform/httpclient"
+	"veritmo/internal/platform/legacyname"
 
 	"veritmo/internal/assistant/assist"
 	"veritmo/internal/assistant/llm"
@@ -192,13 +193,13 @@ type Describer struct {
 }
 
 // FromEnv builds a Describer from the Ollama address in use (see
-// internal/platform/settings); ORCHESTRATOR_DESCRIBE_CPU=1
+// internal/platform/settings); VERITMO_DESCRIBE_CPU=1
 // keeps the model on the CPU.
 func FromEnv() *Describer {
 	return &Describer{
 		Host: settings.OllamaURL(),
 		HTTP: httpclient.Long,
-		CPU:  os.Getenv("ORCHESTRATOR_DESCRIBE_CPU") == "1",
+		CPU:  legacyname.Getenv("DESCRIBE_CPU") == "1",
 	}
 }
 

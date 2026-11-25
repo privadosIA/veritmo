@@ -60,21 +60,29 @@ func reset() {
 
 var warnedEnv sync.Map
 
-// Getenv is the value of VERITMO_<suffix>, or, when that is unset, of the variable it replaced, MO_<suffix>. The first time the old one is the one that
-// answers, a line says so and names the new one; when both are set the new one wins and nothing is logged.
+// formerEnvPrefixes are the prefixes the variables of this program have had before VERITMO_, in the order they are tried.
+var formerEnvPrefixes = []string{"MO_", "ORCHESTRATOR_"}
+
+// Getenv is the value of VERITMO_<suffix>, or, when that is unset, of the variable it replaced: MO_<suffix> and then ORCHESTRATOR_<suffix>. The first time
+// an old one is the one that answers, a line says so and names the new one; when the new one is set it wins and nothing is logged.
 //
-// TODO(veritmo-env): remove the fallback (and this warning) in the release after the deploys use the new names.
-func Getenv(suffix string) string {
-	if v := os.Getenv("VERITMO_" + suffix); v != "" {
+// TODO(veritmo-env): remove the fallbacks (and this warning) in the release after the deploys use the new names.
+func Getenv(suffix string) string { return Lookup(os.Getenv, suffix) }
+
+// Lookup is Getenv over any source of variables (the tests and the resolvers that are handed their environment).
+func Lookup(getenv func(string) string, suffix string) string {
+	if v := getenv("VERITMO_" + suffix); v != "" {
 		return v
 	}
-	v := os.Getenv("MO_" + suffix)
-	if v != "" {
-		if _, done := warnedEnv.LoadOrStore(suffix, true); !done {
-			slog.Warn("MO_" + suffix + " is obsolete, use VERITMO_" + suffix)
+	for _, prefix := range formerEnvPrefixes {
+		if v := getenv(prefix + suffix); v != "" {
+			if _, done := warnedEnv.LoadOrStore(prefix+suffix, true); !done {
+				slog.Warn(prefix + suffix + " is obsolete, use VERITMO_" + suffix)
+			}
+			return v
 		}
 	}
-	return v
+	return ""
 }
 
 // resetEnv forgets which variables were warned about (for the tests).

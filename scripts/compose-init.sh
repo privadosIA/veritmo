@@ -79,7 +79,7 @@ Ready. Next:
   docker compose up -d                                  # the server, MySQL, the migration, Prometheus and Grafana
 Pieces that are optional are profiles: set COMPOSE_PROFILES in .env (music, local-llm, logs, redis), or add --profile to the command.
 
-The dashboard connects from outside to http://${bind:-127.0.0.1}:${port:-4666} with the token of the server, which is ORCHESTRATOR_TOKEN in .env:
-  grep ^ORCHESTRATOR_TOKEN= .env
+The dashboard connects from outside to http://${bind:-127.0.0.1}:${port:-4666} with the token of the server, which is VERITMO_TOKEN in .env:
+  grep ^VERITMO_TOKEN= .env
 and the origin it is served from goes in DASHBOARD_ORIGIN in .env.
 MSG

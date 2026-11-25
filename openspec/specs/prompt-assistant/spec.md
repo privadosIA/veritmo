@@ -68,10 +68,10 @@ Before generating, the assistant SHALL check that the configured model is instal
 
 ### Requirement: Model and server are configurable
 
-The model SHALL default to `qwen3:8b`, be overridden by the environment variable `ORCHESTRATOR_ASSIST_MODEL` and then by the command's `--model` flag. The Ollama address SHALL come from the resolver of `ollama-settings` (the address saved in the settings, then `OLLAMA_HOST` as Ollama itself reads it, then `127.0.0.1:11434`) and SHALL be resolved at each request.
+The model SHALL default to `qwen3:8b`, be overridden by the environment variable `VERITMO_ASSIST_MODEL` and then by the command's `--model` flag. The Ollama address SHALL come from the resolver of `ollama-settings` (the address saved in the settings, then `OLLAMA_HOST` as Ollama itself reads it, then `127.0.0.1:11434`) and SHALL be resolved at each request.
 
 #### Scenario: precedence of the model
-- **WHEN** `ORCHESTRATOR_ASSIST_MODEL` is set and `--model` is also given
+- **WHEN** `VERITMO_ASSIST_MODEL` is set and `--model` is also given
 - **THEN** the flag's value is used
 
 #### Scenario: the saved address is used
@@ -152,7 +152,7 @@ The `music` task SHALL send the user's description to the local model with instr
 
 ### Requirement: A request can name the model, and the installed models can be listed
 
-`POST /api/assist` SHALL accept an optional `model`, naming a model installed in Ollama, and SHALL use it for that request in the image, motion and music tasks; an empty or absent `model` SHALL mean the server's default (`ORCHESTRATOR_ASSIST_MODEL`, else `qwen3:8b`). A model that is not installed SHALL be refused with the error that names it and says to install it with `ollama pull <model>`; nothing SHALL be downloaded. The memory check and the CPU-only checks SHALL apply to the chosen model. `GET /api/assist/models` SHALL answer `{default, models: [{name, size_bytes, fits}]}`, behind the same authentication as the other `/api/` routes: the models installed in Ollama that can chat (embedding and reranker models are left out), `fits` telling whether the model passes the memory rule (its size times 1.3 plus 4 GiB against the memory available now, true when that cannot be read), and `default` the model used when a request names none. An unreachable Ollama SHALL answer the same error as the other assistant routes.
+`POST /api/assist` SHALL accept an optional `model`, naming a model installed in Ollama, and SHALL use it for that request in the image, motion and music tasks; an empty or absent `model` SHALL mean the server's default (`VERITMO_ASSIST_MODEL`, else `qwen3:8b`). A model that is not installed SHALL be refused with the error that names it and says to install it with `ollama pull <model>`; nothing SHALL be downloaded. The memory check and the CPU-only checks SHALL apply to the chosen model. `GET /api/assist/models` SHALL answer `{default, models: [{name, size_bytes, fits}]}`, behind the same authentication as the other `/api/` routes: the models installed in Ollama that can chat (embedding and reranker models are left out), `fits` telling whether the model passes the memory rule (its size times 1.3 plus 4 GiB against the memory available now, true when that cannot be read), and `default` the model used when a request names none. An unreachable Ollama SHALL answer the same error as the other assistant routes.
 
 #### Scenario: a request names an installed model
 - **WHEN** a request carries `"model": "example/qwen3-tuned:8b"` and that model is installed
@@ -172,7 +172,7 @@ The `music` task SHALL send the user's description to the local model with instr
 
 ### Requirement: A refusal by the model is reported as such
 
-When the model answers a task with a refusal instead of the requested text, the assistant SHALL NOT return it as a suggestion: the server SHALL answer `422` with the code `assist_refused` and a message that says the named model refused to write this text and that the refusal comes from the model. In the private edition the message also says that another model can be chosen (the selector, or `ORCHESTRATOR_ASSIST_MODEL`); in the public edition it says nothing about choosing another one. A reply is a refusal when, after cleaning, it opens (case-insensitively, ignoring wrapping quotes) with a refusal phrase from a fixed list in English or Spanish ("I can't", "I cannot", "I'm sorry", "I am sorry", "Sorry", "I'm unable", "I am unable", "I won't", "I apologize", "As an AI", "Lo siento", "No puedo", "Lamento", "No me es posible") and has at most 80 words. For the music task the check SHALL run on the reply before it is parsed, and only when the reply has no `STYLE:` line. The command line SHALL print the same message on standard error with a non-zero exit status.
+When the model answers a task with a refusal instead of the requested text, the assistant SHALL NOT return it as a suggestion: the server SHALL answer `422` with the code `assist_refused` and a message that says the named model refused to write this text and that the refusal comes from the model. In the private edition the message also says that another model can be chosen (the selector, or `VERITMO_ASSIST_MODEL`); in the public edition it says nothing about choosing another one. A reply is a refusal when, after cleaning, it opens (case-insensitively, ignoring wrapping quotes) with a refusal phrase from a fixed list in English or Spanish ("I can't", "I cannot", "I'm sorry", "I am sorry", "Sorry", "I'm unable", "I am unable", "I won't", "I apologize", "As an AI", "Lo siento", "No puedo", "Lamento", "No me es posible") and has at most 80 words. For the music task the check SHALL run on the reply before it is parsed, and only when the reply has no `STYLE:` line. The command line SHALL print the same message on standard error with a non-zero exit status.
 
 #### Scenario: an image task refused
 - **WHEN** the model answers "I'm sorry, but I can't help with that request."
@@ -220,10 +220,10 @@ The assistant (picture, movement, song and videoclip-storyboard prompts) SHALL u
 
 ### Requirement: The public edition's assistant does not use models without safety training
 
-In the public edition the assistant SHALL apply the deny list of `editions` to the model named by the request, the routing, `ORCHESTRATOR_ASSIST_MODEL` or the first installed one, and SHALL answer `400 model_not_allowed` for a denied model without calling it.
+In the public edition the assistant SHALL apply the deny list of `editions` to the model named by the request, the routing, `VERITMO_ASSIST_MODEL` or the first installed one, and SHALL answer `400 model_not_allowed` for a denied model without calling it.
 
 #### Scenario: a denied model through the environment
-- **WHEN** `ORCHESTRATOR_ASSIST_MODEL` names a denied model in a public build
+- **WHEN** `VERITMO_ASSIST_MODEL` names a denied model in a public build
 - **THEN** every assistant call answers `400 model_not_allowed` and nothing is sent to Ollama
 
 ### Requirement: The music task can also return the tags and writes the sections of the track's generator

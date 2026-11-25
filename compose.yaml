@@ -40,7 +40,7 @@ x-required:
   grafana_admin_password: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
   music_token: ${MUSIC_TOKEN:?set MUSIC_TOKEN in .env (bash scripts/compose-init.sh makes it)}
   redis_password: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
-  orchestrator_token: ${ORCHESTRATOR_TOKEN:?set ORCHESTRATOR_TOKEN in .env (bash scripts/compose-init.sh makes it)}
+  veritmo_token: ${VERITMO_TOKEN:?set VERITMO_TOKEN in .env (bash scripts/compose-init.sh makes it)}
 
 x-server-image: &server-image
   image: veritmo/server:${VERSION:-dev}
@@ -116,7 +116,7 @@ services:
       migrate: {condition: service_completed_successfully}
     environment:
       <<: *database-env
-      ORCHESTRATOR_TOKEN_FILE: /run/secrets/orchestrator_token
+      VERITMO_TOKEN_FILE: /run/secrets/veritmo_token
       SERVER_ARGS: ${SERVER_ARGS:-}
       # The browser origin of the dashboard (it runs outside the stack) and the pieces of the stack, as the default of what is not saved in Settings.
       CORS_ORIGINS: ${DASHBOARD_ORIGIN:-}
@@ -135,7 +135,7 @@ services:
       MONITORING_REDIS_ADDRESS: redis:6379
       MONITORING_REDIS_SECRET_FILE: /run/secrets/redis_password
       MEDIA_DIR: ${MEDIA_DIR:-}
-    secrets: [veritmo_db_password, orchestrator_token, music_token, grafana_admin_password, redis_password]
+    secrets: [veritmo_db_password, veritmo_token, music_token, grafana_admin_password, redis_password]
     ports:
       - "${BIND:-127.0.0.1}:${SERVER_PORT:-4666}:4666"
     volumes:
@@ -416,7 +416,7 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}
-    secrets: [orchestrator_token]
+    secrets: [veritmo_token]
     volumes:
       - ./deploy/compose/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -498,8 +498,8 @@ secrets:
     environment: MUSIC_TOKEN
   redis_password:
     environment: REDIS_PASSWORD
-  orchestrator_token:
-    environment: ORCHESTRATOR_TOKEN
+  veritmo_token:
+    environment: VERITMO_TOKEN
 
 volumes:
   mysql-data:

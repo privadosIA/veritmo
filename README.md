@@ -110,7 +110,7 @@ Which browser pages may call the API from another origin (CORS) is decided by th
 
 ## Related repositories
 
-Depends on `heartmula`, `diffrhythm2` and `lion-clap` (the music services it starts) and, through them, on `musicgen-core`. Used by `dashboards-labs` (its API contract).
+Depends on `heartmula`, `diffrhythm2` and `lion-clap` (the music services it starts) and, through them, on `musicgen-core`; `triposr` and `stable-fast-3d` are the .NET ports of the 3D model makers (the `model3d` container stays as the fallback). Used by `dashboards-labs` (its API contract).
 
 | Repository | What it is |
 |---|---|
@@ -119,7 +119,9 @@ Depends on `heartmula`, `diffrhythm2` and `lion-clap` (the music services it sta
 | [`heartmula`](https://github.com/privadosIA/heartmula) | C# (.NET 8 + TorchSharp) port of [heartlib](https://github.com/HeartMuLa/heartlib): the HeartMuLa song generator, run by the server as a service. |
 | [`DiffRhythm2`](https://github.com/privadosIA/DiffRhythm2) | C# port of [DiffRhythm2](https://github.com/ASLP-lab/DiffRhythm2): a diffusion model that writes a whole song. |
 | [`lion-clap`](https://github.com/privadosIA/lion-clap) | C# port of [LAION-CLAP](https://github.com/LAION-AI/CLAP): audio and text embeddings, used to recognise songs. |
-| [`musicgen-core`](https://github.com/privadosIA/musicgen-core) | The TorchSharp building blocks shared by the three ports. |
+| [`musicgen-core`](https://github.com/privadosIA/musicgen-core) | The TorchSharp building blocks shared by the five ports. |
+| [`triposr`](https://github.com/privadosIA/triposr) | C# port of [TripoSR](https://github.com/VAST-AI-Research/TripoSR): one picture in, one 3D model (`.glb`) out; makes the models of the *models3d* category (MIT original). |
+| [`stable-fast-3d`](https://github.com/privadosIA/stable-fast-3d) | C# port of [Stable Fast 3D](https://github.com/Stability-AI/stable-fast-3d): one picture in, one textured 3D model (`.glb`) out. **Under the Stability AI Community License, not Apache-2.0** (free for research and non-commercial use, and for commercial use under US$1M of yearly revenue). |
 | [`forms-lib`](https://github.com/privadosIA/forms-lib) | `@core/dynamic-forms`, the Angular library that draws forms and tables from JSON. |
 
 The links are to the public copies of these repositories. The third-party tools, models and libraries they build on, with their licenses, are listed in [THIRD_PARTY.md](THIRD_PARTY.md).

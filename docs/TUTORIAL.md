@@ -70,7 +70,7 @@ bin/veritmo --gpu 1 --keep-tmp projects/my-project/scenes.yaml
 
 Useful flags (they go **before** the file): `--gpu 0,1`, `--keep-tmp`, `--force`, `--only <scene-id>`, `--mode images`, `--vram-warn-mb 2048`. To convert a dataset of songs: `bin/veritmo import --mode music -o scenes.yaml songs.json` (flags, here too, before the file).
 
-To use the dashboard from another machine, protect access with `ORCHESTRATOR_TOKEN` and open an SSH tunnel (`ssh -L 4666:127.0.0.1:4666 user@server`). The details and every `scenes.yaml` field are in [SCENES_YAML.md](SCENES_YAML.md); the endpoints, in [`docs/http-api.md`](http-api.md).
+To use the dashboard from another machine, protect access with `VERITMO_TOKEN` and open an SSH tunnel (`ssh -L 4666:127.0.0.1:4666 user@server`). The details and every `scenes.yaml` field are in [SCENES_YAML.md](SCENES_YAML.md); the endpoints, in [`docs/http-api.md`](http-api.md).
 
 To have the AI help write prompts from the terminal:
 

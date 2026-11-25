@@ -119,8 +119,8 @@ if [ ! -s "$TOKEN_FILE" ]; then
   umask 077
   head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > "$TOKEN_FILE"
 fi
-ORCHESTRATOR_TOKEN="$(cat "$TOKEN_FILE")"
-export ORCHESTRATOR_TOKEN
+VERITMO_TOKEN="$(cat "$TOKEN_FILE")"
+export VERITMO_TOKEN
 
 # The private edition is built with the tag `private`; the public tree does not
 # contain its files, so the tag is added only when they are there.
@@ -139,7 +139,7 @@ if [ "$CAN_BUILD" = "1" ] || [ ! -x "$BIN" ]; then
   go build ${EDITION_TAG:+-tags "$EDITION_TAG"} -o "$BIN" ./cmd/veritmo
 fi
 
-if [ "$SHOW_TOKEN" = "1" ]; then TOKEN_SHOWN="$ORCHESTRATOR_TOKEN"; else TOKEN_SHOWN="(hidden: read it with: cat $TOKEN_FILE, or start with --show-token)"; fi
+if [ "$SHOW_TOKEN" = "1" ]; then TOKEN_SHOWN="$VERITMO_TOKEN"; else TOKEN_SHOWN="(hidden: read it with: cat $TOKEN_FILE, or start with --show-token)"; fi
 
 cat <<EOF
 

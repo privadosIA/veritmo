@@ -48,7 +48,7 @@ func useFake(t *testing.T, srv *httptest.Server) deps {
 	d := realDeps()
 	d.newAssistant = func(modelFlag string) *assist.Assistant {
 		a := assist.New(srv.URL, assist.ModelFromEnv(modelFlag, func(k string) string {
-			return map[string]string{"ORCHESTRATOR_ASSIST_MODEL": "qwen3:8b"}[k]
+			return map[string]string{"VERITMO_ASSIST_MODEL": "qwen3:8b"}[k]
 		}))
 		a.MemAvailable = func() (int64, error) { return 27 * sched.GiB, nil }
 		return a

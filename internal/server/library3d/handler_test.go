@@ -156,6 +156,34 @@ func TestImportListSearchAndDelete(t *testing.T) {
 	}
 }
 
+func TestModelFileIsServedWithItsETag(t *testing.T) {
+	s := newServer(t, nil)
+	s.importPack(t, "mine")
+	rec := s.do(http.MethodGet, "/api/models3d/models/mine/prop/file", nil)
+	want := glb(`{"accessors":[{"count":30}],"meshes":[{"primitives":[{"attributes":{"POSITION":0},"indices":0}]}]}`)
+	if rec.Code != http.StatusOK || !bytes.Equal(rec.Body.Bytes(), want) {
+		t.Fatalf("%d, %d bytes (want %d)", rec.Code, rec.Body.Len(), len(want))
+	}
+	h := rec.Header()
+	if h.Get("Content-Type") != "model/gltf-binary" || h.Get("Content-Length") != fmt.Sprint(len(want)) || h.Get("ETag") == "" || !strings.HasPrefix(h.Get("Cache-Control"), "private, max-age=") {
+		t.Errorf("headers: %v", h)
+	}
+	// the same ETag answers 304 and no body
+	req := httptest.NewRequest(http.MethodGet, "/api/models3d/models/mine/prop/file", nil)
+	req.Header.Set("If-None-Match", h.Get("ETag"))
+	again := httptest.NewRecorder()
+	s.mux.ServeHTTP(again, req)
+	if again.Code != http.StatusNotModified || again.Body.Len() != 0 {
+		t.Errorf("If-None-Match: %d, %d bytes", again.Code, again.Body.Len())
+	}
+	// a model that is not there, and a pack that is not
+	for _, p := range []string{"/api/models3d/models/mine/nope/file", "/api/models3d/models/nope/prop/file"} {
+		if rec := s.do(http.MethodGet, p, nil); rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), "not_found") {
+			t.Errorf("%s: %d %s", p, rec.Code, rec.Body)
+		}
+	}
+}
+
 func TestImportErrorsHaveTheirOwnStatus(t *testing.T) {
 	s := newServer(t, nil)
 	s.importPack(t, "mine")
@@ -327,6 +355,9 @@ func TestCatalogFiltersByOriginAndSearchesPrompts(t *testing.T) {
 	}
 	if rec := s.do(http.MethodGet, "/api/models3d/models/generated/gato/thumbnail", nil); rec.Code != http.StatusNotFound {
 		t.Errorf("thumbnail of an adult model: %d", rec.Code)
+	}
+	if rec := s.do(http.MethodGet, "/api/models3d/models/generated/gato/file", nil); rec.Code != http.StatusNotFound {
+		t.Errorf("file of an adult model: %d", rec.Code)
 	}
 	// a server that shows everything does
 	s.h.SetHost(fakeHost{adult: true})

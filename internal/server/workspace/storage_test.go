@@ -191,7 +191,7 @@ func TestStorage_AllProjectsAndTheDisk(t *testing.T) {
 
 func TestLowDisk_ThresholdFromTheEnvironmentAndReportedEverywhere(t *testing.T) {
 	// the machine has some free space: a huge threshold makes it low, 0 disables the warning
-	t.Setenv("ORCHESTRATOR_MIN_FREE_GB", "100000000")
+	t.Setenv("VERITMO_MIN_FREE_GB", "100000000")
 	s, fe := launchServer(t)
 
 	rec := doJSON(t, s.Handler(), http.MethodGet, "/api/storage", nil)
@@ -226,7 +226,7 @@ func TestLowDisk_ThresholdFromTheEnvironmentAndReportedEverywhere(t *testing.T) 
 
 func TestLowDisk_DisabledAndPlentyOfSpaceGiveNoWarning(t *testing.T) {
 	for _, v := range []string{"0", "0.001"} { // disabled; a threshold of one megabyte
-		t.Setenv("ORCHESTRATOR_MIN_FREE_GB", v)
+		t.Setenv("VERITMO_MIN_FREE_GB", v)
 		s, fe := launchServer(t)
 		rec := doJSON(t, s.Handler(), http.MethodPost, "/api/projects/demo/runs", map[string]any{})
 		if rec.Code != http.StatusAccepted || strings.Contains(rec.Body.String(), "warnings") {

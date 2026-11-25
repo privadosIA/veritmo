@@ -209,7 +209,7 @@ func TestStore_ForceBypassesTheStore(t *testing.T) {
 }
 
 func TestStore_OffWithAZeroLimit(t *testing.T) {
-	t.Setenv("ORCHESTRATOR_STORE_MB", "0")
+	t.Setenv("VERITMO_STORE_MB", "0")
 	cfg := storeProject(t,
 		scene("one", "a red barn", "Hello there.", 5),
 		scene("two", "a red barn", "Hello there.", 5))

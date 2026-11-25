@@ -15,7 +15,7 @@ bin/veritmo serve [flags]
 | `--addr` | `127.0.0.1:4666` | Listen address. Loopback by default; set explicitly to expose beyond this machine. |
 | `--projects-dir` | `projects` | Directory whose subdirectories holding a `scenes.yaml` are the managed projects. |
 | `--db` | `.orchestrator/orchestrator.db` | SQLite file for the run history (pure-Go driver, no CGO). |
-| `--token` | _(none)_ | Bearer token required on `/api/*`. Also read from `ORCHESTRATOR_TOKEN` (preferred: flags show up in `ps`). The flag wins. |
+| `--token` | _(none)_ | Bearer token required on `/api/*`. Also read from `VERITMO_TOKEN` (preferred: flags show up in `ps`). The flag wins. |
 | `--cors-origin` | _(none)_ | Origin allowed to call the API cross-origin, e.g. `http://host:4200`. Repeatable, exact match. Default: same-origin only. |
 | `--insecure-no-auth` | `false` | Allow a non-loopback `--addr` without a token (prints a warning). |
 
@@ -30,7 +30,7 @@ By default the server is loopback-only, unauthenticated and same-origin.
 To use it from another machine:
 
 ```bash
-export ORCHESTRATOR_TOKEN="$(openssl rand -hex 24)"
+export VERITMO_TOKEN="$(openssl rand -hex 24)"
 bin/veritmo serve --addr 0.0.0.0:4666 --cors-origin http://my-laptop:4200
 ```
 
@@ -139,7 +139,7 @@ error also carries `provider` and `alternatives`: what to retry with), `describe
 | `GET /api/library/playlists/{id}` | A playlist with its song keys in order, or `404`. |
 | `PUT /api/library/playlists/{id}` `{"name", "songs"?}` | Replaces its name and its songs; the same `422` as `POST`. |
 | `DELETE /api/library/playlists/{id}` | Deletes it (`204`). |
-| `GET /api/storage` | The size of every project (`{projects: [{id, total_bytes, client, kind?}], disk: {free_bytes, total_bytes, warn_below_bytes, low}}`), without following symbolic links, and the free and total space of the disk that holds them. With a media directory (`--media-dir`, see [SERVER.md](SERVER.md)) the answer also has `media: {dir, disk: {free_bytes, total_bytes, warn_below_bytes, low}, projects: [{id, folder}]}`: the absolute path where the projects live, the folder of each one and the free space of that disk, read on every request (a client that writes there can use it to know what is left); without one `media` is absent. `low` is true below `warn_below_bytes` (20 GB, or `ORCHESTRATOR_MIN_FREE_GB`; `0` disables it); the environment report carries the same `disk`, and launching a run answers `warnings` with the low-space message (it never refuses the run). `managed=include` and `client=a,b` work as in `GET /api/projects`; `disk` is always the disk's, never a sum of the projects, so including the managed ones counts nothing twice. |
+| `GET /api/storage` | The size of every project (`{projects: [{id, total_bytes, client, kind?}], disk: {free_bytes, total_bytes, warn_below_bytes, low}}`), without following symbolic links, and the free and total space of the disk that holds them. With a media directory (`--media-dir`, see [SERVER.md](SERVER.md)) the answer also has `media: {dir, disk: {free_bytes, total_bytes, warn_below_bytes, low}, projects: [{id, folder}]}`: the absolute path where the projects live, the folder of each one and the free space of that disk, read on every request (a client that writes there can use it to know what is left); without one `media` is absent. `low` is true below `warn_below_bytes` (20 GB, or `VERITMO_MIN_FREE_GB`; `0` disables it); the environment report carries the same `disk`, and launching a run answers `warnings` with the low-space message (it never refuses the run). `managed=include` and `client=a,b` work as in `GET /api/projects`; `disk` is always the disk's, never a sum of the projects, so including the managed ones counts nothing twice. |
 | `GET /api/projects/{id}/storage` | What takes the space of one project, part by part: `cache` (`tmp/` without its leftovers), `leftovers` (files of `tmp/` of scenes that no longer exist), `clips` and `animations` (`out/clips/`), `final` (the rest of `out/`), `sources`, `reviews` (`.reviews/`), `backups` (`scenes.yaml.*`), each with `bytes`, `files` and `cleanable`, plus `total_bytes`. |
 | `POST /api/projects/{id}/storage/clean` `{"parts": [...]}` | Removes the files of those parts (`cache`, `leftovers`, `clips`, `animations`, `reviews`, `backups`) and answers `{freed_bytes, cleaned}`. `final` and `sources` are `400`; a project with a queued or running run is `409`. |
 | `GET /api/clips?exclude=` | The clips every project keeps for its scenes (`out/clips/<scene>.mp4`, and `<scene>.anim.mp4`, the complete animation of a generated scene): `{clips: [{project, scene, kind, size, modified}]}` with `kind` `clip` or `animation`, leaving out the project in `exclude`, or only the one in `project` (the gallery of a video project lists its scene clips this way). Every song, clip and project carries `client`, and `managed=include` / `client=a,b` work as in `GET /api/projects` (a clip also carries `project_kind` when its project is managed). |
@@ -150,6 +150,7 @@ error also carries `provider` and `alternatives`: what to retry with), `describe
 | `GET /api/models3d/packs/{id}` / `POST .../install` / `POST .../cancel` / `DELETE .../{id}` | One pack; queue its download (`202`: only from the host of its page, the zip's hash and licence text checked, unpacked safely; `409` if installed or installing); stop an install; remove a pack (a pack of the list becomes `available` again). |
 | `POST /api/models3d/packs/import?id=&licence=&name=&author=&source_url=` | Installs a pack from a zip the person has (the body; `licence` is required and kept as given). `422` when it has no `.glb`, `409` for an id in use. |
 | `GET /api/models3d/models?pack=&q=&tag=&has_clips=&source=&engine=&project=&limit=&offset=` | The models of the installed packs `{models: [{id, pack, name, tags, clips, triangles, needs, licence, author, attribution, source}], total}` (`source` is `catalog`, `user` or `generated`, as the filter; `engine` and `project` keep the generated models of that engine or that project or generation; `q` also searches the prompt of a generated model; what is marked `adult` is left out by a server that does not show adult content, and its detail and thumbnail are `404`) (`X-Total-Count` and `Link` with a page); `GET .../models/{pack}/{name}` is one and `.../thumbnail` its picture (the pack's own, else one drawn by Blender and kept; `503` without Blender). |
+| `GET /api/models3d/models/{pack}/{name}/file` | The model's `.glb` as stored (`model/gltf-binary`, `ETag`, `Cache-Control: private`; `304` for `If-None-Match`, `206` for a `Range`). Accepts `?ticket=`. `404` for a model that is not in the library. |
 | `GET /api/models3d/engines` | The engines that make a 3D model from a picture (`triposr`, `sf3d`) and whether each can be used now: `{engines: {triposr: {available, reason?, detail?, container?}, ...}}`. Reasons: `no_docker`, `no_image`, `no_gpu_runtime`, `no_weights`, `no_gpu`, `not_running`, `unreachable`, `not_built` and for `sf3d` `key_missing`, `key_rejected`, `licence_not_accepted` (the server only says what is missing). `503` without a 3D service. See `docs/MODEL_GENERATION.md`. |
 | `POST /api/models3d/engines/{engine}/start` / `.../stop` | Start or stop the service of an engine: its .NET service (or the container, when `model3d_backend` is `docker`). `409` with the engine's `reason` when it cannot be used yet, for a service that `MODEL3D_HOST` names (managed where it runs), and on `stop` while a run is making 3D models. |
 | `POST /api/models3d/engines/{engine}/install` {backend?, parts?, confirm?} | What the engine lacks for one backend: `backend` (default the one in use, `dotnet` or `docker`) and `parts` (`service`, `image`, `weights`; default all that are missing). Without `confirm` the plan (`backend`, `parts`, weight files missing, size, licence, `gated`, disk room); with it `202 {install}`, a job that runs the parts in order (the .NET service's weights are downloaded by the server, the container's are fetched by `fetch.py` in the image; `sf3d` uses the saved Hugging Face key). `409` when nothing is missing or another install runs; `422` with the `reason` (`no_service`, `no_docker`, ...) or `no_disk`. Follow it with `GET /api/models3d/installs/{id}` (and `POST .../cancel`). |
@@ -255,7 +256,7 @@ Three SSE message kinds:
 Every request sets `num_gpu: 0` and turns the model's reasoning off, verifies
 in Ollama that the model occupies 0 bytes of VRAM (otherwise it unloads it and
 fails), and always unloads the model when it finishes, so neither VRAM nor RAM
-stays held. The model comes from `ORCHESTRATOR_ASSIST_MODEL` (default
+stays held. The model comes from `VERITMO_ASSIST_MODEL` (default
 `qwen3:8b`) and the address from the saved setting, else `OLLAMA_HOST` as Ollama
 itself reads it (see Settings below).
 
@@ -282,7 +283,7 @@ A model that the edition does not use (the public edition keeps a deny list of m
 | `POST /api/describe` `{"project", "source", "model"?, "split"?}` | Reads a picture (png, jpg, webp) or a clip (mp4, mov, webm, mkv, avi) that is already in the project's `sources/` (upload it with `PUT /api/projects/{id}/sources/{name}`) with a local vision model and returns `200 {"prompt", "motion"?, "model", "kind", "frames"}`: an English prompt of ~70-120 words (subjects with an adult age, clothing or its absence, pose, setting, light, framing, style). For a clip 4-8 key frames are described and merged, and `motion` has a ≤25-word movement prompt (it can be missing). The file is only read: it never reaches a generator. With `split: true` a clip is answered shot by shot: its cuts are found with ffmpeg's scene filter (sensitivity 0.3, raised to 0.4 and 0.5 only when there are more than 12 shots), shots under 1.5 s are merged into the previous one, at most 12 remain, and the answer adds `shots: [{start, end, prompt, motion?}]` in seconds and playing order (the middle frame of each shot is checked for age and described; `prompt` is the first shot's; a clip with no cut gives one shot covering it all; a picture ignores `split`). `model` names an installed vision model; without it the default is `gemma4:26b` (or the first vision model installed). `400` for a bad project or source, a file that is not a picture or clip, or a clip over 5 minutes; `404` for an unknown project or source; `409` while a run is queued or active; `422` with `describe_refused` when the model refuses or does not describe (the message names it) and with `describe_minor` when a person in the picture, or in any frame, is or looks under 18 or their age cannot be confirmed (no prompt is returned and **the file is deleted**); `503` when Ollama is unreachable, the model is not installed (`ollama pull <model>`) or memory is short. |
 | `GET /api/describe/models` | `{default, detail, models: [{name, size_bytes, fits}]}`: the vision models installed in Ollama, smallest first, the default one. |
 
-The model runs on a GPU (Ollama decides; `ORCHESTRATOR_DESCRIBE_CPU=1` keeps it on
+The model runs on a GPU (Ollama decides; `VERITMO_DESCRIBE_CPU=1` keeps it on
 the CPU) and is unloaded when the request ends. On a GPU 4 GiB of RAM must be
 free; on the CPU `size × 1.3 + 4 GiB`. The application adds no content filter
 except the age check. A scene can record the model that wrote its prompt in
@@ -446,7 +447,7 @@ says that token's account has no access. The token value is never included.
 ## Front end
 
 The binary has no front end inside and `go build ./...` needs no Node/npm toolchain. A built front end is served from a
-folder with `veritmo serve --web-dir <folder>` (or `ORCHESTRATOR_WEB_DIR`): its files at `/`, `index.html` for the
+folder with `veritmo serve --web-dir <folder>` (or `VERITMO_WEB_DIR`): its files at `/`, `index.html` for the
 paths that are not files and not under `/api/`, hashed files cached for good and the rest revalidated. Without it `/`
 answers a plain-text note that the server has no front end. See
 [SERVER.md](SERVER.md#a-front-end-from-a-folder---web-dir).

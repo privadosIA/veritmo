@@ -341,7 +341,7 @@ func TestNormalizeHost(t *testing.T) {
 func TestModelFromEnv_Precedence(t *testing.T) {
 	env := func(v string) func(string) string {
 		return func(k string) string {
-			if k == "ORCHESTRATOR_ASSIST_MODEL" {
+			if k == "VERITMO_ASSIST_MODEL" {
 				return v
 			}
 			return ""
@@ -402,7 +402,7 @@ func TestRun_GenericProviderSkipsEverythingOfOllama(t *testing.T) {
 }
 
 func TestFromResolved(t *testing.T) {
-	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "")
+	t.Setenv("VERITMO_ASSIST_MODEL", "")
 	o := llm.NewOpenAI("https://api.example.com/v1", "k")
 	a := FromResolved(llm.Resolved{Type: "openai", Host: "https://api.example.com/v1", Model: "gpt-4o-mini", Provider: o}, "")
 	if a.Generic == nil || a.Model != "gpt-4o-mini" {

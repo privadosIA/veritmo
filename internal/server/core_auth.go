@@ -35,6 +35,7 @@ var ticketRoutes = []*regexp.Regexp{
 	regexp.MustCompile(`^/api/music-motion/references/[^/]+/frames/[^/]+$`),   // a key frame of a reference, in an <img>
 	regexp.MustCompile(`^/api/music-motion/part-drafts/[^/]+/preview/[^/]+$`), // a preview frame of a draft of a part, in an <img>
 	regexp.MustCompile(`^/api/models3d/models/[^/]+/[^/]+/thumbnail$`),        // the picture of a model of the library, in an <img>
+	regexp.MustCompile(`^/api/models3d/models/[^/]+/[^/]+/file$`),             // the binary glTF of a model of the library, for a viewer or an <a download>
 }
 
 // authenticator guards /api/* with an optional shared Bearer token and

@@ -27,7 +27,7 @@ func runAssist(args []string, stdout, stderr io.Writer) int {
 func (dp deps) assist(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("assist", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	model := fs.String("model", "", "Ollama model (default: $ORCHESTRATOR_ASSIST_MODEL, else "+assist.DefaultModel+")")
+	model := fs.String("model", "", "Ollama model (default: $VERITMO_ASSIST_MODEL, else "+assist.DefaultModel+")")
 	instrumental := fs.Bool("instrumental", false, "music task: write the style only (no lyrics)")
 	provider := fs.String("provider", "", "provider for this run instead of the one routed to the assistant (a remote one needs the acknowledgement given in Settings)")
 	fs.Usage = func() {

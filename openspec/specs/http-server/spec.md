@@ -68,7 +68,7 @@ Every API error response SHALL be a JSON object carrying at least a machine-read
 
 ### Requirement: A front end is served from a directory the operator gives
 
-When `veritmo serve` is given a web directory (`--web-dir`, or `ORCHESTRATOR_WEB_DIR` when the flag is absent), the server SHALL serve the static files in it at the HTTP root, whatever front end they belong to, and SHALL answer `index.html` for any other path outside `/api/`. The directory SHALL be read on each request.
+When `veritmo serve` is given a web directory (`--web-dir`, or `VERITMO_WEB_DIR` when the flag is absent), the server SHALL serve the static files in it at the HTTP root, whatever front end they belong to, and SHALL answer `index.html` for any other path outside `/api/`. The directory SHALL be read on each request.
 
 #### Scenario: serving a build
 

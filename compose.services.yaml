@@ -40,7 +40,7 @@ x-required:
   grafana_admin_password: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
   music_token: ${MUSIC_TOKEN:?set MUSIC_TOKEN in .env (bash scripts/compose-init.sh makes it)}
   redis_password: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env (bash scripts/compose-init.sh makes it)}
-  orchestrator_token: ${ORCHESTRATOR_TOKEN:?set ORCHESTRATOR_TOKEN in .env (bash scripts/compose-init.sh makes it)}
+  veritmo_token: ${VERITMO_TOKEN:?set VERITMO_TOKEN in .env (bash scripts/compose-init.sh makes it)}
 
 services:
   # ─── The database: the one database server of the stack ─────────────────
@@ -320,7 +320,7 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}
-    secrets: [orchestrator_token]
+    secrets: [veritmo_token]
     volumes:
       - ./deploy/compose/prometheus.services.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -403,8 +403,8 @@ secrets:
     environment: MUSIC_TOKEN
   redis_password:
     environment: REDIS_PASSWORD
-  orchestrator_token:
-    environment: ORCHESTRATOR_TOKEN
+  veritmo_token:
+    environment: VERITMO_TOKEN
 
 volumes:
   mysql-data:

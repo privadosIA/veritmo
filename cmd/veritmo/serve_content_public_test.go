@@ -20,7 +20,7 @@ func TestServe_TheHelpDoesNotNameTheOtherMode(t *testing.T) {
 }
 
 func TestServe_ThePublicBuildRefusesTheOptionThatShowsEverything(t *testing.T) {
-	t.Setenv("ORCHESTRATOR_TOKEN", "")
+	t.Setenv("VERITMO_TOKEN", "")
 	var out, errb bytes.Buffer
 	if code := runServe(serveArgs(t, "--"+"un"+"censored"), &out, &errb); code != 2 {
 		t.Fatalf("exit status %d, want 2 (%s)", code, errb.String())

@@ -28,6 +28,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"veritmo/internal/platform/legacyname"
 	"veritmo/internal/platform/media"
 
 	"veritmo/internal/music/music"
@@ -1052,9 +1053,9 @@ func runImages(ctx context.Context, cfg *config.Config, emitter *events.Emitter,
 
 // newArtifactStore is the store of the artifacts of a video project by the hash of their inputs: `tmp/store/` of the
 // project, so it goes with the rest of tmp/ (and lasts as long as the manifest does: with --keep-tmp across runs, and
-// otherwise within the run). Its size limit comes from ORCHESTRATOR_STORE_MB (default 2048; 0 turns it off).
+// otherwise within the run). Its size limit comes from VERITMO_STORE_MB (default 2048; 0 turns it off).
 func newArtifactStore(base string) *cache.Store {
-	limit, ok := cache.StoreMaxBytes(os.Getenv("ORCHESTRATOR_STORE_MB"))
+	limit, ok := cache.StoreMaxBytes(legacyname.Getenv("STORE_MB"))
 	if !ok {
 		return nil
 	}

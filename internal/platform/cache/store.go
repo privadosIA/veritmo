@@ -27,7 +27,7 @@ type Store struct {
 // DefaultStoreMaxBytes is the limit of a store when nothing else says (2 GiB).
 const DefaultStoreMaxBytes int64 = 2 << 30
 
-// StoreMaxBytes reads the limit from the environment variable ORCHESTRATOR_STORE_MB: a number of megabytes, 0 for
+// StoreMaxBytes reads the limit from the environment variable VERITMO_STORE_MB: a number of megabytes, 0 for
 // no store at all (ok is false then). Unset or unreadable gives the default.
 func StoreMaxBytes(env string) (limit int64, ok bool) {
 	if strings.TrimSpace(env) == "" {

@@ -157,13 +157,13 @@ token and allow the UI's origin (a non-loopback `--addr` without a token is
 refused):
 
 ```bash
-export ORCHESTRATOR_TOKEN="$(openssl rand -hex 24)"
+export VERITMO_TOKEN="$(openssl rand -hex 24)"
 bin/veritmo serve --addr 0.0.0.0:4666 --cors-origin http://my-laptop:4200
 ```
 
 The server warns when little disk space is left (the Environment screen, the
 projects list and the launch form of Runs; a run is never refused for it): the
-threshold is 20 GB, or `ORCHESTRATOR_MIN_FREE_GB` (`0` turns the warning off).
+threshold is 20 GB, or `VERITMO_MIN_FREE_GB` (`0` turns the warning off).
 
 Then open the UI's **Connection** button, enter `http://server:4666` and the
 token (or ship defaults as `{"server": "...", "token": "..."}` in a
@@ -177,8 +177,8 @@ tickets for SSE/media and the security model: `docs/http-api.md`.
 A browser only lets a page use the microphone on a secure origin: `https://` or `localhost`. Over plain `http://100.x.y.z:4666` the dashboard hides the microphone and says why. If the machine is on a Tailscale network, `tailscale serve` publishes the server there over HTTPS with a valid certificate, without opening anything to the internet:
 
 ```bash
-export ORCHESTRATOR_TOKEN="$(openssl rand -hex 24)"
-bin/veritmo serve --addr 127.0.0.1:4666        # the token is read from ORCHESTRATOR_TOKEN
+export VERITMO_TOKEN="$(openssl rand -hex 24)"
+bin/veritmo serve --addr 127.0.0.1:4666        # the token is read from VERITMO_TOKEN
 tailscale serve --bg --https=443 http://127.0.0.1:4666
 tailscale serve status                               # shows the https://<machine>.<tailnet>.ts.net address
 ```
@@ -220,7 +220,7 @@ front end and it serves that folder at `/`:
 
 ```bash
 bin/veritmo serve --web-dir ../dashboards-lab/dist/dashboard-full/browser
-# or: ORCHESTRATOR_WEB_DIR=/path/to/build bin/veritmo serve
+# or: VERITMO_WEB_DIR=/path/to/build bin/veritmo serve
 ```
 
 It is the same origin as the API, so the dashboard needs no `--cors-origin`, and the HTTPS and install-as-app notes above

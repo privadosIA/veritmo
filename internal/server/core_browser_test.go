@@ -60,7 +60,7 @@ func TestSettings_BrowserPathValidatedAndRemovable(t *testing.T) {
 
 func TestSettings_MotionModelSavedValidatedAndShownInTheTasks(t *testing.T) {
 	isolateSettings(t)
-	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "qwen3:8b")
+	t.Setenv("VERITMO_ASSIST_MODEL", "qwen3:8b")
 	t.Setenv("OLLAMA_HOST", "http://127.0.0.1:1") // no Ollama to ask: the machine's own models must not change the answer
 	s, _ := newProjectsServer(t)
 	read := func() (int, struct {
@@ -106,7 +106,7 @@ func TestSettings_MotionModelSavedValidatedAndShownInTheTasks(t *testing.T) {
 // With none saved the default shown is the one that would write the pages: a preferred model the Ollama has.
 func TestSettings_MotionModelDefaultIsAPreferredInstalledOne(t *testing.T) {
 	isolateSettings(t)
-	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "qwen3:8b")
+	t.Setenv("VERITMO_ASSIST_MODEL", "qwen3:8b")
 	ol := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"models": []map[string]any{{"name": "qwen3:8b", "size": 1}, {"name": "gemma4:26b", "size": 2}}})
 	}))

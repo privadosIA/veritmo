@@ -33,7 +33,7 @@ type assistRequest struct {
 	KeyScale string  `json:"keyscale,omitempty"`
 	Picture  string  `json:"picture,omitempty"`
 	// Model names an installed Ollama model for this request; empty means the
-	// server's default (ORCHESTRATOR_ASSIST_MODEL, else qwen3:8b).
+	// server's default (VERITMO_ASSIST_MODEL, else qwen3:8b).
 	Model string `json:"model,omitempty"`
 	// Provider replaces the routing of the assistant for this call only (see provider-routing).
 	Provider string `json:"provider,omitempty"`
@@ -42,7 +42,7 @@ type assistRequest struct {
 }
 
 // DefaultAssistRun is how the handler reaches the assistant: Ollama on the CPU, with
-// the model from ORCHESTRATOR_ASSIST_MODEL and the address from the saved setting, else OLLAMA_HOST.
+// the model from VERITMO_ASSIST_MODEL and the address from the saved setting, else OLLAMA_HOST.
 // A test seam on Handler.AssistRun.
 func DefaultAssistRun(ctx context.Context, task assist.Task, text, model string) (string, error) {
 	a, err := assist.ForContext(ctx, model)

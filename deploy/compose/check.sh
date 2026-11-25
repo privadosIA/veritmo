@@ -12,10 +12,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 [[ -f .env ]] || { echo "check: no .env here (run bash scripts/compose-init.sh first)" >&2; exit 2; }
 value() { grep -E "^$1=" .env | tail -1 | cut -d= -f2-; }
-TOKEN="$(value ORCHESTRATOR_TOKEN)"
+TOKEN="$(value VERITMO_TOKEN)"
 BASE="http://127.0.0.1:$(value SERVER_PORT)"
 [[ "$BASE" == *: ]] && BASE="${BASE}4666"
-[[ -n "$TOKEN" ]] || { echo "check: ORCHESTRATOR_TOKEN is empty in .env" >&2; exit 2; }
+[[ -n "$TOKEN" ]] || { echo "check: VERITMO_TOKEN is empty in .env" >&2; exit 2; }
 
 fails=0
 pass() { printf '  ok    %s\n' "$1"; }

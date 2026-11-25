@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"veritmo/internal/platform/legacyname"
 	mediapkg "veritmo/internal/platform/media"
 
 	"veritmo/internal/platform/settings"
@@ -50,11 +51,11 @@ func runServe(args []string, stdout, stderr io.Writer) int {
 	mediaDir := fs.String("media-dir", "", "Directory where whole projects are kept, possibly on another disk (or set MEDIA_DIR); the project folder keeps links into it. Empty: projects stay whole inside --projects-dir")
 	modelsDir := fs.String("models-dir", "", "Directory where the model files live, possibly on another disk (or set MODELS_DIR, or write it in ~/.config/veritmo/models-dir); models/ is a link to it (see `veritmo models migrate`)")
 	dbPath := fs.String("db", ".orchestrator/orchestrator.db", "SQLite file for the run history")
-	token := fs.String("token", "", "Bearer token required on /api/* (or set ORCHESTRATOR_TOKEN; the env var avoids exposing it in ps)")
+	token := fs.String("token", "", "Bearer token required on /api/* (or set VERITMO_TOKEN; the env var avoids exposing it in ps)")
 	insecure := fs.Bool("insecure-no-auth", false, "Allow a non-loopback --addr without a token (API exposed unauthenticated)")
 	strict := fs.Bool("strict", false, "Also hide the projects that were not marked as reviewed (adult: false); by default only the ones marked for adults (adult: true) are hidden")
 	logLevel := fs.String("log-level", "info", "How much the server logs on stderr: debug, info, warn or error")
-	webDir := fs.String("web-dir", "", "Directory of a built front end to serve at the root (or set ORCHESTRATOR_WEB_DIR); the server serves its files and does not care which front end it is")
+	webDir := fs.String("web-dir", "", "Directory of a built front end to serve at the root (or set VERITMO_WEB_DIR); the server serves its files and does not care which front end it is")
 	var corsOrigins stringList
 	fs.Var(&corsOrigins, "cors-origin", "Allowed cross-origin web UI origin, e.g. http://host:4200 (repeatable; default: same-origin only)")
 	fs.Usage = func() {
@@ -68,8 +69,8 @@ func runServe(args []string, stdout, stderr io.Writer) int {
 	tok := *token
 	if tok == "" {
 		var err error
-		// the token may be a file (ORCHESTRATOR_TOKEN_FILE, a Docker secret): it never shows in the environment of the process
-		if tok, err = settings.Env("ORCHESTRATOR_TOKEN"); err != nil {
+		// the token may be a file (VERITMO_TOKEN_FILE, a Docker secret): it never shows in the environment of the process
+		if tok, err = settings.Env("VERITMO_TOKEN"); err != nil {
 			fmt.Fprintf(stderr, "fatal: %v\n", err)
 			return 2
 		}
@@ -80,7 +81,7 @@ func runServe(args []string, stdout, stderr io.Writer) int {
 	}
 	web := *webDir
 	if web == "" {
-		web = os.Getenv("ORCHESTRATOR_WEB_DIR")
+		web = legacyname.Getenv("WEB_DIR")
 	}
 	if web != "" {
 		if fi, err := os.Stat(web); err != nil || !fi.IsDir() {
@@ -90,7 +91,7 @@ func runServe(args []string, stdout, stderr io.Writer) int {
 	}
 	if !isLoopbackAddr(*addr) && tok == "" {
 		if !*insecure {
-			fmt.Fprintf(stderr, "fatal: refusing to listen on non-loopback address %s without an access token; set --token (or ORCHESTRATOR_TOKEN), or pass --insecure-no-auth to expose the API unauthenticated\n", *addr)
+			fmt.Fprintf(stderr, "fatal: refusing to listen on non-loopback address %s without an access token; set --token (or VERITMO_TOKEN), or pass --insecure-no-auth to expose the API unauthenticated\n", *addr)
 			return 2
 		}
 		fmt.Fprintf(stderr, "WARNING: serving on %s with NO authentication: anyone who can reach it can launch runs and modify projects\n", *addr)

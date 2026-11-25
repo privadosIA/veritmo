@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"veritmo/internal/platform/legacyname"
 	"veritmo/internal/platform/media"
 	"veritmo/internal/platform/store"
 	"veritmo/internal/server/api"
@@ -245,10 +246,10 @@ func (h *Handler) removeEmptyDirs(id string, parts map[string]bool) {
 // defaultMinFreeGB is the free space below which the disk is reported as low.
 const defaultMinFreeGB = 20.0
 
-// minFreeBytes is the low-space threshold: ORCHESTRATOR_MIN_FREE_GB (0 disables the warning) or 20 GB.
+// minFreeBytes is the low-space threshold: VERITMO_MIN_FREE_GB (0 disables the warning) or 20 GB.
 func minFreeBytes() int64 {
 	gb := defaultMinFreeGB
-	if v := os.Getenv("ORCHESTRATOR_MIN_FREE_GB"); v != "" {
+	if v := legacyname.Getenv("MIN_FREE_GB"); v != "" {
 		if f, err := strconv.ParseFloat(v, 64); err == nil && f >= 0 {
 			gb = f
 		}

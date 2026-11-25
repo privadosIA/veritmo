@@ -42,7 +42,7 @@ func resolvedMotion(t *testing.T) llm.Resolved {
 
 func TestResolveModel_AnInstalledPreferredModelBeatsTheAssistants(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "assistant:8b")
+	t.Setenv("VERITMO_ASSIST_MODEL", "assistant:8b")
 	ollamaWith(t, "assistant:8b", "gemma4:31b", "gemma4:26b")
 	if got := ResolveModel(context.Background(), resolvedMotion(t)); got != "gemma4:26b" {
 		t.Errorf("model = %q, want gemma4:26b (the first preferred one installed)", got)
@@ -55,7 +55,7 @@ func TestResolveModel_AnInstalledPreferredModelBeatsTheAssistants(t *testing.T) 
 
 func TestResolveModel_NoneInstalledFallsBackToTheAssistants(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "assistant:8b")
+	t.Setenv("VERITMO_ASSIST_MODEL", "assistant:8b")
 	ollamaWith(t, "assistant:8b", "qwen3-coder:30b")
 	if got := ResolveModel(context.Background(), resolvedMotion(t)); got != "assistant:8b" {
 		t.Errorf("model = %q, want the assistant's", got)
@@ -65,7 +65,7 @@ func TestResolveModel_NoneInstalledFallsBackToTheAssistants(t *testing.T) {
 func TestResolveModel_TheSavedModelWinsAndDefaultModelIgnoresIt(t *testing.T) {
 	cfg := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", cfg)
-	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "assistant:8b")
+	t.Setenv("VERITMO_ASSIST_MODEL", "assistant:8b")
 	if err := os.MkdirAll(filepath.Join(cfg, "veritmo"), 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestResolveModel_TheSavedModelWinsAndDefaultModelIgnoresIt(t *testing.T) {
 
 func TestResolveModel_AnUnreachableOllamaKeepsTheAssistants(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("ORCHESTRATOR_ASSIST_MODEL", "assistant:8b")
+	t.Setenv("VERITMO_ASSIST_MODEL", "assistant:8b")
 	t.Setenv("OLLAMA_HOST", "http://127.0.0.1:1")
 	if got := ResolveModel(context.Background(), resolvedMotion(t)); got != "assistant:8b" {
 		t.Errorf("model = %q, want the assistant's", got)

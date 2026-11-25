@@ -13,7 +13,7 @@ func serveArgs(t *testing.T, extra ...string) []string {
 }
 
 func TestServe_StrictIsAnOptionAndTheHelpSaysSo(t *testing.T) {
-	t.Setenv("ORCHESTRATOR_TOKEN", "")
+	t.Setenv("VERITMO_TOKEN", "")
 	var out, errb bytes.Buffer
 	if code := runServe(serveArgs(t, "--strict"), &out, &errb); code == 2 {
 		t.Fatalf("--strict must be accepted: %s", errb.String())

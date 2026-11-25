@@ -500,6 +500,15 @@ func (l *Library) Model(pack, name string) (ModelView, error) {
 	return viewOfModel(r, *m), nil
 }
 
+// ModelFile is the path of the binary glTF of a model, as the library keeps it.
+func (l *Library) ModelFile(pack, name string) (string, error) {
+	_, m, err := l.find(pack, name)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(l.FilesDir(pack), filepath.FromSlash(m.File)), nil
+}
+
 func (l *Library) find(pack, name string) (*Record, *Model, error) {
 	r, ok := l.record(pack)
 	if !ok {

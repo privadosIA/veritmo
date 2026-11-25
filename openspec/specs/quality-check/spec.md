@@ -19,7 +19,7 @@ The check SHALL sample the raw animation of every animated scene that has one, a
 
 ### Requirement: A vision model can judge the people in each frame
 
-When a vision model is named (`--model`, `--check-model` or `$ORCHESTRATOR_VISION_MODEL`) the check SHALL send every sampled frame to it through Ollama and ask for a JSON verdict (`defect`, `severity` 0 to 10, `issue`); a frame with a defect of severity 7 or more (configurable) SHALL be flagged `vision`. Without a model the check SHALL measure only and SHALL list the vision-capable models Ollama has. A model SHALL never be chosen automatically. When the check ends it SHALL ask Ollama to unload the model.
+When a vision model is named (`--model`, `--check-model` or `$VERITMO_VISION_MODEL`) the check SHALL send every sampled frame to it through Ollama and ask for a JSON verdict (`defect`, `severity` 0 to 10, `issue`); a frame with a defect of severity 7 or more (configurable) SHALL be flagged `vision`. Without a model the check SHALL measure only and SHALL list the vision-capable models Ollama has. A model SHALL never be chosen automatically. When the check ends it SHALL ask Ollama to unload the model.
 
 #### Scenario: Deformed face
 - **WHEN** the model answers `{"defect": true, "severity": 8}` for a frame
