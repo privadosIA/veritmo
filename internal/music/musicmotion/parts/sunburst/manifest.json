@@ -1,4 +1,4 @@
-{"name":"sunburst","description":"Rays from the centre of the frame that turn slowly and pulse on every beat: a pop background that goes behind the other layers","version":1,"cost_ms":90,"levels":["simple","medium","advanced"],
+{"name":"sunburst","description":"Rays from the centre of the frame that turn slowly and pulse on every beat: a pop background that goes behind the other layers","version":1,"bands":{"top":1,"center":1,"bottom":1},"cost_ms":90,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"rays","type":"int","default":16,"min":6,"max":40,"description":"How many rays"},
   {"name":"spin","type":"number","default":6,"min":0,"max":40,"description":"Degrees it turns a second"}]}

@@ -10,7 +10,7 @@ import (
 )
 
 // tmpSceneSuffixes are the endings of the per-scene artifacts kept in tmp/, longest first.
-var tmpSceneSuffixes = []string{".anim.avi", ".anim.mp4", ".anim.ambient.wav", ".init.png", ".cut.mp4", ".motion.mp4", ".overlay.webm", ".overlay.mov", ".png", ".wav", ".mp4"}
+var tmpSceneSuffixes = []string{".anim.avi", ".anim.mp4", ".anim.ambient.wav", ".init.png", ".cut.mp4", ".motion.mp4", ".overlay.webm", ".overlay.mov", ".layer.webm", ".layer.mov", ".png", ".wav", ".mp4"}
 
 var imageVariantName = regexp.MustCompile(`^(.*)_v[0-9]+$`)
 

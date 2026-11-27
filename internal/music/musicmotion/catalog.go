@@ -71,6 +71,12 @@ type Manifest struct {
 	// is the page's own layer, "own" is the part itself (from window.__scene.lines and window.__scene.hit).
 	Verse string `json:"verse,omitempty"`
 	Hit   string `json:"hit,omitempty"`
+	// OverVideo says the part leaves what is behind it visible: it draws no opaque background over the whole frame, so a piece
+	// with a video behind it (a background) may use it. A part is marked after it is drawn on a transparent page and measured.
+	OverVideo bool `json:"over_video"`
+	// Bands is how much of each third of the frame the part paints opaque (see Bands), measured with the same drawing as OverVideo. Nil
+	// is unknown, not empty: a part nobody has measured says nothing about where the verse can go.
+	Bands *Bands `json:"bands,omitempty"`
 	// Scene says the part was written for one script piece of one piece (see scene_draft.go); nil for any other part.
 	Scene *SceneRef `json:"scene,omitempty"`
 	// World is the world of the video a scene was written in, one line: the writer of the first scene of a piece that has none
@@ -195,6 +201,11 @@ func parseManifest(raw []byte, folder string) (Manifest, error) {
 	for what, v := range map[string]string{"verse": m.Verse, "hit": m.Hit} {
 		if v != "" && v != DrawnByPage && v != DrawnByPart {
 			return Manifest{}, fmt.Errorf("%s must be %q or %q, got %q", what, DrawnByPage, DrawnByPart, v)
+		}
+	}
+	if m.Bands != nil {
+		if err := m.Bands.Validate(); err != nil {
+			return Manifest{}, err
 		}
 	}
 	if m.Scene != nil {

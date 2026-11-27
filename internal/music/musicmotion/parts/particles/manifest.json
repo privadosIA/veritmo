@@ -1,4 +1,4 @@
-{"name":"particles","description":"A burst of particles with motion streaks from the centre on every beat, in the text and accent colours","version":1,"cost_ms":85,"levels":["advanced"],
+{"name":"particles","description":"A burst of particles with motion streaks from the centre on every beat, in the text and accent colours","version":1,"bands":{"top":0.02,"center":0.02,"bottom":0},"over_video":true,"cost_ms":85,"levels":["advanced"],
  "params":[
   {"name":"amount","type":"int","default":70,"min":10,"max":200,"description":"Particles in each burst"},
   {"name":"streak","animatable":true,"type":"number","default":0.05,"min":0,"max":0.2,"description":"Seconds of motion blur drawn behind each particle"}]}

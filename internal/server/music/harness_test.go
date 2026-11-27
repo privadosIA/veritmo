@@ -63,7 +63,9 @@ type mHandler = Handler
 type testServer struct {
 	*mHandler
 	*stack.Stack
-	memAvailable  sched.AvailableFunc
+	memAvailable sched.AvailableFunc
+	// showsAdult makes the family behave as a server in the content mode `all`.
+	showsAdult    bool
 	motionBrowser func() (motion.Browser, error)
 	motionWriter  func(ctx context.Context) (motion.Writer, motion.ModelInfo, error)
 	gen           *generation.Handler
@@ -82,6 +84,7 @@ func (h testHost) Runner() runner.CommandRunner      { return h.s.MediaRunner }
 func (h testHost) EnvRunner() runner.CommandRunner   { return h.s.EnvRunner }
 func (h testHost) Services() *musicsvc.ServiceHost   { return h.s.Services }
 func (h testHost) MemAvailable() sched.AvailableFunc { return h.s.memAvailable }
+func (h testHost) ShowsAdult() bool                  { return h.s.showsAdult }
 func (h testHost) MotionBrowser() func() (motion.Browser, error) {
 	return h.s.motionBrowser
 }

@@ -139,7 +139,7 @@ type statEvent struct {
 
 // phaseOrder lists the usual phases in execution order; others follow
 // alphabetically.
-var phaseOrder = []string{"tts", "probe", "render", "animate", "clip", "concat", "compose", "synth", "export"}
+var phaseOrder = []string{"tts", "probe", "render", "animate", "clip", "track", "stack", "concat", "compose", "synth", "export"}
 
 func phaseRank(p string) int {
 	for i, x := range phaseOrder {

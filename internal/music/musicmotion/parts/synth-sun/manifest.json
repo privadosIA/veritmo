@@ -1,4 +1,4 @@
-{"name":"synth-sun","description":"A sun cut by stripes over a grid in perspective whose lines come towards the viewer, with a pulse on every beat: the synthwave horizon","version":1,"cost_ms":85,"levels":["simple","medium","advanced"],
+{"name":"synth-sun","description":"A sun cut by stripes over a grid in perspective whose lines come towards the viewer, with a pulse on every beat: the synthwave horizon","version":1,"bands":{"top":0.1,"center":0.45,"bottom":1},"cost_ms":85,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"stripes","type":"int","default":7,"min":3,"max":12,"description":"The stripes that cut the sun"},
   {"name":"speed","type":"number","default":1,"min":0,"max":4,"description":"How fast the grid comes towards the viewer"}]}

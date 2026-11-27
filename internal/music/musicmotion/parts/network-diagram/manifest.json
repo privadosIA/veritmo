@@ -1,4 +1,4 @@
-{"name":"network-diagram","description":"A network of nodes in layers whose connections and nodes light up from layer to layer over the beats","version":1,"cost_ms":85,"levels":["medium","advanced"],
+{"name":"network-diagram","description":"A network of nodes in layers whose connections and nodes light up from layer to layer over the beats","version":1,"bands":{"top":0.04,"center":0.09,"bottom":0},"over_video":true,"cost_ms":85,"levels":["medium","advanced"],
  "params":[
   {"name":"layers","type":"int","default":4,"min":2,"max":7,"description":"How many layers"},
   {"name":"nodes","type":"int","default":5,"min":2,"max":9,"description":"How many nodes in each layer"}]}

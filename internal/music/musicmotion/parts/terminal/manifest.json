@@ -1,4 +1,4 @@
-{"name":"terminal","description":"A terminal window that prints one line per beat, with a blinking cursor; lines are separated by |","version":1,"cost_ms":56,"levels":["simple","medium","advanced"],
+{"name":"terminal","description":"A terminal window that prints one line per beat, with a blinking cursor; lines are separated by |","version":1,"bands":{"top":0.43,"center":0.59,"bottom":0.01},"over_video":true,"cost_ms":56,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"lines","type":"string","default":"$ start song|loading the beat|syncing words|ready","max_length":240,"description":"The lines, separated by |"},
   {"name":"title","type":"string","default":"terminal","max_length":20}]}

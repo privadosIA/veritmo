@@ -1,4 +1,4 @@
-{"name":"oscilloscope","description":"A Lissajous figure of a number of lobes that turns, glows and pulses on every beat, over a faint graticule","version":1,"cost_ms":85,"levels":["medium","advanced"],
+{"name":"oscilloscope","description":"A Lissajous figure of a number of lobes that turns, glows and pulses on every beat, over a faint graticule","version":1,"bands":{"top":0.02,"center":0.02,"bottom":0.01},"over_video":true,"cost_ms":85,"levels":["medium","advanced"],
  "params":[
   {"name":"lobes","type":"int","default":3,"min":1,"max":8,"description":"How many lobes the figure has"},
   {"name":"speed","type":"number","default":1,"min":0.2,"max":4,"description":"How fast it turns"}]}

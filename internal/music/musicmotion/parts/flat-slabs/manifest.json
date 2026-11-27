@@ -1,3 +1,3 @@
-{"name":"flat-slabs","description":"Flat horizontal bars that slide in from alternating sides, one more on every beat","version":1,"cost_ms":55,"levels":["simple","medium","advanced"],
+{"name":"flat-slabs","description":"Flat horizontal bars that slide in from alternating sides, one more on every beat","version":1,"bands":{"top":0.3,"center":0.33,"bottom":0},"over_video":true,"cost_ms":55,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"count","type":"int","default":6,"min":3,"max":8,"description":"How many bars"}]}

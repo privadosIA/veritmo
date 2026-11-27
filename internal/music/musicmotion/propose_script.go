@@ -45,6 +45,12 @@ type ScriptInput struct {
 	NoBlocks bool
 	// Menu is the blocks the writer may name; nil means "read them from the catalog of blocks" (BlockMenu), unless NoBlocks. A test seam.
 	Menu []MenuEntry
+	// Video is the video track of the script this proposal replaces: the proposal keeps it as it is, the pieces that sit over it use only parts
+	// that leave a video visible, and the assistant is told where it plays. Empty for none, which leaves the proposal as it was.
+	Video []VideoItem
+	// Sources is the sources folder of the piece, where its videos are kept: the script is checked against it (see Script.WithSources).
+	// Only read when there is a Video to keep.
+	Sources string
 }
 
 // menu is the blocks the writer is offered.
@@ -321,18 +327,22 @@ func FixedScript(in ScriptInput) (Script, error) {
 			if len(s.Pieces) > 0 {
 				prev = s.Pieces[len(s.Pieces)-1].Part
 			}
+			pieceCands := cands
+			if overVideoAt(in.Video, bounds[k], bounds[k+1]) {
+				pieceCands = onlyOverVideo(cands)
+			}
 			p := Piece{ID: fmt.Sprintf("p%d", n), Start: bounds[k], End: bounds[k+1], Section: sec.Tag,
-				Part: nextPart(cands, n-1, prev)}
+				Part: nextPart(pieceCands, n-1, prev)}
 			if IsChorus(sec.Tag) {
 				if s.Home == "" {
 					s.Home = p.Part
 				}
 				// the chorus returns to its home part on the first piece and on every third one; the pieces between take
 				// the next part in turn, so a long chorus is not one part held for a minute
-				if k%3 == 0 && prev != s.Home {
+				if k%3 == 0 && prev != s.Home && homeFits(in.Cat, s.Home, pieceCands, len(pieceCands) != len(cands)) {
 					p.Part = s.Home
 				} else {
-					p.Part = otherPart(cands, n-1, s.Home, prev)
+					p.Part = otherPart(pieceCands, n-1, s.Home, prev)
 				}
 			}
 			p.Lines = linesOf(in.Map, p.Start, p.End)
@@ -350,6 +360,20 @@ func FixedScript(in ScriptInput) (Script, error) {
 	s.Pieces[0].Start = 0
 	s.Pieces[len(s.Pieces)-1].End = in.Map.Duration
 	return s, nil
+}
+
+// homeFits says whether the home part of the chorus can be used on a piece whose candidates were narrowed to the parts that leave a video
+// visible (narrowed is true): it can when it is one of them. With no narrowing it always can.
+func homeFits(cat Catalog, home string, cands []Part, narrowed bool) bool {
+	if !narrowed {
+		return true
+	}
+	for _, p := range cands {
+		if p.Name == home {
+			return true
+		}
+	}
+	return false
 }
 
 // nextPart takes the part at position i of the candidates, in turn, and the next one when it is the part of the piece
@@ -388,8 +412,13 @@ func scriptUser(in ScriptInput, problem string) string {
 	b.WriteString("Catalog (parts usable at the level " + in.Level + "):\n")
 	for _, p := range levelParts(in.Cat, in.Level) {
 		ps, _ := json.Marshal(p.Params)
-		fmt.Fprintf(&b, "- %s: %s. Parameters: %s\n", p.Name, p.Description, ps)
+		mark := ""
+		if len(in.Video) > 0 && p.OverVideo {
+			mark = " [over_video]"
+		}
+		fmt.Fprintf(&b, "- %s%s: %s. Parameters: %s\n", p.Name, mark, p.Description, ps)
 	}
+	b.WriteString(videoBlock(in.Video))
 	b.WriteString(menuBlock(in.menu()))
 	b.WriteString("\nSections:\n")
 	energies := SectionEnergies(in.Map)
@@ -481,6 +510,9 @@ func ProposeScript(ctx context.Context, w Writer, in ScriptInput) (Proposal, err
 		}
 		b, h := SnapScript(&s, in.Map)
 		addFrameLayers(&s, in)
+		warns = append(warns, KeepTrack(&s, in.Video, in.Cat, in.Level)...)
+		warns = append(warns, PlaceVerse(&s, in.Cat, in.Design)...)
+		s = s.WithSources(in.Sources)
 		if err := s.Validate(in.Cat, in.Map, in.Design); err != nil {
 			// the block layers are an extra: a script that only fails with them is kept without them
 			if n := dropBlockLayers(&s); n > 0 {

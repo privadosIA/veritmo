@@ -1,4 +1,4 @@
-{"name":"word-cloud","description":"Words that appear one by one over the beats and float, laid out inside the frame in sizes that vary","version":1,"cost_ms":80,"levels":["simple","medium","advanced"],
+{"name":"word-cloud","description":"Words that appear one by one over the beats and float, laid out inside the frame in sizes that vary","version":1,"bands":{"top":0.02,"center":0.03,"bottom":0},"over_video":true,"cost_ms":80,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"words","type":"string","default":"signal|noise|memory|future|echo|light|pattern|dream","max_length":240,"description":"The words, separated by |"},
   {"name":"amount","type":"int","default":8,"min":2,"max":24,"description":"How many words are shown (the list is repeated if it is shorter)"}]}

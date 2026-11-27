@@ -117,6 +117,8 @@ var structCases = []structCase{
 	{schema: "MusicScriptLine", value: musicmotion.ScriptLine{}, allOptional: true},
 	{schema: "MusicPartRef", value: musicmotion.PartRef{}},
 	{schema: "MusicDesignOverride", value: musicmotion.DesignOverride{}, allOptional: true},
+	{schema: "MusicVerseLayout", value: musicmotion.VerseLayout{}, allOptional: true},
+	{schema: "MusicVideoItem", value: musicmotion.VideoItem{}},
 	{schema: "MusicScriptHit", value: musicmotion.ScriptHit{}},
 	{schema: "MusicStage", value: musicmotion.Stage{}, allOptional: true},
 	{schema: "MusicStageCharacter", value: musicmotion.StageCharacter{}},

@@ -1,4 +1,4 @@
-{"name":"parallax-cards","description":"Rows of cards on layers that drift at different speeds and jump apart on every beat, with a label on the front one","version":1,"cost_ms":57,"levels":["medium","advanced"],
+{"name":"parallax-cards","description":"Rows of cards on layers that drift at different speeds and jump apart on every beat, with a label on the front one","version":1,"bands":{"top":0.08,"center":0.13,"bottom":0},"over_video":true,"cost_ms":57,"levels":["medium","advanced"],
  "params":[
   {"name":"label","type":"string","default":"memory","max_length":16},
   {"name":"layers","type":"int","default":3,"min":2,"max":4}]}

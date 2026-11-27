@@ -30,6 +30,53 @@ const (
 	VerseStyleGlow      = "glow"      // each word in the text colour with a soft glow and a halo, no background
 )
 
+// The places the verse can be drawn (VerseLayout.Position) and how it is aligned (VerseLayout.Align).
+const (
+	VersePositionTop    = "top"
+	VersePositionCenter = "center"
+	VersePositionBottom = "bottom"
+	VerseAlignLeft      = "left"
+	VerseAlignCenter    = "center"
+	VerseAlignRight     = "right"
+)
+
+// The limits of the scale of the verse.
+const (
+	MinVerseScale = 0.6
+	MaxVerseScale = 1.6
+)
+
+// VerseLayout says where the verse is drawn, how big and how it is aligned. An empty field is the default (bottom, 1, center), and a design
+// with no layout draws the verse exactly as it was drawn before there was one.
+type VerseLayout struct {
+	Position string  `json:"position,omitempty"`
+	Scale    float64 `json:"scale,omitempty"`
+	Align    string  `json:"align,omitempty"`
+}
+
+// Validate checks the layout as a whole: a place and an alignment that exist and a scale inside its limits (0 is the default, 1).
+func (l VerseLayout) Validate() error {
+	switch l.Position {
+	case "", VersePositionTop, VersePositionCenter, VersePositionBottom:
+	default:
+		return fmt.Errorf("verse_layout.position must be top, center or bottom, got %q", l.Position)
+	}
+	switch l.Align {
+	case "", VerseAlignLeft, VerseAlignCenter, VerseAlignRight:
+	default:
+		return fmt.Errorf("verse_layout.align must be left, center or right, got %q", l.Align)
+	}
+	if l.Scale != 0 && (l.Scale < MinVerseScale || l.Scale > MaxVerseScale) {
+		return fmt.Errorf("verse_layout.scale must be between %v and %v, got %v", MinVerseScale, MaxVerseScale, l.Scale)
+	}
+	return nil
+}
+
+// IsDefault says the layout draws the verse where and as it has always been drawn.
+func (l *VerseLayout) IsDefault() bool {
+	return l == nil || ((l.Position == "" || l.Position == VersePositionBottom) && (l.Scale == 0 || l.Scale == 1) && (l.Align == "" || l.Align == VerseAlignCenter))
+}
+
 // VerseStyles lists the verse styles.
 var VerseStyles = []string{VerseStylePlain, VerseStyleHighlight, VerseStyleKaraoke, VerseStyleGlow}
 
@@ -78,6 +125,8 @@ type Design struct {
 	Concept string `json:"concept"`
 	// VerseStyle is how the verse is marked as it is sung: plain (also when empty), highlight or karaoke.
 	VerseStyle string `json:"verse_style,omitempty"`
+	// VerseLayout is where the verse is drawn, how big and how it is aligned; nil is the default (at the bottom, centred, the size the frame gives).
+	VerseLayout *VerseLayout `json:"verse_layout,omitempty"`
 	// HitStyle is how the word hit looks: plain (also when empty), metal or glow.
 	HitStyle string `json:"hit_style,omitempty"`
 	// VerseGroups, when false, shows every line whole instead of in groups of words (a line of more than six words is grouped by the
@@ -200,6 +249,11 @@ func (d Design) Validate() error {
 		bg, _, _ := d.Colours(m)
 		if c := Contrast(d.Accent, bg); c < MinAccentContrast {
 			return &AccentContrastError{Accent: d.Accent, Contrast: c, Mode: m, Background: bg}
+		}
+	}
+	if d.VerseLayout != nil {
+		if err := d.VerseLayout.Validate(); err != nil {
+			return fmt.Errorf("design.%w", err)
 		}
 	}
 	if d.VerseStyle != "" && !slices.Contains(VerseStyles, d.VerseStyle) {
@@ -380,13 +434,14 @@ func SaveDesignAt(p Place, s Stored) error {
 // DesignOverride has the fields of a design that a piece may replace for itself alone. An empty field leaves the song's
 // design as it is.
 type DesignOverride struct {
-	Dark       string `json:"dark,omitempty"`
-	Light      string `json:"light,omitempty"`
-	Accent     string `json:"accent,omitempty"`
-	Display    string `json:"display,omitempty"`
-	Body       string `json:"body,omitempty"`
-	VerseStyle string `json:"verse_style,omitempty"`
-	HitStyle   string `json:"hit_style,omitempty"`
+	Dark        string       `json:"dark,omitempty"`
+	Light       string       `json:"light,omitempty"`
+	Accent      string       `json:"accent,omitempty"`
+	Display     string       `json:"display,omitempty"`
+	Body        string       `json:"body,omitempty"`
+	VerseStyle  string       `json:"verse_style,omitempty"`
+	VerseLayout *VerseLayout `json:"verse_layout,omitempty"`
+	HitStyle    string       `json:"hit_style,omitempty"`
 	// HUD replaces the theme's HUD texts for this piece alone (another act, another label).
 	HUD *HUD `json:"hud,omitempty"`
 }
@@ -416,6 +471,10 @@ func (d Design) With(o *DesignOverride) Design {
 	set(&out.Body, o.Body)
 	set(&out.VerseStyle, o.VerseStyle)
 	set(&out.HitStyle, o.HitStyle)
+	if o.VerseLayout != nil {
+		l := *o.VerseLayout
+		out.VerseLayout = &l
+	}
 	if o.HUD != nil {
 		out.Theme = out.Theme.withHUD(o.HUD)
 	}

@@ -5067,10 +5067,10 @@ paths:
             schema: { $ref: "#/components/schemas/MusicScript" }
       responses:
         "200":
-          description: The saved script.
+          description: The saved script, with the advice about it (`verse_notes`).
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/MusicScript" }
+              schema: { $ref: "#/components/schemas/MusicScriptAnswer" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -5317,6 +5317,254 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { description: A 3D piece of the script uses it, or a render is queued or running. }
+
+  /api/music-motion/pieces/{id}/backgrounds:
+    get:
+      tags: [Music motion]
+      summary: The videos a piece keeps to put behind its pieces
+      description: >-
+        The backgrounds of the piece, sorted by name: each with its length (`seconds`), size in pixels, frame rate, size on disk, where it came from (`source`: `upload`
+        or `generation:<id>`) and `used_by`, the ids of the pieces of the **saved** script that play it behind them (an empty list for one no piece uses; it is never removed
+        by itself, a dashboard can offer to delete it). A server that has this lists `video-background` in the `features` of `GET /api/music-motion/catalog`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The backgrounds.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [backgrounds]
+                properties:
+                  backgrounds:
+                    type: array
+                    items:
+                      type: object
+                      required: [name, seconds, width, height, fps, size, source, used_by]
+                      properties:
+                        name: { type: string }
+                        seconds: { type: number }
+                        width: { type: integer }
+                        height: { type: integer }
+                        fps: { type: number }
+                        size: { type: integer }
+                        source: { type: string }
+                        used_by: { type: array, items: { type: string } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [Music motion]
+      summary: Adds the video of a finished generation to a piece as a background
+      description: >-
+        Copies the video of the generation `from` (`generation:<id>`, an id of `POST /api/generations`) into the piece as `name` (by default `<id>.mp4`). The copy is the
+        piece's own: removing the generation does not change it. `404` for a generation that does not exist (or that is for adults on a server that does not show them),
+        `409` for one that is not `done`, for a name that exists or while a render or a proposal of the piece is queued or running, `422` for a generation with no video or
+        a `from` that is not `generation:<id>`, `400` for a name that is not accepted, `503` without ffprobe.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from]
+              properties:
+                from: { type: string, description: "`generation:<id>`." }
+                name: { type: string, description: "A plain file name ending in `.mp4`, `.mov`, `.webm` or `.mkv`." }
+      responses:
+        "201": { description: Copied., content: { application/json: { schema: { $ref: "#/components/schemas/MusicBackgroundMade" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: The generation is not done, the name exists, or a render or a proposal is queued or running. }
+        "422": { description: The generation has no video, or `from` is not `generation:<id>`. }
+        "503": { description: ffprobe is not installed. }
+
+  /api/music-motion/pieces/{id}/backgrounds/{name}:
+    put:
+      tags: [Music motion]
+      summary: Uploads a video to a piece as a background
+      description: >-
+        A raw body, up to 256 MiB, stored in the sources of the piece's project after ffprobe has read it. `name` is a plain file name ending in `.mp4`, `.mov`, `.webm` or
+        `.mkv` (letters, digits, `.`, `_` or `-`, up to 63 characters). It never replaces a file (`409`) and a piece with a render or a proposal queued or running refuses it
+        with `409`; a body that ffprobe cannot read or that has no picture is a `422` and nothing is stored.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: name, in: path, required: true, schema: { type: string } }
+        - { name: adult, in: query, required: false, schema: { type: boolean }, description: "`true` says the video is for adults: the piece becomes one. A server that does not keep content for adults answers `422` with the code `content_not_allowed`." }
+      requestBody:
+        required: true
+        content:
+          application/octet-stream: { schema: { type: string, format: binary } }
+      responses:
+        "201": { description: Stored., content: { application/json: { schema: { $ref: "#/components/schemas/MusicBackgroundMade" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: The name exists, or a render or a proposal is queued or running. }
+        "413": { description: The file is larger than 256 MiB. }
+        "422": { description: The file cannot be read as a video, or has no video stream. }
+        "503": { description: ffprobe is not installed. }
+    delete:
+      tags: [Music motion]
+      summary: Removes a background of a piece
+      description: >-
+        `404` when it is not there; `409` while a render or a proposal is queued or running and while a piece of the saved script plays it behind it (naming the pieces).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: name, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Removed. }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: A piece of the script plays it, or a render or a proposal is queued or running. }
+
+  /api/music-motion/pieces/{id}/backgrounds/{name}/file:
+    get:
+      tags: [Music motion]
+      security:
+        - bearer: []
+        - ticket: []
+      summary: The video of a background, to play it
+      description: >-
+        The file as it is stored, with its media type, an `ETag` and `Cache-Control: private`; `If-None-Match` is answered with `304` and a `Range` with `206`, so a `<video>`
+        can seek. A dashboard plays it under the transparent page of the piece (`POST /api/music-motion/pieces/{id}/preview` gives this address as `url`). `?ticket=` is accepted
+        (see `POST /api/auth/ticket`) because a media element cannot send headers.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: name, in: path, required: true, schema: { type: string } }
+        - { $ref: "#/components/parameters/Ticket" }
+      responses:
+        "200":
+          description: The video.
+          headers:
+            ETag: { schema: { type: string } }
+          content:
+            video/mp4: { schema: { type: string, format: binary } }
+        "206": { description: The part of the file the `Range` asked for. }
+        "304": { description: The file has not changed since the `ETag` the caller has. }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/music-motion/pieces/{id}/backgrounds/{name}/frame:
+    get:
+      tags: [Music motion]
+      security:
+        - bearer: []
+        - ticket: []
+      summary: The picture of a clip at a second of the file
+      description: >-
+        An `image/png` of the clip at `t` seconds of the file, `width` pixels wide (32 to 1920, default 640) and as tall as the clip's shape gives. `422` for `t` outside the
+        file or a `width` that is not a whole number in range, `404` for a clip the piece does not keep, `503` without ffmpeg. `?ticket=` is accepted (an `<img>` cannot send headers).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: name, in: path, required: true, schema: { type: string } }
+        - { name: t, in: query, required: true, schema: { type: number } }
+        - { name: width, in: query, required: false, schema: { type: integer, minimum: 32, maximum: 1920 } }
+        - { $ref: "#/components/parameters/Ticket" }
+      responses:
+        "200":
+          description: The picture.
+          content:
+            image/png: { schema: { type: string, format: binary } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+        "503": { description: ffmpeg is not installed. }
+
+  /api/music-motion/pieces/{id}/backgrounds/{name}/thumbs:
+    get:
+      tags: [Music motion]
+      security:
+        - bearer: []
+        - ticket: []
+      summary: A strip of pictures of a clip, to draw it in the lane of the video track
+      description: >-
+        One `image/png` with `count` pictures (2 to 60, default 12) side by side, evenly spaced over the file (the middle of each stretch), each `height` pixels high (16 to 240,
+        default 60). `X-Frame-Count` and `X-Frame-Width` say how many there are and how wide each is. `422` for a value out of range, `404` for a clip the piece does not keep,
+        `503` without ffmpeg. `?ticket=` is accepted.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: name, in: path, required: true, schema: { type: string } }
+        - { name: count, in: query, required: false, schema: { type: integer, minimum: 2, maximum: 60 } }
+        - { name: height, in: query, required: false, schema: { type: integer, minimum: 16, maximum: 240 } }
+        - { $ref: "#/components/parameters/Ticket" }
+      responses:
+        "200":
+          description: The strip.
+          headers:
+            X-Frame-Count: { schema: { type: integer } }
+            X-Frame-Width: { schema: { type: integer } }
+          content:
+            image/png: { schema: { type: string, format: binary } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+        "503": { description: ffmpeg is not installed. }
+
+  /api/music-motion/pieces/{id}/video/split:
+    post:
+      tags: [Music motion]
+      summary: Cuts an item of the video track in two
+      description: >-
+        Replaces the item `item` of the script's `video` by two that touch at `at` (seconds of the song, strictly inside it): the second takes up the clip where the first stops, both keep
+        the speed the whole had, and their ids are `<item>-a` and `<item>-b` unless `ids` gives two free ones. The whole script is validated and saved in one write and answered.
+        `422` (the script untouched) for a cut outside the item or a script that would not be valid, `404` for an unknown item, `409` while the piece is rendering or proposing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [item, at]
+              properties:
+                item: { type: string }
+                at: { type: number }
+                ids: { type: array, minItems: 2, maxItems: 2, items: { type: string } }
+      responses:
+        "200":
+          description: The script as saved.
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/MusicScript" } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /api/music-motion/pieces/{id}/video/join:
+    post:
+      tags: [Music motion]
+      summary: Joins two touching items of the video track into one
+      description: >-
+        Replaces the items `first` and `second` (next to each other, touching, playing the same clip at the same speed and the second taking up the file where the first stops) by one.
+        The script is validated and saved in one write and answered. `422` (the script untouched) when they cannot be joined, `404` for an unknown item, `409` while the piece is rendering or proposing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [first, second]
+              properties:
+                first: { type: string }
+                second: { type: string }
+      responses:
+        "200":
+          description: The script as saved.
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/MusicScript" } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
 
   /api/music-motion/library/characters:
     get:
@@ -7587,7 +7835,7 @@ components:
               weights: { type: array, items: { type: integer } }
               licence: { type: string, description: "`OFL-1.1` for the whole pack." }
         modes: { type: array, items: { type: string }, description: "`dark`, `light`." }
-        features: { type: array, items: { type: string }, description: "What this server's scripts support beyond the base format: `animate` (keyframes on a parameter, see `MusicScriptPiece.animate`) and `layers` (lanes of parts over the pieces, see `MusicScript.layers`). A dashboard checks it before it saves a script that needs it. `svg` is not about scripts: it says `POST /api/assist/svg` exists. `review` says part drafts and pieces can be graded by the vision model (`review` on `POST /part-drafts` and `/scenes`, `POST /pieces/{id}/review`, the setting `music_motion.review_drafts`). `theme` says a design may carry `theme` and `transition_seconds`, the pack of fonts is embedded and the built-in `hud-chrome` and `grain` parts exist. `blender-motion` says a piece of a script can be a 3D scene (`MusicScriptPiece.blender`) with `POST /pieces/{id}/script/{piece}/blender`; `blender-models` says such a piece can place the 3D models (`.glb`) of its piece (`PUT|GET|DELETE /pieces/{id}/models`); `blender` is a different entry: it says the datasets can have 3D scenes. `scene` says scenes written for the verses of a piece exist: `scene` on `POST /part-drafts`, `verse: own`/`hit: own` in a part's manifest, `POST /pieces/{id}/scenes` and `include=scene`/`piece=` on the catalog." }
+        features: { type: array, items: { type: string }, description: "What this server's scripts support beyond the base format: `animate` (keyframes on a parameter, see `MusicScriptPiece.animate`) and `layers` (lanes of parts over the pieces, see `MusicScript.layers`). A dashboard checks it before it saves a script that needs it. `svg` is not about scripts: it says `POST /api/assist/svg` exists. `review` says part drafts and pieces can be graded by the vision model (`review` on `POST /part-drafts` and `/scenes`, `POST /pieces/{id}/review`, the setting `music_motion.review_drafts`). `theme` says a design may carry `theme` and `transition_seconds`, the pack of fonts is embedded and the built-in `hud-chrome` and `grain` parts exist. `blender-motion` says a piece of a script can be a 3D scene (`MusicScriptPiece.blender`) with `POST /pieces/{id}/script/{piece}/blender`; `blender-models` says such a piece can place the 3D models (`.glb`) of its piece (`PUT|GET|DELETE /pieces/{id}/models`); `blender` is a different entry: it says the datasets can have 3D scenes. `video-background` says a piece of a script can play a video behind it (`MusicScriptPiece.background`, `PUT|POST|GET|DELETE /pieces/{id}/backgrounds`, `GET /pieces/{id}/backgrounds/{name}/file`) and each part of the catalog says `over_video`. `video-track` says the script has a free video track (`MusicScript.video`, `GET /pieces/{id}/backgrounds/{name}/frame` and `/thumbs`, `POST /pieces/{id}/video/split` and `/join`, `verse_layout` in a design) and that `background` is a shorthand for an item of it. `verse-legibility` says the parts of the catalog list `bands` and that `GET /pieces/{id}` and `PUT /pieces/{id}/script` answer `verse_notes`. `scene` says scenes written for the verses of a piece exist: `scene` on `POST /part-drafts`, `verse: own`/`hit: own` in a part's manifest, `POST /pieces/{id}/scenes` and `include=scene`/`piece=` on the catalog." }
     MusicSceneBatch:
       type: object
       required: [state, done, total, drafts, brief_mode, started_at]
@@ -7676,6 +7924,42 @@ components:
               html: { type: string, description: "The page of the piece, wrapped for a sandboxed frame. Empty for a 3D piece." }
               song: { type: object, description: "The song map cut to the piece, as the renderer gives it to the page. `{}` for a 3D piece." }
               blender: { type: boolean, description: "The piece is a 3D scene drawn by Blender: it has no page. Ask for its frames with `GET /pieces/{id}/frame?t=` or `POST /pieces/{id}/script/{piece}/blender/frame`." }
+              layer: { type: boolean, description: "An item of the video track is over the piece: its page is on a transparent background to be laid over the video." }
+        video:
+          type: array
+          description: "The video track of the script, in order, so a dashboard can play each clip under the transparent pages with a `<video>` of its own. Absent for a script with no track."
+          items:
+            type: object
+            required: [id, clip, url, start, end, build_seconds, scrim]
+            properties:
+              id: { type: string }
+              clip: { type: string }
+              url: { type: string, description: "Where to play the clip (`GET /pieces/{id}/backgrounds/{name}/file`)." }
+              media_type: { type: string }
+              file_seconds: { type: number, description: "How long the file lasts (0 when it cannot be read)." }
+              start: { type: number }
+              end: { type: number }
+              build_seconds: { type: number, description: "How long the item is built: its own length and the crossfade into the next item." }
+              local_scrims:
+                type: array
+                description: >-
+                  The strips of the design's background colour the render lays over this item, over the global `scrim`, on the band where the verse of a piece
+                  that touches it is drawn (worked out from the brightness of the clip behind the verse; absent for none, and never saved in the script). Each one is a
+                  trapezoid across the full width: `scrim` of the colour (0 to 0.8) over the rows of the verse (`top` 6 % to 22 % of the height, `center` 42 % to 58 %,
+                  `bottom` 78 % to 94 %), fading linearly to nothing over 6 % of the height above and below. `GET .../frame` draws them; a dashboard that draws
+                  the band over a `<video>` with this profile shows the same picture.
+                items:
+                  type: object
+                  required: [band, scrim]
+                  properties:
+                    band: { type: string, enum: [top, center, bottom] }
+                    scrim: { type: number }
+              scrim: { type: number }
+              transition_seconds: { type: number, description: "The crossfade into this item that applies (0 for a cut or a gap)." }
+              from: { type: number, description: "Second of the file where the part starts." }
+              to: { type: number, description: "Second of the file where the part ends." }
+              speed: { type: number }
+              repeats: { type: boolean, description: "The part is shorter than the item and repeats from its start." }
         replacements:
           type: array
           items:
@@ -8028,7 +8312,7 @@ components:
         count: { type: integer, description: "In how many places." }
     MusicPart:
       type: object
-      required: [name, description, levels, cost_ms, source, params]
+      required: [name, description, levels, cost_ms, over_video, source, params]
       properties:
         name: { type: string }
         description: { type: string }
@@ -8036,6 +8320,8 @@ components:
         cost_ms: { type: integer, description: "Milliseconds it costs to draw a frame at 1280x720 (measured)." }
         manual: { type: boolean, description: "Only used if the script names it (the fixed rule does not choose it)." }
         fixed_copy: { type: boolean, description: "The part draws example text of its own (a name, a button label, a title): the fixed rule of the script and the level substitution do not choose it. Worked out from a text parameter with a default or a block converted from HyperFrames, unless the manifest sets `fixed_copy` itself." }
+        over_video: { type: boolean, description: "The part leaves what is behind it visible (it draws no opaque background over the whole frame), so a piece with a video behind it (`background`) may use it as its main part, an extra or a layer item. `false` when the part is not marked." }
+        bands: { type: object, required: [top, center, bottom], properties: { top: { type: number }, center: { type: number }, bottom: { type: number } }, description: "How much of each third of the frame the part paints opaque (the share of pixels with alpha of 0.5 or more, the largest of the first, the middle and the last frame of its check scene, drawn on a transparent page with no verse and no word hit). Measured with the drawing that measures `over_video`. Absent for a part nobody has measured: it is unknown, not empty. A server that lists them has `verse-legibility` in the `features` of the catalog." }
         source: { type: string, enum: [builtin, user] }
         origin: { $ref: "#/components/schemas/MusicPartOrigin" }
         verse: { type: string, enum: [page, own], description: "Who draws the lyric when this is the main part of a piece: `page` (the default, also when absent) is the page's own layer, `own` is the part itself, which reads `window.__scene.lines`; the page then leaves `#verse` out." }
@@ -8134,6 +8420,7 @@ components:
         fps: { type: integer, enum: [24, 30, 60] }
         resolution: { type: string, description: "For example `1280x720`." }
         client: { type: string, pattern: '^[a-z0-9-]{1,32}$', description: "The name of the dashboard making the request (as in `GenerationRequest`)." }
+        adult: { type: boolean, description: "The piece is for adults. Absent or `false`: it is not, unless the music project it comes from is (then it is). A server that does not keep content for adults answers `422` with the code `content_not_allowed`. A piece for adults is a `404` on every route that names it, and is left out of the lists, on a server that does not show them; its project carries `adult: true`, so its video and its runs are hidden like those of any project for adults." }
         design: { $ref: "#/components/schemas/MusicDesign" }
         preset: { type: string, description: "Identifier of a style (`/api/music-motion/presets`): the piece's design starts as the style's (that of `design`, if sent, takes precedence) and the fixed rule uses its parts and its rhythm. `422` if the style does not exist (nothing is created). Without `preset` the piece is made as usual." }
         prompt: { type: string, maxLength: 2000, description: "The person's direction for the video: it is kept with the piece and read by the proposals that send no prompt of their own. `422` above 2000 characters." }
@@ -8474,12 +8761,13 @@ components:
         parts: { type: array, items: { type: string } }
     MusicPiece:
       type: object
-      required: [id, state, progress, source, style, level, fps, width, height, client, created_at, size_bytes]
+      required: [id, state, progress, source, style, level, fps, width, height, client, adult, created_at, size_bytes]
       properties:
         id: { type: string }
         state: { type: string, enum: [draft, queued, running, done, failed] }
         progress: { type: integer, description: "0 to 100." }
         title: { type: string }
+        adult: { type: boolean, description: "The piece is for adults (see `MusicPieceRequest.adult`). It becomes true by itself when the piece keeps a background that is: a video copied from a generation marked `adult`, or uploaded with `?adult=true`." }
         source:
           type: object
           required: [project, track_id, variant]
@@ -8515,6 +8803,7 @@ components:
         song_map: { $ref: "#/components/schemas/SongMap" }
         words_note: { type: string, description: "Why the words were not heard when they were requested, how they were timed when it was not by token (a model with no timestamp preset), and why the voice was not separated or a kept stem was not used, and, when the separated voice matched fewer than 75 % of the written words and the mix was kept because it matched more, both counts (only in the response that causes it)." }
         script_warning: { type: string, description: "The user edited the script and it was kept, but it may need adjusting to the new sections (only in the `transcribe` response)." }
+        verse_notes: { type: array, items: { $ref: "#/components/schemas/MusicVerseNote" }, description: "Advice about the saved script, worked out on every read (only in `GET /api/music-motion/pieces/{id}`, when the piece has a script): the pieces whose verse is drawn on a band their main part occupies. See `MusicVerseNote`. A server that answers it lists `verse-legibility` in the `features` of the catalog." }
     MusicProposal:
       type: object
       required: [state, what, started_at]
@@ -8556,6 +8845,7 @@ components:
         modes: { type: object, additionalProperties: { type: string, enum: [dark, light] }, description: "The mode of each section tag, in lowercase." }
         concept: { type: string, description: "The visual idea each scene returns to (up to 200 characters)." }
         verse_groups: { type: boolean, description: "`false` shows every line of the verse whole. By default a line of more than six timed words is shown in groups, one at a time: 2 to 3 words in a section of the top third of energy, 3 to 5 in the middle third, 4 to 6 in the bottom third, breaking at punctuation or at a pause of 150 ms or more; a group opens 0.2 s before its first word and is removed 0.12 s after its last, or when the next opens." }
+        verse_layout: { $ref: "#/components/schemas/MusicVerseLayout" }
         verse_style: { type: string, enum: [plain, highlight, karaoke, glow], description: "How the verse is marked as it is sung: `plain` (the default and if missing: the words appear and the key one is in the accent color), `highlight` (the word being sung gets a background in the accent color and stays marked), `karaoke` (those already sung switch to the accent color) or `glow` (each word in the text color with a soft glow and a halo, no background)." }
         hit_style: { type: string, enum: [plain, metal, glow], description: "What the word hit looks like: `plain` (the default and if missing), `metal` (metallic letters with a shine that crosses them) or `glow` (letters in the accent color with light around them); in `metal` and `glow` the letters enter one after another." }
         theme:
@@ -8601,6 +8891,30 @@ components:
             Only in the answer of `PUT .../design`, when the default mode or the modes of the sections changed while
             the script has pieces with a `mode` of their own that differs from the design's: how many. Nothing is
             changed; clear the `mode` of those pieces (`PUT .../script`) to make them follow the design.
+    MusicVerseNote:
+      type: object
+      required: [band]
+      description: >-
+        Advice, never a refusal: nothing is moved or refused because of it, and a script with no `verse_layout` is drawn as it always was. A note
+        about a piece (`piece`, `part`, `band`, `share`, `free`) says its verse is drawn on a band (`top`, `center` or `bottom`: its `verse_layout`, the
+        piece's own over the design's, or the bottom) that its main part paints opaque by 0.2 or more and that has a clear band to move to: `free` is the band the part leaves clearest
+        (below 0.1). A part made to fill the frame gives no note. A note about a track item (`item`, `band`, `contrast`) says its clip leaves the accent under 3:1: for an item with a `scrim` of its own, with that scrim; for one without, even with the local scrim of 0.8 the render lays over the verse's band.
+        A part nobody has measured (no `bands` in the catalog) and a piece with no verse give no note.
+      properties:
+        piece: { type: string }
+        item: { type: string }
+        part: { type: string }
+        band: { type: string, enum: [top, center, bottom] }
+        share: { type: number }
+        free: { type: string, enum: [top, center, bottom] }
+        contrast: { type: number }
+    MusicScriptAnswer:
+      description: "What `PUT /api/music-motion/pieces/{id}/script` answers: the saved script, with its own fields at the top level, and the advice about it."
+      allOf:
+        - { $ref: "#/components/schemas/MusicScript" }
+        - type: object
+          properties:
+            verse_notes: { type: array, items: { $ref: "#/components/schemas/MusicVerseNote" } }
     MusicScript:
       type: object
       required: [version, pieces]
@@ -8608,6 +8922,16 @@ components:
         version: { type: integer, enum: [1] }
         pieces: { type: array, items: { $ref: "#/components/schemas/MusicScriptPiece" } }
         home: { type: string, description: "The part the chorus comes back to (the one every chorus piece uses): the script proposal names it, the fixed rule sets it to the part of the first chorus piece. Optional; nothing refuses a script that has none or whose chorus pieces differ." }
+        video:
+          type: array
+          maxItems: 64
+          items: { $ref: "#/components/schemas/MusicVideoItem" }
+          description: |
+            The video track: clips played behind the pieces, in the time of the song, in order and without overlapping (a gap is drawn in the colour of the design's background).
+            An item can span several pieces and a piece can have several items. The `background` of a piece is a shorthand for the item `bg-<piece id>` over that piece:
+            it is converted when the script is saved and is never returned. Refused with `422` naming the item for a clip the piece does not keep, a part of the clip past its end,
+            a speed out of range, items out of order or overlapping, one outside the song, a repeated id or more than 64 items, and for a piece that touches an item and has a part
+            that is not marked `over_video`. A script without `video` is drawn as always. A server that has it lists `video-track` in the `features` of `GET /api/music-motion/catalog`.
         layers:
           type: array
           maxItems: 4
@@ -8619,6 +8943,26 @@ components:
             Refused with `422`, naming the layer and the item, for a part that is not in the catalog, bad parameters, an empty range or one outside the song,
             items of one lane that overlap (they follow one another, in order), a repeated layer id, more than 4 layers or 32 items in a layer, and a piece whose
             page would draw the same part twice (as its main part, an extra or another item) or more than 8 parts. A script without `layers` is drawn as always.
+    MusicVideoItem:
+      type: object
+      required: [id, clip, start, end]
+      properties:
+        id: { type: string, description: "Lower case letters, digits and dashes; unique in the track." }
+        clip: { type: string, description: "A video the piece keeps (see `GET /api/music-motion/pieces/{id}/backgrounds`)." }
+        start: { type: number, description: "Second of the song where the item starts." }
+        end: { type: number, description: "Second of the song where it ends." }
+        clip_start: { type: number, description: "Second of the file where the part it plays starts (default 0)." }
+        clip_end: { type: number, description: "Second of the file where the part ends (default the end of the file)." }
+        clip_speed: { type: number, minimum: 0.25, maximum: 4, description: "How fast the part plays. Without it the part is slowed to fill the item by at most 2x; a part that is still short repeats from its start." }
+        scrim: { type: number, minimum: 0, maximum: 0.8, description: "How much of the design's background colour is laid over the video so the verse reads (default 0.3)." }
+        transition_seconds: { type: number, minimum: 0, description: "The crossfade into this item from the one before it when the two touch (never longer than the shorter of them). Without it, a cut." }
+    MusicVerseLayout:
+      type: object
+      description: "Where the verse is drawn and how large. A value out of range or unknown is `422` naming the field; without it the verse is drawn where it always was (bottom, centred, scale 1)."
+      properties:
+        position: { type: string, enum: [top, center, bottom] }
+        scale: { type: number, minimum: 0.6, maximum: 1.6 }
+        align: { type: string, enum: [left, center, right] }
     MusicLayer:
       type: object
       required: [id, items]
@@ -8644,7 +8988,7 @@ components:
     MusicScriptPiece:
       type: object
       required: [id, start, end]
-      description: "A piece is made from a part of the catalog (`part`) or is a 3D scene drawn by Blender (`blender`), never both. A 3D piece has no `part`, `params`, `animate`, `with`, `design`, `mode`, `lines`, `hit` or `stage` (`422` naming the piece and the field)."
+      description: "A piece is made from a part of the catalog (`part`) or is a 3D scene drawn by Blender (`blender`), never both. A 3D piece has no `part`, `params`, `animate`, `with`, `design`, `mode`, `lines`, `hit`, `stage` or `background` (`422` naming the piece and the field)."
       properties:
         id: { type: string }
         start: { type: number }
@@ -8669,12 +9013,32 @@ components:
         lines: { type: array, items: { $ref: "#/components/schemas/MusicScriptLine" } }
         hit: { $ref: "#/components/schemas/MusicScriptHit" }
         stage: { $ref: "#/components/schemas/MusicStage" }
+        background: { $ref: "#/components/schemas/MusicPieceBackground" }
         with:
           type: array
           maxItems: 3
           items: { $ref: "#/components/schemas/MusicPartRef" }
           description: "Extra parts drawn alongside the main one, on top and in this order (up to three, without repeating any part of the piece): for example a year bar that stays while the main screen changes."
         design: { $ref: "#/components/schemas/MusicDesignOverride" }
+    MusicBackgroundMade:
+      type: object
+      required: [name, seconds, width, height, fps]
+      properties:
+        name: { type: string }
+        seconds: { type: number }
+        width: { type: integer }
+        height: { type: integer }
+        fps: { type: number }
+    MusicPieceBackground:
+      type: object
+      required: [clip]
+      description: "The video a piece plays behind everything it draws. `clip` is a background the piece keeps (see `GET /api/music-motion/pieces/{id}/backgrounds`); `clip_start`, `clip_end` and `clip_speed` mean what they mean in a scene of `scenes.yaml` (the part of the file in seconds, `clip_end` after `clip_start`, a speed from 0.25 to 4; a part shorter than the piece is slowed by at most 2x and then repeated, a longer one is cut); `scrim` (0 to 0.8, default 0.3) is how much of the design's background colour is laid over the video so the verse reads. A 3D piece cannot have one, and every part of the piece (main, `with` and the items of the layers that show in it) must be marked `over_video` in the catalog: `422` naming the piece and the field otherwise, for a clip the piece does not keep or a part of the clip past its end."
+      properties:
+        clip: { type: string }
+        clip_start: { type: number, minimum: 0 }
+        clip_end: { type: number }
+        clip_speed: { type: number, minimum: 0.25, maximum: 4 }
+        scrim: { type: number, minimum: 0, maximum: 0.8 }
     MusicPartRef:
       type: object
       required: [part]
@@ -8708,6 +9072,7 @@ components:
         display: { type: string }
         body: { type: string }
         verse_style: { type: string, enum: [plain, highlight, karaoke, glow] }
+        verse_layout: { $ref: "#/components/schemas/MusicVerseLayout" }
         hit_style: { type: string, enum: [plain, metal, glow] }
         hud: { $ref: "#/components/schemas/MusicThemeHud", description: "Replaces the theme's HUD texts for this piece alone." }
     MusicScriptLine:

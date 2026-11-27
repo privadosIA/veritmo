@@ -9,6 +9,7 @@ package generation
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -550,4 +551,32 @@ func (h *Handler) reusedInputs(from string) (*uploaded, []genInput, string) {
 		return nil, nil, fmt.Sprintf("reuse_inputs_of: generation %s kept no inputs", from)
 	}
 	return pic, files, ""
+}
+
+// Why FinishedVideo cannot give a video.
+var (
+	// ErrGenerationNotFound is a generation that does not exist or that a server that does not show adult content hides.
+	ErrGenerationNotFound = errors.New("the generation does not exist")
+	// ErrGenerationNotDone is a generation that has not finished (it is queued, running, failed or cancelled); the error says its state.
+	ErrGenerationNotDone = errors.New("the generation is not done")
+	// ErrGenerationNoVideo is a generation that finished with no video file.
+	ErrGenerationNoVideo = errors.New("the generation has no video")
+)
+
+// FinishedVideo is the path of the video of a finished generation, for another family that keeps a copy of it (a music piece keeps it as the
+// background of a piece), and whether the generation is marked for adults. A generation a server that does not show adult content hides is
+// ErrGenerationNotFound, as for the generation API itself.
+func (h *Handler) FinishedVideo(id string) (path string, adult bool, err error) {
+	v, ok := h.generationOf(id)
+	if !ok || !h.host.ProjectVisible(id) {
+		return "", false, ErrGenerationNotFound
+	}
+	if v.State != GenDone {
+		return "", false, fmt.Errorf("%w: it is %s", ErrGenerationNotDone, v.State)
+	}
+	path = filepath.Join(h.ws.ProjectDir(id), "out", id+".mp4")
+	if fi, err := os.Stat(path); err != nil || !fi.Mode().IsRegular() {
+		return "", false, ErrGenerationNoVideo
+	}
+	return path, v.Request.Adult != nil && *v.Request.Adult, nil
 }

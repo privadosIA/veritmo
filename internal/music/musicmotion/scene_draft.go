@@ -49,6 +49,9 @@ type SceneDraftInput struct {
 	// Archetype is the kind of shot the reference video the piece names had at the same relative place, as one line (see
 	// ReferenceShots); empty for none. A cue for the kind of shot, never something to copy.
 	Archetype string
+	// OverVideo says the piece plays a video behind it: the scene is laid over the video, so it must paint no background of its own. The
+	// writer is told so and the draft is measured on a transparent page (CheckOptions.OverVideo).
+	OverVideo bool
 }
 
 // NeighbourScene is the part of a script piece next to the one being written, with what it draws.
@@ -89,7 +92,10 @@ func BuildSceneInput(spec ProjectSpec, ref SceneRef, brief string) (SceneDraftIn
 		return SceneDraftInput{}, err
 	}
 	sc.Part, sc.Params, sc.Extras, sc.Layers, sc.Backdrop, sc.Actors = Part{}, nil, nil, nil, "", nil
-	in := SceneDraftInput{Ref: ref, Brief: strings.TrimSpace(brief), Scene: sc, Section: p.Section, Index: idx + 1, Total: len(spec.Script.Pieces), Start: p.Start, End: p.End, Title: spec.Title,
+	// A scene is checked and previewed on the design's own background; whether it leaves a video visible is measured apart.
+	sc.Background = nil
+	track, _ := spec.Script.WithTrack() // a piece's `background` counts as the item it becomes
+	in := SceneDraftInput{OverVideo: len(track.ItemsOver(p)) > 0 || p.Background != nil, Ref: ref, Brief: strings.TrimSpace(brief), Scene: sc, Section: p.Section, Index: idx + 1, Total: len(spec.Script.Pieces), Start: p.Start, End: p.End, Title: spec.Title,
 		World: spec.World, Device: spec.Device}
 	if idx == 0 {
 		in.Hook = spec.Hook
@@ -242,6 +248,11 @@ func SceneUser(in SceneDraftInput, cat Catalog, problem string) string {
 	}
 	if in.Hook != "" {
 		b.WriteString("This is the first piece: the first two seconds of the video show: " + in.Hook + "\n")
+	}
+	if in.OverVideo {
+		b.WriteString("\nA video plays behind this scene: your page is drawn on a transparent background and laid over it, so it must paint no background of its own " +
+			"(no panel, gradient, wall or colour over the whole frame); draw only the words, shapes and objects, and let the video show around them. " +
+			"A scene that paints more than half of the frame opaque is refused because it hides the video.\n")
 	}
 	if in.Brief != "" {
 		b.WriteString("\nThe idea asked for (the metaphor to draw):\n" + in.Brief + "\n")

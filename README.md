@@ -34,7 +34,7 @@ docker compose --profile install run --rm installer      # installs the programs
 docker compose up -d                                      # starts everything
 ```
 
-The server and the installer are published images (`ghcr.io/privadosia/veritmo-server`, `veritmo-tools`): Compose downloads them and builds them from the checkout only when it cannot. Nothing in them is a model: you download those from the dashboard, and [docs/IMAGES.md](docs/IMAGES.md) lists what they hold, with each licence. The dashboard is a separate project that connects from outside: see [docs/COMPOSE.md](docs/COMPOSE.md#the-dashboard-connects-from-outside).
+The server and the installer are published images (`ghcr.io/privadosia/veritmo-server`, `veritmo-tools`): Compose downloads them and builds them from the checkout only when it cannot. Nothing in them is a model: you download those from the dashboard, and [docs/IMAGES.md](docs/IMAGES.md) lists what they hold, with each licence. The dashboard is a separate project that connects from outside: see [docs/COMPOSE.md](docs/COMPOSE.md#the-dashboard-connects-from-outside). The stack also leaves out a container for the .NET services (the song recognition and the vision of the video-edit tools): the server runs those itself from the installation folder, and where it has none the tasks that need them are reported unavailable, with their reason. The installer step of the public edition does not build them.
 
 Or **on the host**, without Docker:
 

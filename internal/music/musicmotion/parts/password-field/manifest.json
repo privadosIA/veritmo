@@ -1,4 +1,4 @@
-{"name":"password-field","description":"A password field whose dots appear one on every beat, with a bar of five steps that fills to the strength of the password and a word that says it","version":1,"cost_ms":55,"levels":["simple","medium","advanced"],
+{"name":"password-field","description":"A password field whose dots appear one on every beat, with a bar of five steps that fills to the strength of the password and a word that says it","version":1,"bands":{"top":0.01,"center":0,"bottom":0},"over_video":true,"cost_ms":55,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"password","type":"string","default":"ChangeMe","max_length":20},
   {"name":"label","type":"string","default":"Your password is","max_length":30},

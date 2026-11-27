@@ -1,4 +1,4 @@
-{"name":"data-table","description":"A table of data whose rows enter one on every beat, with one row marked in the accent colour","version":1,"cost_ms":63,"levels":["simple","medium","advanced"],
+{"name":"data-table","description":"A table of data whose rows enter one on every beat, with one row marked in the accent colour","version":1,"bands":{"top":0.46,"center":0.63,"bottom":0.1},"over_video":true,"cost_ms":63,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"columns","type":"string","default":"package|version|risk","max_length":60,"description":"The column titles, separated by |"},
   {"name":"rows","type":"string","default":"http-kit|0.1.4|low;tidy-utils|1.4.2|low;cookie-jar|1.0.2|HIGH;pdf-render|5.0.0|medium;queue-lite|4.7.0|low;agent-sdk|0.9.1|medium","max_length":240,"description":"The rows, separated by ;, their cells by |"},

@@ -48,6 +48,10 @@ type pieceInfo struct {
 	Width     int       `json:"width"`
 	Height    int       `json:"height"`
 	Client    string    `json:"client"`
+	// Adult is the label of the piece: true when it is for adults (the person said so when it was made, its music project is, or it keeps a
+	// video that is). A server that does not show adult content has no such piece: every route that names it answers the 404 of an unknown
+	// one and the lists leave it out. A piece made before the label counts as not for adults.
+	Adult bool `json:"adult,omitempty"`
 	// SizeBytes is what the piece keeps on disk, measured when it was last needed (nil: not measured yet): after a render finishes and after its
 	// storage is cleaned, never on a read. SizeRunID is the run the size was measured after.
 	SizeBytes *int64 `json:"size_bytes,omitempty"`
@@ -92,7 +96,20 @@ func (h *Handler) readPiece(id string) (*pieceInfo, bool) {
 	if !strings.HasPrefix(id, piecePrefix) || !api.ProjectIDPattern.MatchString(id) {
 		return nil, false
 	}
-	return h.pieces().get(id)
+	info, ok := h.pieces().get(id)
+	if ok && info.Adult && !h.host.ShowsAdult() {
+		return nil, false // a piece for adults does not exist for a server that does not show them
+	}
+	return info, ok
+}
+
+// markAdult labels the piece as for adults and keeps it: a piece that keeps a video that is for adults is.
+func (h *Handler) markAdult(info *pieceInfo) error {
+	if info.Adult {
+		return nil
+	}
+	info.Adult = true
+	return h.writePiece(info)
 }
 
 func (h *Handler) writePiece(info *pieceInfo) error { return h.pieces().put(info) }
@@ -133,8 +150,12 @@ type CatalogPart struct {
 	CostMS      int      `json:"cost_ms"`
 	Manual      bool     `json:"manual,omitempty"`
 	// FixedCopy says the part draws example text of its own (see musicmotion.Part.HasFixedCopy).
-	FixedCopy bool   `json:"fixed_copy,omitempty"`
-	Source    string `json:"source"`
+	FixedCopy bool `json:"fixed_copy,omitempty"`
+	// OverVideo says the part leaves what is behind it visible, so a piece with a video behind it (a background) may use it.
+	OverVideo bool `json:"over_video"`
+	// Bands is how much of each third of the frame the part paints opaque, measured; absent for a part nobody has measured.
+	Bands  *musicmotion.Bands `json:"bands,omitempty"`
+	Source string             `json:"source"`
 	// Origin is the reference video a part of the user came from; absent for the parts that come with the program and for
 	// the ones written by hand.
 	Origin *musicmotion.PartOrigin `json:"origin,omitempty"`
@@ -199,7 +220,7 @@ func catalogPartOf(p musicmotion.Part) CatalogPart {
 		params = append(params, CatalogParam{Name: pr.Name, Type: pr.Type, Description: pr.Description, Default: fmt.Sprint(pr.Default),
 			Min: pr.Min, Max: pr.Max, MaxLength: pr.MaxLength, Options: pr.Options, Animatable: pr.Animatable})
 	}
-	return CatalogPart{Name: p.Name, Description: p.Description, Levels: p.Levels, CostMS: cost, Manual: p.Manual, FixedCopy: p.HasFixedCopy, Source: p.Source, Origin: p.Origin, Verse: p.Verse, Hit: p.Hit, Scene: p.Scene, Timeline: p.Timeline(), Pictures: p.Pictures, Params: params}
+	return CatalogPart{Name: p.Name, Description: p.Description, Levels: p.Levels, CostMS: cost, Manual: p.Manual, FixedCopy: p.HasFixedCopy, OverVideo: p.OverVideo, Bands: p.Bands, Source: p.Source, Origin: p.Origin, Verse: p.Verse, Hit: p.Hit, Scene: p.Scene, Timeline: p.Timeline(), Pictures: p.Pictures, Params: params}
 }
 
 // GET /api/music-motion/catalog
@@ -250,17 +271,19 @@ type PieceSource struct {
 
 // PieceView is a piece as the API shows it: its song, its state and progress, its script and its video once rendered.
 type PieceView struct {
-	ID           string                `json:"id"`
-	State        string                `json:"state"` // draft, queued, running, done or failed
-	Progress     int                   `json:"progress"`
-	Title        string                `json:"title,omitempty"`
-	Source       PieceSource           `json:"source"`
-	Style        string                `json:"style"`
-	Level        string                `json:"level"`
-	FPS          int                   `json:"fps"`
-	Width        int                   `json:"width"`
-	Height       int                   `json:"height"`
-	Client       string                `json:"client"`
+	ID       string      `json:"id"`
+	State    string      `json:"state"` // draft, queued, running, done or failed
+	Progress int         `json:"progress"`
+	Title    string      `json:"title,omitempty"`
+	Source   PieceSource `json:"source"`
+	Style    string      `json:"style"`
+	Level    string      `json:"level"`
+	FPS      int         `json:"fps"`
+	Width    int         `json:"width"`
+	Height   int         `json:"height"`
+	Client   string      `json:"client"`
+	// Adult says the piece is for adults (see pieceInfo.Adult).
+	Adult        bool                  `json:"adult"`
 	CreatedAt    time.Time             `json:"created_at"`
 	RunID        string                `json:"run_id,omitempty"`
 	Estimate     *musicmotion.Estimate `json:"estimate,omitempty"`
@@ -292,11 +315,14 @@ type PieceView struct {
 	// user edited, may need adjusting to the new sections. Both are only in the answer that causes them.
 	WordsNote     string `json:"words_note,omitempty"`
 	ScriptWarning string `json:"script_warning,omitempty"`
+	// VerseNotes is advice about the saved script (see musicmotion.VerseNotes): the pieces whose verse falls on the band their part occupies.
+	// It is worked out on every read, so a change of the design is never stale in it; nothing in it is refused or moved.
+	VerseNotes []musicmotion.VerseNote `json:"verse_notes,omitempty"`
 }
 
 func (h *Handler) pieceViewOf(info *pieceInfo, full bool) PieceView {
 	v := PieceView{ID: info.ID, State: "draft", Title: info.Title, Source: PieceSource{Project: info.Project, TrackID: info.TrackID, Variant: info.Variant},
-		Style: info.Style, Level: info.Level, FPS: info.FPS, Width: info.Width, Height: info.Height, Client: info.Client, CreatedAt: info.CreatedAt,
+		Style: info.Style, Level: info.Level, FPS: info.FPS, Width: info.Width, Height: info.Height, Client: info.Client, Adult: info.Adult, CreatedAt: info.CreatedAt,
 		ScriptSource: info.ScriptSource, Preset: info.Preset, Prompt: info.Prompt, World: info.World, Device: info.Device, Hook: info.Hook, Reference: info.Reference}
 	script, hasScript := musicmotion.LoadScriptAt(h.place(info.ID))
 	if hasScript {
@@ -338,6 +364,9 @@ func (h *Handler) pieceViewOf(info *pieceInfo, full bool) PieceView {
 		}
 		if hasScript {
 			v.Script = &script
+			if st, ok := musicmotion.LoadDesignAt(h.place(info.ID)); ok {
+				v.VerseNotes = h.verseNotesOf(context.Background(), info, script, st.Design)
+			}
 		}
 		if m, ok := h.pieceMap(info.ID); ok {
 			v.SongMap = &m
@@ -392,6 +421,9 @@ type PieceRequest struct {
 	FPS        int     `json:"fps,omitempty"`
 	Resolution string  `json:"resolution,omitempty"`
 	Client     *string `json:"client,omitempty"`
+	// Adult says the piece is for adults. Absent or false: it is not, unless its music project is (then it is). A server that does not keep
+	// content for adults refuses it with 422 content_not_allowed.
+	Adult *bool `json:"adult,omitempty"`
 	// Design, when given, is the design of the piece (it is then the user's); otherwise a palette is chosen.
 	Design *musicmotion.Design `json:"design,omitempty"`
 	// Transcribe hears when each word is sung (Whisper, on the CPU: about a third of the song's length) instead of
@@ -504,6 +536,15 @@ func (h *Handler) handleMusicMotionCreate(w http.ResponseWriter, r *http.Request
 	}
 	if !api.ProjectIDPattern.MatchString(req.Project) || !h.ws.ProjectExists(req.Project) {
 		api.Refuse(w, "the music project %q does not exist", req.Project)
+		return
+	}
+	// A piece is for adults when the person says so or when the music project it comes from is.
+	adult := req.Adult != nil && *req.Adult
+	if label, exists := h.ws.ProjectAdult(req.Project); exists && label != nil && *label {
+		adult = true
+	}
+	if adult && !h.host.ShowsAdult() {
+		api.WriteError(w, http.StatusUnprocessableEntity, api.CodeContentNotAllowed, "this server does not keep content for adults")
 		return
 	}
 	song, _, err := h.ws.SongOf(req.Project, req.TrackID, req.Variant)
@@ -645,7 +686,7 @@ func (h *Handler) handleMusicMotionCreate(w http.ResponseWriter, r *http.Request
 	}
 	title := song.Title
 	info := &pieceInfo{ID: id, CreatedAt: time.Now().UTC(), Project: req.Project, TrackID: req.TrackID, Variant: req.Variant, Title: title, Style: req.Style,
-		Level: req.Level, FPS: fps, Width: width, Height: height, Client: client, SongFile: songFile, Caption: song.Caption, ScriptSource: prop.Source,
+		Level: req.Level, FPS: fps, Width: width, Height: height, Client: client, Adult: adult, SongFile: songFile, Caption: song.Caption, ScriptSource: prop.Source,
 		Lyrics: lyrics, Language: song.VocalLanguage, Preset: req.Preset, Prompt: strings.TrimSpace(req.Prompt), World: clipLine(req.World), Device: req.Device, Hook: clipLine(req.Hook), Reference: strings.TrimSpace(req.Reference)}
 	if err := h.pieces().create(info, docs.Docs); err != nil {
 		cleanup()
@@ -763,10 +804,22 @@ func (h *Handler) handleMusicMotionSetScript(w http.ResponseWriter, r *http.Requ
 		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("invalid JSON body: %v", err))
 		return
 	}
+	h.saveScript(w, info, script)
+}
+
+// saveScript validates the script against the piece's song and design and, if it is valid, saves it and answers it. The `background` of a
+// piece is a shorthand: what is saved and answered is the item of the video track it becomes. A script that is not valid is a 422 and what the
+// piece had is untouched.
+func (h *Handler) saveScript(w http.ResponseWriter, info *pieceInfo, script musicmotion.Script) {
 	m, ok := h.pieceMap(info.ID)
 	st, hasDesign := musicmotion.LoadDesignAt(h.place(info.ID))
 	if !ok || !hasDesign {
 		api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, "the piece has lost its song map or its design")
+		return
+	}
+	script, terr := script.WithTrack()
+	if terr != nil {
+		api.Refuse(w, "%v", terr)
 		return
 	}
 	if err := script.WithSources(h.pieceSources(info.ID)).ValidateAll(h.mmCatalog(), h.mmLibrary(), m, st.Design, info.Width, info.Height); err != nil {
@@ -783,7 +836,14 @@ func (h *Handler) handleMusicMotionSetScript(w http.ResponseWriter, r *http.Requ
 	}
 	info.ScriptEdited, info.ScriptSource = true, "user"
 	_ = h.writePiece(info)
-	api.WriteJSON(w, http.StatusOK, script)
+	api.WriteJSON(w, http.StatusOK, ScriptAnswer{Script: script, VerseNotes: h.verseNotesOf(context.Background(), info, script, st.Design)})
+}
+
+// ScriptAnswer is a saved script with the advice about it: what `PUT .../script` answers. The script's own fields are at the top level, as
+// they always were.
+type ScriptAnswer struct {
+	musicmotion.Script
+	VerseNotes []musicmotion.VerseNote `json:"verse_notes,omitempty"`
 }
 
 // lineTexts lists the sung lines of a song map, in order.
@@ -852,8 +912,23 @@ func (h *Handler) handleMusicMotionRender(w http.ResponseWriter, r *http.Request
 			return
 		}
 	}
-	spec := musicmotion.ProjectSpec{Dir: dir, Name: info.ID, SongFile: filepath.Join(dir, info.SongFile), Map: m, Design: st.Design, Script: script,
-		Cat: cat, Lib: lib, FPS: info.FPS, Width: info.Width, Height: info.Height, Client: info.Client}
+	if track, _ := script.WithTrack(); len(track.Video) > 0 {
+		// the video track is built and the layers laid over it with ffmpeg; the clips are read with ffprobe. No model or GPU.
+		if !ffmpegAvailable() {
+			api.WriteError(w, http.StatusServiceUnavailable, api.CodeUnavailable, "ffmpeg is not installed: it is needed to build the video track and lay the pieces over it")
+			return
+		}
+		if !ffprobeAvailable() {
+			api.WriteError(w, http.StatusServiceUnavailable, api.CodeUnavailable, "ffprobe is not installed: it is needed to read the clips of the video track")
+			return
+		}
+	}
+	effective := script
+	if track, terr := script.WithTrack(); terr == nil {
+		effective, _ = h.withEffectiveScrims(r.Context(), info, track, st.Design)
+	}
+	spec := musicmotion.ProjectSpec{Dir: dir, Name: info.ID, SongFile: filepath.Join(dir, info.SongFile), Map: m, Design: st.Design, Script: effective,
+		Cat: cat, Lib: lib, FPS: info.FPS, Width: info.Width, Height: info.Height, Client: info.Client, Adult: info.Adult}
 	if _, err := musicmotion.WriteProject(spec); err != nil {
 		api.Refuse(w, "%v", err)
 		return
@@ -1249,7 +1324,7 @@ func (h *Handler) handleMusicMotionTranscribe(w http.ResponseWriter, r *http.Req
 // up more than a second from a boundary of the new sections. It answers the error itself and says false when it fails.
 func (h *Handler) followTheMap(w http.ResponseWriter, info *pieceInfo, m songmap.Map, d musicmotion.Design) (warning string, ok bool) {
 	if !info.ScriptEdited {
-		script, err := h.fixedScriptFor(info, m, d)
+		script, notes, err := h.fixedScriptFor(info, m, d)
 		if err != nil {
 			api.Refuse(w, "%v", err)
 			return "", false
@@ -1259,11 +1334,21 @@ func (h *Handler) followTheMap(w http.ResponseWriter, info *pieceInfo, m songmap
 			return "", false
 		}
 		info.ScriptSource = "fallback"
-		return "", true
+		return strings.Join(notes, "; "), true
 	}
 	if script, has := musicmotion.LoadScriptAt(h.place(info.ID)); has {
 		if n := piecesOffTheSections(script, m); n > 0 {
 			warning = fmt.Sprintf("the script was edited by the user and was kept; %d of its pieces start or end more than a second from a boundary of the new sections, so it may need adjusting", n)
+		}
+		// an item of the video track that is outside the new song is named: it is never cut silently, and the script is not saved or rendered until it is moved or removed
+		for _, it := range script.Video {
+			if it.End > m.Duration+0.05 {
+				note := fmt.Sprintf("the video item %q (%.1f s to %.1f s) is outside the new song (%.1f s): move it or remove it before the script is saved or rendered", it.ID, it.Start, it.End, m.Duration)
+				if warning != "" {
+					warning += "; "
+				}
+				warning += note
+			}
 		}
 	}
 	return warning, true
@@ -1314,18 +1399,37 @@ func (h *Handler) handleMusicMotionWords(w http.ResponseWriter, r *http.Request)
 }
 
 // fixedScriptFor makes the script of a piece with the fixed rule (no assistant), for its level and style.
-func (h *Handler) fixedScriptFor(info *pieceInfo, m songmap.Map, d musicmotion.Design) (musicmotion.Script, error) {
-	prop, err := musicmotion.ProposeScript(context.Background(), nil, musicmotion.ScriptInput{Map: m, Design: d, Level: info.Level, Cat: h.mmCatalog()})
+//
+// The video track of the script it replaces is kept, and the pieces over it use parts that leave it visible (what it changed is in the notes).
+func (h *Handler) fixedScriptFor(info *pieceInfo, m songmap.Map, d musicmotion.Design) (musicmotion.Script, []string, error) {
+	old, _ := musicmotion.LoadScriptAt(h.place(info.ID))
+	track, dropped := trackWithin(old.Video, m.Duration)
+	prop, err := musicmotion.ProposeScript(context.Background(), nil, musicmotion.ScriptInput{Map: m, Design: d, Level: info.Level, Cat: h.mmCatalog(),
+		Video: track, Sources: h.pieceSources(info.ID)})
 	if err != nil {
-		return musicmotion.Script{}, err
+		return musicmotion.Script{}, nil, err
 	}
+	prop.Warnings = append(prop.Warnings, dropped...)
 	if info.Style == musicmotion.StyleIllustrated {
 		musicmotion.AddStages(&prop.Script, h.mmLibrary(), d)
 	}
 	if err := prop.Script.WithSources(h.pieceSources(info.ID)).ValidateAll(h.mmCatalog(), h.mmLibrary(), m, d, info.Width, info.Height); err != nil {
-		return musicmotion.Script{}, err
+		return musicmotion.Script{}, nil, err
 	}
-	return prop.Script, nil
+	return prop.Script, prop.Warnings, nil
+}
+
+// trackWithin is the items of a video track that are inside a song of duration seconds, and a sentence for each one that is not: a script made
+// again for a new song cannot keep a video that is past its end, and says so instead of failing.
+func trackWithin(video []musicmotion.VideoItem, duration float64) (kept []musicmotion.VideoItem, notes []string) {
+	for _, it := range video {
+		if it.End > duration+0.05 {
+			notes = append(notes, fmt.Sprintf("the video item %q (%.1f s to %.1f s) is outside the new song (%.1f s): it was left out of the script (the file is still in the piece)", it.ID, it.Start, it.End, duration))
+			continue
+		}
+		kept = append(kept, it)
+	}
+	return kept, notes
 }
 
 // piecesOffTheSections counts the pieces of a script that start or end more than a second from every boundary of the

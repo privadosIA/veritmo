@@ -57,6 +57,9 @@ type CheckOptions struct {
 	// Allow is text a scene may show besides its verse and the design's concept: the idea it was asked for and the song's title.
 	// Only read with SceneRules.
 	Allow string
+	// OverVideo says the part is going to be used over a video (a piece with a background): besides what any part passes, it must leave
+	// the video visible (see MeasureOverVideo). A part whose manifest says over_video is measured whatever this says.
+	OverVideo bool
 	// Server, when set, collects what is wrong on the page's own layers (the word hit it draws) with a part that never touches them: that is
 	// the server's fault, not the part's, so it is logged and written here prefixed "server:" instead of refusing the part.
 	Server *[]string
@@ -350,6 +353,20 @@ func CheckPart(ctx context.Context, browser string, p Part, opts CheckOptions) (
 			return nil, err
 		}
 		out = append(out, more...)
+	}
+	if len(out) == 0 && (p.OverVideo || opts.OverVideo || p.Bands != nil) {
+		m, err := MeasureOverVideo(ctx, browser, p, opts.Scene)
+		if err != nil {
+			return nil, err
+		}
+		if (p.OverVideo || opts.OverVideo) && !m.OK() {
+			out = append(out, OverVideoProblem(m, opts.OverVideo))
+		}
+		if p.Bands != nil {
+			if band := p.Bands.differsFrom(m.Bands); band != "" {
+				out = append(out, BandsProblem(*p.Bands, m.Bands, band))
+			}
+		}
 	}
 	return out, nil
 }

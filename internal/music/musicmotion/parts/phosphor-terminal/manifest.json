@@ -1,4 +1,4 @@
-{"name":"phosphor-terminal","description":"A terminal with scan lines and a glow, in green or amber phosphor, whose lines are typed on the beat with a cursor","version":1,"cost_ms":85,"levels":["simple","medium","advanced"],
+{"name":"phosphor-terminal","description":"A terminal with scan lines and a glow, in green or amber phosphor, whose lines are typed on the beat with a cursor","version":1,"bands":{"top":0.42,"center":0.68,"bottom":0.02},"over_video":true,"cost_ms":85,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"lines","type":"string","default":"$ boot|loading memory|HELLO, WORLD|ready_","max_length":240,"description":"The lines, separated by |"},
   {"name":"tone","type":"enum","default":"green","options":["green","amber"],"description":"The colour of the phosphor"}]}

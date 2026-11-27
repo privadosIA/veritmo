@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"math"
 	"regexp"
 	"strings"
 )
@@ -66,7 +67,39 @@ type Scene struct {
 	// Backdrop is the SVG of the background of an illustrated piece, and Actors its characters (see stage.go).
 	Backdrop string
 	Actors   []Actor
+	// Background, when set, makes the page one that goes over a video: it paints nothing over the whole frame (the design's
+	// colour is not laid under it) and the scrim goes under its parts. Nil for a page of its own, which is what every piece had
+	// before pieces could have a video behind them.
+	Background *VideoBackground
 }
+
+// VideoBackground is what a page over a video needs to know about it.
+type VideoBackground struct {
+	// Scrim is how much of the design's --bg colour is laid over the video so the verse reads over it, from 0 to MaxScrim.
+	Scrim float64
+}
+
+// Limits of the scrim of a video behind a piece.
+const (
+	DefaultScrim = 0.3
+	MaxScrim     = 0.8
+)
+
+// transparentCSS is added to the page's own stylesheet for a page over a video: the page and its body paint nothing, and the
+// scrim is the only thing the page lays over the video itself.
+func transparentCSS(b VideoBackground) string {
+	return fmt.Sprintf("\nhtml,body{background:transparent}\n#scrim{position:absolute;left:0;top:0;width:100%%;height:100%%;background:color-mix(in srgb,var(--bg) %g%%,transparent)}\n", math.Round(b.Scrim*1000)/10) + verseHaloCSS
+}
+
+// verseHalo is the shadow of the design's background colour a word of the verse has over a video: a tight one that gives the glyphs an
+// edge and a soft one that darkens (or lightens, in a light mode) what is right behind them. It never changes a word's colour.
+const verseHalo = "0 0 .08em color-mix(in srgb,var(--bg) 90%,transparent),0 0 .3em color-mix(in srgb,var(--bg) 70%,transparent)"
+
+// verseHaloCSS gives every word of the verse the halo, whatever the verse style. The glow style has shadows of its own, so it keeps
+// them and the halo goes after them.
+const verseHaloCSS = "#verse .w{text-shadow:" + verseHalo + "}\n" +
+	"#verse.verse-glow .w{text-shadow:0 0 .1em var(--fg),0 0 .45em color-mix(in srgb,var(--fg) 75%,transparent)," + verseHalo + "}\n" +
+	"#verse.verse-glow .w.k{text-shadow:0 0 .1em var(--accent),0 0 .45em color-mix(in srgb,var(--accent) 75%,transparent)," + verseHalo + "}\n"
 
 // MaxExtras is how many parts a piece may carry besides its main one.
 const MaxExtras = 3
@@ -124,6 +157,9 @@ func (s Scene) Check() error {
 			return fmt.Errorf("the part %q is in the piece twice: two fragments of one part would share their element ids", e.Part.Name)
 		}
 		seen[e.Part.Name] = true
+	}
+	if b := s.Background; b != nil && (b.Scrim < 0 || b.Scrim > MaxScrim) {
+		return fmt.Errorf("the scrim is %v: it goes from 0 to %v", b.Scrim, MaxScrim)
 	}
 	if s.Mode != ModeDark && s.Mode != ModeLight {
 		return fmt.Errorf("the mode %q is neither %q nor %q", s.Mode, ModeDark, ModeLight)
@@ -426,12 +462,21 @@ func BuildPage(s Scene) (string, error) {
 	b.WriteString("<!doctype html><html><head><meta charset=\"utf-8\"><style>")
 	b.WriteString(vars)
 	fmt.Fprintf(&b, pageCSS, s.Width, s.Height, size)
+	if l := s.Design.VerseLayout; !l.IsDefault() {
+		b.WriteString(verseLayoutCSS(*l, size))
+	}
+	if s.Background != nil {
+		b.WriteString(transparentCSS(*s.Background))
+	}
 	b.WriteString(FontFaceCSS(s.Design.Display, s.Design.Body))
 	b.WriteString("</style>")
 	if t := s.Design.Theme; t != nil && t.CSS != "" {
 		b.WriteString("<style data-theme>" + t.CSS + "</style>") // after the page's own stylesheet, so it wins over its defaults
 	}
 	b.WriteString("</head><body class=\"mode-" + s.Mode + "\">")
+	if s.Background != nil && s.Background.Scrim > 0 {
+		b.WriteString("<div id=\"scrim\"></div>") // first in the page: everything else is drawn over it
+	}
 	// The data goes first: the script of the part runs while the page loads and may read it.
 	b.WriteString("<script>window.__scene=" + scriptSafe(string(sceneJSON)) + ";window.__theme=" + scriptSafe(string(themeJSON)) + ";window.__params=" + scriptSafe(string(paramsJSON)) + ";</script>")
 	if hfUse {
@@ -506,4 +551,25 @@ func (s Scene) withAssets() Scene {
 	}
 	s.Layers = layers
 	return s
+}
+
+// verseLayoutCSS is added to the page's own stylesheet when the design places the verse somewhere other than the bottom, in another size or
+// aligned otherwise: it overrides the default of #verse and nothing else, so a design with no layout makes the page it always made. size is the
+// font size the frame gives (in pixels), which the scale multiplies.
+func verseLayoutCSS(l VerseLayout, size int) string {
+	var b strings.Builder
+	b.WriteString("\n")
+	switch l.Position {
+	case VersePositionTop:
+		b.WriteString("#verse{top:6%;bottom:auto}\n")
+	case VersePositionCenter:
+		b.WriteString("#verse{top:50%;bottom:auto;transform:translateY(-50%)}\n")
+	}
+	if l.Scale != 0 && l.Scale != 1 {
+		fmt.Fprintf(&b, "#verse{font-size:%dpx}\n", int(math.Round(float64(size)*l.Scale)))
+	}
+	if l.Align != "" && l.Align != VerseAlignCenter {
+		fmt.Fprintf(&b, "#verse{text-align:%s}\n", l.Align)
+	}
+	return b.String()
 }

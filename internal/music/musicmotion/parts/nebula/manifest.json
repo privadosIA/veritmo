@@ -1,4 +1,4 @@
-{"name":"nebula","description":"Clouds of soft particles with a gradient to the accent colour, the same for the same seed, that breathe on the beat","version":1,"cost_ms":100,"levels":["simple","medium","advanced"],
+{"name":"nebula","description":"Clouds of soft particles with a gradient to the accent colour, the same for the same seed, that breathe on the beat","version":1,"bands":{"top":0.04,"center":0.04,"bottom":0},"over_video":true,"cost_ms":100,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"amount","type":"int","default":220,"min":40,"max":600,"description":"How many particles"},
   {"name":"seed","type":"int","default":1,"min":0,"max":9999,"description":"The same seed draws the same cloud"}]}

@@ -81,6 +81,9 @@ type Config struct {
 	Favorites []Favorite `yaml:"favorites,omitempty" json:"favorites,omitempty"`
 	// BGM is the optional soundtrack of a video project.
 	BGM *BGM `yaml:"bgm,omitempty" json:"bgm,omitempty"`
+	// VideoTrack is the video under the scenes of a video project: clips of sources/ in seconds of the output, in order, with gaps allowed. With
+	// it the scenes that say `layer` are laid over it (see videotrack.go).
+	VideoTrack []VideoTrackItem `yaml:"video_track,omitempty" json:"video_track,omitempty"`
 	// VideoEdit is the tool, its settings and its inputs in a video-edit project; it is the project's whole job.
 	VideoEdit *VideoEdit `yaml:"video_edit,omitempty" json:"video_edit,omitempty"`
 
@@ -547,6 +550,9 @@ type Scene struct {
 	MotionBPM    *float64       `yaml:"motion_bpm,omitempty" json:"motion_bpm,omitempty"`
 	// Overlay puts an animated title, lower third or credits over the scene's video.
 	Overlay *Overlay `yaml:"overlay,omitempty" json:"overlay,omitempty"`
+	// Layer makes a motion scene a transparent page laid over the project's video track (video_track) at its place in the output, instead of a
+	// picture of its own.
+	Layer bool `yaml:"layer,omitempty" json:"layer,omitempty"`
 	// Blender makes the scene from a .blend file rendered by Blender instead of a picture and an animation.
 	Blender *SceneBlender `yaml:"blender,omitempty" json:"blender,omitempty"`
 }
@@ -1678,10 +1684,14 @@ func (c *Config) validate(statBase string) error {
 				c.warn("scene %q: motion is ignored because the scene is animated", s.ID)
 			}
 		}
+		errs = append(errs, c.validateVideoTrack(statPath)...)
 		errs = append(errs, c.validateAnimateUse(statPath)...)
 		errs = append(errs, c.validateBrowserForMotion()...)
 		errs = append(errs, c.validateBlenderAvailable()...)
 	case ModeImages:
+		if len(c.VideoTrack) > 0 {
+			errs = append(errs, fmt.Errorf("config: video_track only works in video mode (mode is %q)", c.Output.Mode))
+		}
 		for _, s := range c.Scenes {
 			errs = append(errs, c.validateInitImage(s, statPath)...)
 			// Fields of the other modes (tts_text, speed, motion...) are ignored here without a warning: a project

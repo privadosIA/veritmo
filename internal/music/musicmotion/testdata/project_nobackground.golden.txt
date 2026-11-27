@@ -1,0 +1,17 @@
+project: piece-test
+output: {mode: video, file: out/piece-test.mp4}
+defaults:
+  resolution: 640x360
+  fps: 30
+bgm: {file: song.wav, volume: 1, ducking: false, fade_seconds: 0}
+scenes:
+  - id: p1
+    motion_graphic: "music piece: flat-slabs (Verse)"
+    silence_seconds: 4
+  - id: p2
+    motion_graphic: "music piece: nebula (Chorus)"
+    silence_seconds: 4
+motion/p1.html 73d29ca11a0a1073
+motion/p1.song.json 67f0d14761ca4a60
+motion/p2.html ae1312d1d222b99e
+motion/p2.song.json d07b74113ffbcff8

@@ -1,4 +1,4 @@
-{"name":"stamp","description":"A big stamp that slams down on the beat, tilted, with a border in the accent colour","version":1,"cost_ms":105,"levels":["simple","medium","advanced"],
+{"name":"stamp","description":"A big stamp that slams down on the beat, tilted, with a border in the accent colour","version":1,"bands":{"top":0.02,"center":0.05,"bottom":0},"over_video":true,"cost_ms":105,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"text","type":"string","default":"APPROVED","max_length":14},
   {"name":"every","type":"int","default":2,"min":1,"max":4,"description":"It slams on every this many beats"}]}

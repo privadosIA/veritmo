@@ -413,3 +413,39 @@ When a stored motion page declares a timeline, the program SHALL be able to chan
 #### Scenario: The API refuses what cannot be revised
 - **WHEN** the same call is made with an empty request, for a scene with no stored page, or for a page with no timeline block
 - **THEN** the answer is `400`, `404` or `422` respectively, the model is not called and the stored page is as it was
+
+### Requirement: An overlay can be given a song map and a page that was stored for it
+
+The page of an overlay SHALL be given the song map and the beat clock of the scene (see "A page may be given the song map and a beat clock") when the project stored a song map for that scene, and an overlay without one SHALL be drawn exactly as before, with neither. A page stored for the overlay by the project that wrote it (a music piece over a clip) SHALL be used as it is: the model SHALL NOT be asked for it and the run SHALL NOT replace it, whether or not the overlay's `text` is a description, and `text` SHALL still be required and SHALL be kept as the scene's label. The clip hash of the scene SHALL change when the stored page or the song map of its overlay changes, so a scene whose overlay changed is composited again and no other scene is.
+
+#### Scenario: An overlay that knows the song
+- **WHEN** a scene with `clip` and `overlay` has a song map stored beside its page and the page reads `window.__scene.lines`
+- **THEN** the overlay is drawn with the beat clock and the song of the scene, and the word being sung changes at its own second
+
+#### Scenario: An ordinary overlay
+- **WHEN** an overlay has no stored song map
+- **THEN** its page receives neither song nor beat clock, as before
+
+#### Scenario: A stored page is not written again
+- **WHEN** `motion/<scene>.overlay.html` exists and the model is unreachable
+- **THEN** the run uses the page, asks no model and does not fail
+
+#### Scenario: Only the changed overlay is composited again
+- **WHEN** the stored page of the overlay of one scene changes
+- **THEN** that scene's clip is built again and the others come from the cache
+
+### Requirement: A scene can be a transparent layer
+
+A motion scene with `layer: true` SHALL have its page drawn on a transparent background for the whole length of the scene (VP9 with alpha, or ProRes 4444 when ffmpeg lacks it, as an overlay is), given the song map and the beat clock of the scene when the project stored a song map for it, and SHALL have no clip phase of its own: its transparent video is what the scene produces. A page stored by the project for the scene SHALL be used as it is and the model SHALL NOT be asked for it. The video of a layer SHALL be cached by the content of the page, the song map, the length, the frame rate and the size, and by nothing about the track it will be laid over.
+
+#### Scenario: A layer that knows the song
+- **WHEN** a layer scene has a stored page that reads `window.__scene.lines` and a song map
+- **THEN** its video is transparent where the page draws nothing and the word being sung changes at its own second
+
+#### Scenario: The track changes
+- **WHEN** a clip of the project's track is replaced and the project runs again
+- **THEN** no layer scene is drawn again
+
+#### Scenario: A stored page and no model
+- **WHEN** the model is unreachable and every layer scene has its stored page
+- **THEN** the run does not fail

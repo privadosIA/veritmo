@@ -1,4 +1,4 @@
-{"name":"wire-sphere","description":"A wireframe sphere that turns a step on every beat, swells on the hit and marks points of its surface in the accent colour","version":1,"cost_ms":85,"levels":["advanced"],
+{"name":"wire-sphere","description":"A wireframe sphere that turns a step on every beat, swells on the hit and marks points of its surface in the accent colour","version":1,"bands":{"top":0.02,"center":0.02,"bottom":0},"over_video":true,"cost_ms":85,"levels":["advanced"],
  "params":[
   {"name":"rings","type":"int","default":9,"min":4,"max":16,"description":"Parallels and meridians"},
   {"name":"dots","type":"int","default":14,"min":0,"max":40,"description":"Marked points on the surface"}]}

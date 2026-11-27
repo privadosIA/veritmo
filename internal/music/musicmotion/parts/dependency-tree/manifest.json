@@ -1,4 +1,4 @@
-{"name":"dependency-tree","description":"A tree of names, indented by depth, each with a bar that grows to its value; one more line enters on every beat","version":1,"cost_ms":55,"levels":["simple","medium","advanced"],
+{"name":"dependency-tree","description":"A tree of names, indented by depth, each with a bar that grows to its value; one more line enters on every beat","version":1,"bands":{"top":0.51,"center":0.5,"bottom":0},"over_video":true,"cost_ms":55,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"items","type":"string","default":"billing-service:0.9|-http-kit:0.55|--tidy-utils:0.3|--cookie-jar:0.7|-pdf-render:0.45|-queue-lite:0.35|-agent-sdk:0.8|--agent-1:0.5|--agent-2:0.6","max_length":240,"description":"name:value (0 to 1), a dash per level of depth in front, separated by |"},
   {"name":"title","type":"string","default":"dependency tree","max_length":28}]}

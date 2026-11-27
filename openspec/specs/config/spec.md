@@ -858,3 +858,35 @@ Parsing SHALL reject a field the configuration does not define, naming the field
 #### Scenario: an oversized configuration through the API
 - **WHEN** `PUT /api/projects/{id}/config` carries a YAML larger than the limit
 - **THEN** the answer is `413` with the standard error body and nothing is written
+
+### Requirement: A project can have a video track and layer scenes
+
+`scenes.yaml` SHALL accept, in a video project, `video_track`: a list of `{id, clip, start, end, clip_start?, clip_end?, clip_speed?, scrim?, transition_seconds?}` with the meaning and the limits of the video track of a script (a file name of `sources/`, seconds of the output video, items in order with no overlap, at most 64), and `scrim` and the gaps coloured by the design's `--bg` (`defaults.motion.design.dark` or `light` as the mode says), black (`#000000`) when the project has no motion design. It SHALL accept on a scene `layer: true` together with `motion_graphic` or `motion_part`: the scene is a transparent page, laid over the track at its place in the output instead of being a picture of its own. The validation SHALL name the item or scene and the field for an unknown or missing clip, a trim past the file, an item outside the project's length, an overlap, a `layer` that is not on a motion scene, a `layer` scene with `clip`, `image`, `animate` or `overlay`, and a `video_track` in a project with no scenes. A project with neither SHALL load, validate and run exactly as before.
+
+#### Scenario: A project with a track
+- **WHEN** `scenes.yaml` has `video_track` with two items and three `layer: true` motion scenes
+- **THEN** it loads and validates, and each item and scene keeps its fields
+
+#### Scenario: A layer that is not a page
+- **WHEN** a scene has `layer: true` and `image`
+- **THEN** the validation names the scene and says a layer is a page
+
+#### Scenario: No motion design
+- **WHEN** a project with `video_track` has no `defaults.motion.design`
+- **THEN** the scrim and the gaps are black
+
+#### Scenario: Unchanged projects
+- **WHEN** a project has no `video_track` and no `layer`
+- **THEN** it behaves exactly as before
+
+### Requirement: A video track item accepts local scrims
+
+A `video_track` item of `scenes.yaml` SHALL accept `local_scrims`, a list of `{band, scrim}` with `band` one of `top`, `center` and `bottom` (each at most once) and `scrim` a number from 0 to 0.8, with the meaning of "A track item can have a local scrim over the band of the verse". An unknown band, a repeated band or a `scrim` outside 0 to 0.8 SHALL be refused naming the item and the field. A project with no `local_scrims` SHALL load and be written exactly as before.
+
+#### Scenario: A local scrim
+- **WHEN** an item has `local_scrims: [{band: bottom, scrim: 0.5}]`
+- **THEN** the project loads and the item keeps it
+
+#### Scenario: A band that does not exist
+- **WHEN** an item has `local_scrims: [{band: left, scrim: 0.5}]`
+- **THEN** the project is refused naming the item and `local_scrims`

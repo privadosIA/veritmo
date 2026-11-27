@@ -38,6 +38,9 @@ type ProjectSpec struct {
 	Height   int
 	// Client is the dashboard that asked for the piece, written in the project (see config.ValidClient); empty for none.
 	Client string
+	// Adult marks the project of the piece as for adults (`adult: true` in its scenes.yaml), so its video and its runs are hidden like any
+	// project for adults. False writes nothing: the project is then as it always was.
+	Adult bool
 	// Title is the song's title, when it has one: a scene may say it (see SceneDraftInput.Title).
 	Title string
 	// World, Device and Hook are the storyline of the plan the piece was made from (empty for none): the scene writer draws its
@@ -56,6 +59,8 @@ type SceneFiles struct {
 	PagePath string  `json:"page"`
 	// Blender is the description file of a 3D piece (in sources/), which has no part and no page.
 	Blender string `json:"blender,omitempty"`
+	// Layer says the scene is a transparent page laid over the video track (the piece has an item of the track over it).
+	Layer bool `json:"layer,omitempty"`
 }
 
 // sceneFor makes the scene of a piece, in the piece's own time.
@@ -74,6 +79,10 @@ func sceneFor(p Piece, spec ProjectSpec) (Scene, Part, error) {
 	design := spec.Design.With(p.Design)
 	sc := Scene{Part: part, Params: params, Animate: p.Animate, Design: design, Mode: ResolveMode(design, p), Duration: round3(p.End - p.Start), Width: spec.Width, Height: spec.Height,
 		SongStart: p.Start, SongLength: spec.Map.Duration}
+	// A piece that has an item of the video track over it is drawn as a layer: its page paints nothing over the frame (the scrim belongs to the item).
+	if track, _ := spec.Script.WithTrack(); len(track.ItemsOver(p)) > 0 {
+		sc.Background = &VideoBackground{}
+	}
 	for _, w := range p.With {
 		wp, ok := spec.Cat.Get(w.Part)
 		if !ok {
@@ -180,6 +189,9 @@ type PieceMotion struct {
 	Seconds    float64
 	HTML       string
 	Song       json.RawMessage
+	// Background is the video behind the piece, when it has one: its page is then drawn on transparent and is the overlay of a scene
+	// that plays the video.
+	Background *PieceBackground
 }
 
 // BuildPages makes the page and the sliced song map of each piece of the script, in script order, and writes nothing.
@@ -214,8 +226,12 @@ func BuildPages(spec ProjectSpec, only []string) ([]PieceMotion, error) {
 		if err != nil {
 			return nil, fmt.Errorf("piece %q: %w", p.ID, err)
 		}
-		song, _ := json.Marshal(songmap.Slice(spec.Map, p.Start, p.End))
-		out = append(out, PieceMotion{ID: p.ID, Part: part.Name, Section: strings.TrimSpace(p.Section), Start: p.Start, End: p.End, Seconds: sc.Duration, HTML: page, Song: song})
+		// The piece's page reads where the beats, the words and the loudness are, not where the words' times came from or how many attacks the whole
+		// song has: those are left out so that moving one word does not change the song of every piece (and so draw every page again).
+		cut := songmap.Slice(spec.Map, p.Start, p.End)
+		cut.WordsSource, cut.Attacks = "", 0
+		song, _ := json.Marshal(cut)
+		out = append(out, PieceMotion{ID: p.ID, Part: part.Name, Section: strings.TrimSpace(p.Section), Start: p.Start, End: p.End, Seconds: sc.Duration, HTML: page, Song: song, Background: p.Background})
 	}
 	return out, nil
 }
@@ -246,6 +262,14 @@ func WriteProject(spec ProjectSpec) ([]SceneFiles, error) {
 	if spec.Client != "" {
 		fmt.Fprintf(&yaml, "client: %s\n", spec.Client)
 	}
+	if spec.Adult {
+		yaml.WriteString("adult: true\n")
+	}
+	// the `background` of a piece is the item of the video track it becomes: from here on there is one form
+	var terr error
+	if spec.Script, terr = spec.Script.WithTrack(); terr != nil {
+		return nil, terr
+	}
 	blenderPieces := 0
 	for _, p := range spec.Script.Pieces {
 		if p.Blender != nil {
@@ -253,8 +277,9 @@ func WriteProject(spec ProjectSpec) ([]SceneFiles, error) {
 		}
 	}
 	fmt.Fprintf(&yaml, "project: %s\noutput: {mode: video, file: out/%s.mp4}\ndefaults:\n  resolution: %dx%d\n  fps: %d\n", spec.Name, spec.Name, spec.Width, spec.Height, spec.FPS)
-	if blenderPieces > 0 {
-		// A 3D piece takes its beats from the song's tempo and its colours and fonts from the song's design.
+	if blenderPieces > 0 || len(spec.Script.Video) > 0 {
+		// A 3D piece takes its beats from the song's tempo and its colours and fonts from the song's design; the video track takes the colour of its
+		// gaps and of its scrim from the design too.
 		motionYAML, err := yamlv3.Marshal(map[string]any{"motion": BlenderConfig(spec.Map, spec.Design, 0, 0, 0).Defaults.Motion})
 		if err != nil {
 			return nil, err
@@ -263,7 +288,33 @@ func WriteProject(spec ProjectSpec) ([]SceneFiles, error) {
 			fmt.Fprintf(&yaml, "  %s\n", line)
 		}
 	}
-	fmt.Fprintf(&yaml, "bgm: {file: %s, volume: 1, ducking: false, fade_seconds: 0}\nscenes:\n", songName)
+	fmt.Fprintf(&yaml, "bgm: {file: %s, volume: 1, ducking: false, fade_seconds: 0}\n", songName)
+	if len(spec.Script.Video) > 0 {
+		yaml.WriteString("video_track:\n")
+		for _, it := range spec.Script.Video {
+			fmt.Fprintf(&yaml, "  - {id: %s, clip: %s, start: %v, end: %v", it.ID, it.Clip, it.Start, it.End)
+			for _, f := range []struct {
+				name string
+				v    *float64
+			}{{"clip_start", it.ClipStart}, {"clip_end", it.ClipEnd}, {"clip_speed", it.ClipSpeed}, {"scrim", it.Scrim}, {"transition_seconds", it.TransitionSeconds}} {
+				if f.v != nil {
+					fmt.Fprintf(&yaml, ", %s: %v", f.name, *f.v)
+				}
+			}
+			if len(it.Local) > 0 {
+				yaml.WriteString(", local_scrims: [")
+				for k, l := range it.Local {
+					if k > 0 {
+						yaml.WriteString(", ")
+					}
+					fmt.Fprintf(&yaml, "{band: %s, scrim: %v}", l.Band, l.Scrim)
+				}
+				yaml.WriteString("]")
+			}
+			yaml.WriteString("}\n")
+		}
+	}
+	yaml.WriteString("scenes:\n")
 	pages, err := BuildPages(spec, nil)
 	if err != nil {
 		return nil, err
@@ -281,10 +332,7 @@ func WriteProject(spec ProjectSpec) ([]SceneFiles, error) {
 	for i, p := range spec.Script.Pieces {
 		// With crossfades, the end of a piece and the start of the next overlap, so each piece is drawn as long as the fade into the
 		// next one more: the pieces then land on the song as they do with cuts.
-		seconds := round3(p.End - p.Start)
-		if i+1 < len(fades) {
-			seconds = round3(seconds + fades[i+1])
-		}
+		seconds := SceneSeconds(spec.Script, spec.Design, i)
 		if p.Blender != nil {
 			name := p.ID + config.SceneSpecSuffix
 			if err := writeIfChanged(filepath.Join(spec.Dir, config.SourcesSubdir, name), sceneJSON(p.Blender.Description), ""); err != nil {
@@ -299,17 +347,26 @@ func WriteProject(spec ProjectSpec) ([]SceneFiles, error) {
 			continue
 		}
 		pg := pageOf[p.ID]
+		// A piece with an item of the video track over it is a layer: a transparent page laid over the track. A stale overlay page (the form a
+		// piece's own video had before the track) is removed so that it is never read.
+		layer := len(spec.Script.ItemsOver(p)) > 0
 		if err := writeIfChanged(motion.PagePath(spec.Dir, pg.ID, false), []byte(pg.HTML), ""); err != nil {
 			return nil, err
 		}
 		if err := writeIfChanged(motion.SongPath(spec.Dir, pg.ID), pg.Song, ""); err != nil {
 			return nil, err
 		}
-		fmt.Fprintf(&yaml, "  - id: %s\n    motion_graphic: %q\n    silence_seconds: %v\n", pg.ID, "music piece: "+pg.Part+" ("+pg.Section+")", seconds)
+		_ = os.Remove(motion.PagePath(spec.Dir, pg.ID, true))
+		_ = os.Remove(motion.MetaPath(spec.Dir, pg.ID, true))
+		label := "music piece: " + pg.Part + " (" + pg.Section + ")"
+		fmt.Fprintf(&yaml, "  - id: %s\n    motion_graphic: %q\n    silence_seconds: %v\n", pg.ID, label, seconds)
+		if layer {
+			yaml.WriteString("    layer: true\n")
+		}
 		if crossfading && i > 0 {
 			fmt.Fprintf(&yaml, "    transition_seconds: %v\n", fades[i])
 		}
-		files = append(files, SceneFiles{ID: pg.ID, Part: pg.Part, Seconds: pg.Seconds, PagePath: filepath.Join(motion.Dir, pg.ID+".html")})
+		files = append(files, SceneFiles{ID: pg.ID, Part: pg.Part, Seconds: pg.Seconds, PagePath: filepath.Join(motion.Dir, pg.ID+".html"), Layer: layer})
 	}
 	removeStaleDescriptions(filepath.Join(spec.Dir, config.SourcesSubdir), described)
 	if err := writeIfChanged(filepath.Join(spec.Dir, "scenes.yaml"), []byte(yaml.String()), ""); err != nil {

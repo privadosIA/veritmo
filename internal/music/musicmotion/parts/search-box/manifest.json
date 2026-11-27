@@ -1,4 +1,4 @@
-{"name":"search-box","description":"A search field with a magnifier where a phrase is typed letter by letter and a list of suggestions that grows by one on every beat, the first one marked","version":1,"cost_ms":65,"levels":["simple","medium","advanced"],
+{"name":"search-box","description":"A search field with a magnifier where a phrase is typed letter by letter and a list of suggestions that grows by one on every beat, the first one marked","version":1,"bands":{"top":0.19,"center":0.63,"bottom":0.01},"over_video":true,"cost_ms":65,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"query","type":"string","default":"it's only a fancy autocomplete","max_length":48,"description":"The phrase that is typed"},
   {"name":"suggestions","type":"string","default":"autocomplete|autopilot|autonomous agents|auto-approve all|auto-renew: humanity","max_length":160,"description":"The suggestions, separated by |"},

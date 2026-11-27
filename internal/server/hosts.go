@@ -147,6 +147,7 @@ func (h musicHost) Workspace() *workspace.Handler   { return h.s.workspace }
 func (h musicHost) Models() *models.Handler         { return h.s.models }
 func (h musicHost) Generation() *generation.Handler { return h.s.generation }
 func (h musicHost) Assistant() *assistant.Handler   { return h.s.assistant }
+func (h musicHost) ShowsAdult() bool                { return h.s.content == ContentAll }
 
 func (h musicHost) ProjectsDir() string                { return h.s.cfg.ProjectsDir }
 func (h musicHost) MotionCatalog() musicmotion.Catalog { return h.s.motionCat }

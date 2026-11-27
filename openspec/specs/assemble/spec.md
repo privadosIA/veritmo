@@ -223,3 +223,51 @@ When a scene has an ambience WAV (from the animate phase with `model_audio`), `G
 #### Scenario: Ambience shorter than the scene
 - **WHEN** the scene lasts 10 s and the ambience 2 s
 - **THEN** the ambience plays once and the rest of the clip carries only the narration (or silence)
+
+### Requirement: The video track is built from its items
+
+The `track` phase SHALL build each item of the project's video track from its file as a clip of the item's length at the project's size and frame rate with no sound: the part of the file (`clip_start` to `clip_end`) cut exactly, retimed by `clip_speed` (slowed by at most 2x and then repeated when shorter than the item, cut when longer), scaled and cropped to cover the frame, and darkened or lightened by `scrim` of the design's background colour. It SHALL then join the items in order into one video as long as the project, with a crossfade where an item has `transition_seconds` and touches the one before, a cut where it touches without one, and a solid frame of the design's background colour in the gaps and before the first and after the last item. The result SHALL have one video stream and no audio stream.
+
+#### Scenario: Two touching items with a fade
+- **WHEN** items from 0 to 6 and from 6 to 12 have `transition_seconds: 0.5` on the second
+- **THEN** the track is 12 seconds long and the picture dissolves for 0.5 s around second 6
+
+#### Scenario: A clip shorter than its item
+- **WHEN** an item of 6 seconds uses a clip of 2 seconds
+- **THEN** the clip is slowed by at most 2x and repeated until the item ends
+
+#### Scenario: A gap
+- **WHEN** there is no item from 20 to 30
+- **THEN** those seconds are the colour of the design's background
+
+### Requirement: The layers are stacked over the track with the song
+
+The `stack` phase SHALL lay the transparent video of each layer scene over the track at the second of the output where the scene starts, keeping the alpha of the layers (the VP9 decoder that keeps it), with a dissolve of the alpha where two layers overlap by a crossfade, and SHALL write one video as long as the project with the soundtrack of the project (`bgm`) as its only sound. The scenes that are not layers SHALL take their place in the output as they do today. The stack SHALL be one graph over all the layers of the project, and SHALL encode the result once, with the parameters every other final video has.
+
+#### Scenario: Two layers dissolving
+- **WHEN** two layer scenes overlap by 0.4 s
+- **THEN** over those 0.4 s the first fades out and the second fades in over the same track
+
+#### Scenario: The song is the only sound
+- **WHEN** the clips of the track have sound
+- **THEN** the final video has the song's sound only
+
+#### Scenario: A long song
+- **WHEN** the project has 40 layers
+- **THEN** the stack finishes in one pass with the same kind of picture as with a few
+
+### Requirement: A track item can have a local scrim over the band of the verse
+
+An item of the video track with `local_scrims` SHALL be built with, over the item's own scrim, a strip of the design's background colour for each entry `{band, scrim}`: `band` is `top`, `center` or `bottom`; the strip covers the full width and, in the rows of that band as the verse takes them (`top` from 6 % to 22 % of the height, `center` from 42 % to 58 %, `bottom` from 78 % to 94 %), has the opacity `scrim`, and fades out linearly to nothing over 6 % of the height above and below, never outside the frame. The strip SHALL be drawn with the same function by the build, by `GET /api/music-motion/pieces/{id}/frame` and by the page a dashboard draws from the preview, so the three show the same picture. An item with no `local_scrims` SHALL be built exactly as before, byte for byte in its command.
+
+#### Scenario: The band is tinted and the rest is not
+- **WHEN** an item of a black clip has `local_scrims: [{band: bottom, scrim: 0.8}]` over a white design colour
+- **THEN** the frames of the built item are close to white in the rows from 78 % to 94 % and black above 70 % of the height
+
+#### Scenario: Soft edges
+- **WHEN** the same item is looked at from the top of its strip to the middle of it
+- **THEN** the opacity grows without a step, from nothing to 0.8
+
+#### Scenario: Without local scrims
+- **WHEN** an item has none
+- **THEN** its build command is the one it had before this change

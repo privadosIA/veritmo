@@ -278,7 +278,7 @@ func cpuSamples(runID, gpu string, cfg *config.Config, lines []string, succeeded
 		}
 		secs := float64(ev.DurationMS) / 1000
 		switch {
-		case ev.SceneID == "_global" && (ev.Phase == "concat" || ev.Phase == "export"):
+		case ev.SceneID == "_global" && (ev.Phase == "concat" || ev.Phase == "stack" || ev.Phase == "export"):
 			join += secs
 		case known[ev.SceneID] && (ev.Phase == "tts" || ev.Phase == "probe" || ev.Phase == "clip" || ev.Phase == "export"):
 			if _, seen := perScene[ev.SceneID]; !seen {

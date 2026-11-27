@@ -353,3 +353,133 @@ func TestMotionScene_TheSongMapIsGivenToTheRenderAndChangesTheHash(t *testing.T)
 		t.Fatal("without a song map the hash is the one it always was")
 	}
 }
+
+// An overlay of a scene that has a song map stored (a music piece over a video) is drawn with it: its page reads the beat clock and the
+// words from it. An overlay of an ordinary scene gets none, as before.
+func TestOverlay_IsGivenTheSongMapOfItsSceneWhenThereIsOne(t *testing.T) {
+	imageSetup(t)
+	jobs := motionStubs(t)
+	if _, err := motion.OverlayExt(); err != nil {
+		t.Skipf("no alpha encoder here: %v", err)
+	}
+	storePages(t, "a", false, true)
+	storePages(t, "b", false, true)
+	song := `{"bpm":120,"beats":[0,0.5,1],"words":[{"text":"hi","start":0.2}]}`
+	if err := os.WriteFile(motion.SongPath("", "a"), []byte(song), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	sa := config.Scene{ID: "a", Prompt: "x", SilenceSeconds: silent(2), Speed: 1.0, Overlay: &config.Overlay{Text: "piece a"}}
+	sb := config.Scene{ID: "b", Prompt: "y", SilenceSeconds: silent(2), Speed: 1.0, Overlay: &config.Overlay{Text: "plain title"}}
+	runImageScenes(t, []config.Scene{sa, sb}, nil)
+	got := map[string]string{}
+	for _, j := range *jobs {
+		got[strings.TrimSuffix(strings.TrimPrefix(filepath.Base(j.Out), "scene_"), filepath.Ext(j.Out))] = string(j.Page.Song)
+		if !j.Page.Transparent {
+			t.Errorf("an overlay is drawn on transparent: %+v", j.Page)
+		}
+	}
+	if got["a.overlay"] != song {
+		t.Errorf("the overlay of a scene with a song map is given it: %q", got["a.overlay"])
+	}
+	if got["b.overlay"] != "" {
+		t.Errorf("the overlay of an ordinary scene gets no song: %q", got["b.overlay"])
+	}
+}
+
+// A page stored for the overlay is used as it is: with the model out of reach the run does not fail, and it does not ask.
+func TestOverlay_AStoredPageIsUsedWithoutTheModel(t *testing.T) {
+	imageSetup(t)
+	motionStubs(t) // asking the model fails the test
+	if _, err := motion.OverlayExt(); err != nil {
+		t.Skipf("no alpha encoder here: %v", err)
+	}
+	storePages(t, "a", false, true)
+	sc := config.Scene{ID: "a", Prompt: "x", SilenceSeconds: silent(2), Speed: 1.0, Overlay: &config.Overlay{Text: "a description the model could write from"}}
+	if _, _, out := runImageScenes(t, []config.Scene{sc}, nil); strings.Contains(out, `"type":"error"`) {
+		t.Fatalf("the run failed:\n%s", out)
+	}
+}
+
+// A changed word changes the clip hash of the scene it is in and no other scene's.
+func TestOverlay_ChangingTheSongMapOfOneSceneChangesOnlyItsClipHash(t *testing.T) {
+	imageSetup(t)
+	storePages(t, "a", false, true)
+	storePages(t, "b", false, true)
+	cfg := &config.Config{Defaults: config.Defaults{Resolution: "1280x720", FPS: 30}}
+	a := config.Scene{ID: "a", Prompt: "x", SilenceSeconds: silent(4), Overlay: &config.Overlay{Text: "T"}}
+	b := config.Scene{ID: "b", Prompt: "x", SilenceSeconds: silent(4), Overlay: &config.Overlay{Text: "T"}}
+	noSong := SceneClipHash(cfg, a, "")
+	os.WriteFile(motion.SongPath("", "a"), []byte(`{"words":[{"text":"one","start":0.2}]}`), 0o644)
+	os.WriteFile(motion.SongPath("", "b"), []byte(`{"words":[{"text":"one","start":0.2}]}`), 0o644)
+	withSong, withSongB := SceneClipHash(cfg, a, ""), SceneClipHash(cfg, b, "")
+	if withSong == noSong {
+		t.Fatal("an overlay that gets a song map does not share the hash of one that gets none")
+	}
+	os.WriteFile(motion.SongPath("", "a"), []byte(`{"words":[{"text":"one","start":0.3}]}`), 0o644) // one word moved
+	if SceneClipHash(cfg, a, "") == withSong {
+		t.Fatal("a moved word draws the overlay of its scene again")
+	}
+	if SceneClipHash(cfg, b, "") != withSongB {
+		t.Fatal("another scene's clip hash changed")
+	}
+	os.Remove(motion.SongPath("", "a"))
+	if SceneClipHash(cfg, a, "") != noSong {
+		t.Fatal("without a song map the hash is the one it always was")
+	}
+}
+
+// A layer is a page drawn on transparent for the whole scene with the song map of its scene, and it makes no clip of its own: its video is
+// what the scene makes.
+func TestLayer_IsDrawnTransparentWithTheSongMapAndHasNoClip(t *testing.T) {
+	imageSetup(t)
+	jobs := motionStubs(t)
+	ext, err := motion.OverlayExt()
+	if err != nil {
+		t.Skipf("no alpha encoder here: %v", err)
+	}
+	storePages(t, "a", true, false)
+	song := `{"bpm":120,"beats":[0,0.5,1],"words":[{"text":"hi","start":0.2}]}`
+	if err := os.WriteFile(motion.SongPath("", "a"), []byte(song), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	sc := config.Scene{ID: "a", MotionGraphic: "x", SilenceSeconds: silent(2), Speed: 1.0, Layer: true}
+	fr, m, _ := runImageScenes(t, []config.Scene{sc}, nil)
+	if len(*jobs) != 1 {
+		t.Fatalf("one page drawn, got %d", len(*jobs))
+	}
+	j := (*jobs)[0]
+	if !j.Page.Transparent || j.Page.Duration != 2 || j.Out != "tmp/scene_a.layer."+ext || string(j.Page.Song) != song {
+		t.Fatalf("a layer is transparent, as long as its scene, with its song map: %+v", j)
+	}
+	for _, c := range fr.Calls() {
+		if c.Name == "ffmpeg" && strings.HasSuffix(strings.Join(c.Args, " "), "tmp/scene_a.mp4") {
+			t.Fatalf("a layer builds no clip: %s", strings.Join(c.Args, " "))
+		}
+	}
+	if m.Scenes["a"].Mp4Path != "tmp/scene_a.layer."+ext {
+		t.Fatalf("the manifest keeps its video: %+v", m.Scenes["a"])
+	}
+	// the same page is another video as a layer than as a plain scene
+	plain := sc
+	plain.Layer = false
+	cfg := &config.Config{Defaults: config.Defaults{Resolution: "1280x720", FPS: 30}}
+	if MotionImageHash(cfg, sc, "", "") == MotionImageHash(cfg, plain, "", "") {
+		t.Fatal("a layer does not share the hash of the plain scene")
+	}
+}
+
+// A project with no video track emits neither of the new phases, and concatenates as always.
+func TestNoTrackNoTrackPhases(t *testing.T) {
+	imageSetup(t)
+	motionStubs(t)
+	storePages(t, "a", true, false)
+	_, _, out := runImageScenes(t, []config.Scene{motionScene("a")}, nil)
+	for _, no := range []string{`"phase":"track"`, `"phase":"stack"`} {
+		if strings.Contains(out, no) {
+			t.Fatalf("a project with no track emitted %s:\n%s", no, out)
+		}
+	}
+	if !strings.Contains(out, `"phase":"concat"`) {
+		t.Fatalf("it concatenates:\n%s", out)
+	}
+}

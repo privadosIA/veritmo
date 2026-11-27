@@ -32,7 +32,7 @@ func BeatPhase(m songmap.Map, start float64) float64 {
 
 // MakeBlender turns the piece into a 3D scene with this description: the part and everything that belongs to a page is cleared.
 func (p *Piece) MakeBlender(description json.RawMessage) {
-	p.Part, p.Params, p.Animate, p.With, p.Design, p.Mode, p.Lines, p.Hit, p.Stage = "", nil, nil, nil, nil, "", nil, nil, nil
+	p.Part, p.Params, p.Animate, p.With, p.Design, p.Mode, p.Lines, p.Hit, p.Stage, p.Background = "", nil, nil, nil, nil, "", nil, nil, nil, nil
 	p.Blender = &PieceBlender{Description: description}
 }
 

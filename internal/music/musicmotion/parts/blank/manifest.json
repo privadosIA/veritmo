@@ -1,1 +1,1 @@
-{"name":"blank","description":"Draws nothing of its own: the piece is made of its stage (a background and characters) and its text","version":1,"cost_ms":40,"manual":true,"levels":["simple","medium","advanced"],"params":[]}
+{"name":"blank","description":"Draws nothing of its own: the piece is made of its stage (a background and characters) and its text","version":1,"bands":{"top":0,"center":0,"bottom":0},"over_video":true,"cost_ms":40,"manual":true,"levels":["simple","medium","advanced"],"params":[]}

@@ -85,6 +85,9 @@ type Piece struct {
 	Hit   *ScriptHit   `json:"hit,omitempty"`
 	// Stage is the background and the characters of an illustrated piece (see stage.go).
 	Stage *Stage `json:"stage,omitempty"`
+	// Background is a video kept by the piece that goes behind everything it draws (see background.go); nil for none, which is what every
+	// piece had before. A 3D piece cannot have one.
+	Background *PieceBackground `json:"background,omitempty"`
 	// TransitionSeconds is the crossfade into this piece from the one before (0 to MaxTransitionSeconds; 0 is a cut); nil takes
 	// the design's. It is ignored on the first piece.
 	TransitionSeconds *float64 `json:"transition_seconds,omitempty"`
@@ -98,6 +101,9 @@ type Script struct {
 	Home string `json:"home,omitempty"`
 	// Layers are lanes of parts drawn over the pieces (see layers.go).
 	Layers []Layer `json:"layers,omitempty"`
+	// Video is the video track: the clips played behind the pieces, in seconds of the song (see video.go). Empty for none, which is what
+	// every script had before.
+	Video []VideoItem `json:"video,omitempty"`
 	// sources is the sources folder of the piece this script belongs to, where its 3D pieces find the models they place
 	// (see WithSources); empty when the script has no folder, and then a model is refused.
 	sources string
@@ -161,6 +167,11 @@ func name(p Piece, i int) string {
 // Validate checks a script against the catalog, the song map and the design, and names the first piece that is
 // wrong. It does not look at the level: a part above the level is replaced when the script is built (ApplyLevel).
 func (s Script) Validate(cat Catalog, m songmap.Map, d Design) error {
+	// the `background` of a piece is a shorthand for an item of the video track: it is checked as the item it becomes
+	s, err := s.WithTrack()
+	if err != nil {
+		return err
+	}
 	if s.Version != ScriptVersion {
 		return fmt.Errorf("the script version must be %d, got %d", ScriptVersion, s.Version)
 	}
@@ -278,7 +289,13 @@ func (s Script) Validate(cat Catalog, m songmap.Map, d Design) error {
 	if m.Duration > 0 && math.Abs(last.End-m.Duration) > coverTolerance {
 		return fmt.Errorf("%s ends at %.2f s but the song lasts %.2f s: the script must cover the whole song", name(last, len(s.Pieces)-1), last.End, m.Duration)
 	}
-	return s.validateLayers(cat)
+	if err := s.validateLayers(cat); err != nil {
+		return err
+	}
+	if err := s.validateBackgrounds(cat); err != nil {
+		return err
+	}
+	return s.validateVideo(cat)
 }
 
 // blenderEnv is what the description of a 3D piece is checked against: the song's tempo and the song's design (its colours and
@@ -319,7 +336,7 @@ func (p Piece) validateBlender(n string, env blender.Env) error {
 	}
 	for field, set := range map[string]bool{
 		"params": len(p.Params) > 0, "animate": len(p.Animate) > 0, "with": len(p.With) > 0, "design": p.Design != nil,
-		"mode": p.Mode != "", "lines": len(p.Lines) > 0, "hit": p.Hit != nil, "stage": p.Stage != nil,
+		"mode": p.Mode != "", "lines": len(p.Lines) > 0, "hit": p.Hit != nil, "stage": p.Stage != nil, "background": p.Background != nil,
 	} {
 		if set {
 			return fmt.Errorf("%s: a 3D piece (blender) cannot have %s: it is drawn by Blender and not from a part", n, field)
@@ -371,6 +388,10 @@ func LoadScriptAt(p Place) (Script, bool) {
 	if json.Unmarshal(raw, &s) != nil {
 		return Script{}, false
 	}
+	// a script saved with the `background` of a piece reads as the item of the video track it is (see WithTrack)
+	if t, err := s.WithTrack(); err == nil {
+		s = t
+	}
 	return s, true
 }
 
@@ -379,7 +400,12 @@ func SaveScript(dir string, s Script) error { return SaveScriptAt(DirPlace(dir),
 
 // SaveScriptAt stores the script.
 func SaveScriptAt(p Place, s Script) error {
-	raw, err := json.MarshalIndent(s, "", "  ")
+	// what is kept is the one form: the `background` of a piece is the item of the video track it becomes (see WithTrack)
+	t, err := s.WithTrack()
+	if err != nil {
+		return err
+	}
+	raw, err := json.MarshalIndent(t, "", "  ")
 	if err != nil {
 		return err
 	}

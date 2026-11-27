@@ -278,10 +278,15 @@ func (h *Handler) designStep(ch writerChoice, info *pieceInfo, m songmap.Map, pr
 
 // scriptStep writes a new script for the piece from the design and keeps it.
 func (h *Handler) scriptStep(ch writerChoice, info *pieceInfo, m songmap.Map, st musicmotion.Stored, prompt string, sheet *musicmotion.ReferenceSheet, noBlocks bool) (musicmotion.Proposal, *proposeFail) {
-	prop, err := musicmotion.ProposeScript(ch.ctx, ch.w, musicmotion.ScriptInput{Map: m, Design: st.Design, Level: info.Level, Cat: h.mmCatalog(), Prompt: prompt, Device: info.Device, Hook: info.Hook, Reference: sheet, NoAssistant: ch.why, NoBlocks: noBlocks})
+	// the script this one replaces may have a video track: it is kept, and the pieces over it fit it
+	old, _ := musicmotion.LoadScriptAt(h.place(info.ID))
+	track, dropped := trackWithin(old.Video, m.Duration)
+	prop, err := musicmotion.ProposeScript(ch.ctx, ch.w, musicmotion.ScriptInput{Map: m, Design: st.Design, Level: info.Level, Cat: h.mmCatalog(), Prompt: prompt, Device: info.Device, Hook: info.Hook, Reference: sheet, NoAssistant: ch.why, NoBlocks: noBlocks,
+		Video: track, Sources: h.pieceSources(info.ID)})
 	if err != nil {
 		return prop, refusal("%v", err)
 	}
+	prop.Warnings = append(prop.Warnings, dropped...)
 	if info.Style == musicmotion.StyleIllustrated {
 		musicmotion.AddStages(&prop.Script, h.mmLibrary(), st.Design)
 	}
@@ -452,6 +457,7 @@ func (h *Handler) runProposal(ctx context.Context, info *pieceInfo, m songmap.Ma
 			return
 		}
 		p.ScriptSource, p.ScriptFallbackReason, p.ScriptFallbackPieces = prop.Source, prop.FallbackReason, prop.FallbackPieces
+		p.Notes = append(p.Notes, prop.Warnings...)
 	}
 	finish(nil)
 }

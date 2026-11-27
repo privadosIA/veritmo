@@ -312,3 +312,39 @@ The server SHALL keep each part of the user's (the scene parts written for a pie
 
 - **WHEN** a part whose fragment loads an external resource is posted
 - **THEN** the answer is `422` with that problem and nothing is saved
+
+### Requirement: A part says whether it can be over a video
+
+The manifest of a part SHALL accept `over_video` (a boolean, `false` when absent), true when the part leaves what is behind it visible: it draws no opaque background over the whole frame. The catalog SHALL list it for each part. The program's `blank` and its parts that draw only text, lines, shapes or characters on an otherwise empty frame SHALL be marked `true` once drawn on a transparent page and checked so that opaque pixels cover no more than half of the frame at the start, the middle and the end of the part; a part that is not marked SHALL NOT be the main part, an extra or a layer item of a piece that touches an item of the video track (a piece with a `background` does), and the refusal SHALL name the piece and the part. A part written by the assistant (a scene or a draft) SHALL be checked the same way and marked when it passes. The page of a piece that touches an item of the track SHALL NOT paint the design's `--bg` colour over the frame and SHALL NOT use it for the full-frame backdrop of a hit but a translucent one; the scrim belongs to the item of the track, not to the page.
+
+#### Scenario: A part that fills the frame
+- **WHEN** a piece that touches an item of the track uses a part whose manifest has no `over_video`
+- **THEN** the script is refused naming the piece and the part
+
+#### Scenario: Text on empty
+- **WHEN** `blank` is drawn on a transparent page with a verse
+- **THEN** the frame outside the words is transparent and `over_video` is `true`
+
+#### Scenario: The hit over a clip
+- **WHEN** a piece that touches an item of the track has a hit at full screen
+- **THEN** the clip stays visible around the word, behind a translucent backdrop
+
+### Requirement: A part says how much of each band of the frame it occupies
+
+The manifest of a part SHALL accept `bands`, an object `{top, center, bottom}` of numbers from 0 to 1: the share of opaque pixels (alpha of 0.5 or more) in each third of the frame, counted at the first, the middle and the last frame of the part's standard check scene, drawn on a transparent page with no verse and no word hit, taking the largest share of the three frames for each band. The measure SHALL be the one that measures `over_video` (the same drawing, not a second one). The catalog SHALL list `bands` for each part that has it. The built-in parts SHALL carry it, and a draft SHALL get it, as `over_video`, when it is approved. A manifest that claims `bands` SHALL be checked against the measure and refused when a band differs from it by more than 0.1. A part with no `bands` is unknown, not empty: nothing SHALL be inferred from its absence.
+
+#### Scenario: Flat bars at the top
+- **WHEN** `flat-slabs` is drawn on a transparent page
+- **THEN** its `bands.top` is at least 0.2
+
+#### Scenario: A manifest that lies
+- **WHEN** a manifest says `bands: {top: 0, center: 0, bottom: 0}` for a part that fills the top third
+- **THEN** the check of the part fails naming the band
+
+#### Scenario: A draft is measured
+- **WHEN** a draft is approved
+- **THEN** its manifest carries the `bands` that were measured
+
+#### Scenario: A part with no measure
+- **WHEN** a part has no `bands`
+- **THEN** the catalog does not list them for it and no note is made about it

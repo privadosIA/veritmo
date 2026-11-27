@@ -502,6 +502,14 @@ func runVideoOverlap(ctx context.Context, cfg *config.Config, emitter *events.Em
 		}
 		wavPath, pngPath, mp4Path := cache.ArtifactPaths(scene.ID)
 		animRawPath, animPath := cache.AnimatePaths(scene.ID)
+		if scene.Layer {
+			// a layer is a transparent video laid over the video track (see trackstack.go): it is its own artifact and has no clip of its own
+			ext, err := motion.OverlayExt()
+			if err != nil {
+				return nil, st.fail(scene.ID, fmt.Sprintf("layer failed: %v", err))
+			}
+			mp4Path = LayerPath(scene.ID, ext)
+		}
 
 		// Phases: TTS + Probe. A silent scene skips both entirely — no
 		// subprocess and no events (phases that do not run are silent in
@@ -573,7 +581,10 @@ func runVideoOverlap(ctx context.Context, cfg *config.Config, emitter *events.Em
 			}
 			emitter.PhaseStart(scene.ID, "render")
 			renderLoadMs := 0 // what sd says it spent loading models in this phase (0: it did not say)
-			if scene.IsMotionGraphic() {
+			if scene.Layer {
+				// A layer: the page is played on a transparent background to the video the scene makes (job.mp4Path); its first frame is the picture.
+				err = renderLayerScene(ctx, mo, execRunner, base, scene, width, height, cfg.Defaults.FPS, durationSeconds, job.mp4Path, pngPath)
+			} else if scene.IsMotionGraphic() {
 				// A motion graphic: the page is played to a video as long as the scene; its first
 				// frame is the scene picture.
 				err = renderMotionScene(ctx, mo, execRunner, base, scene, width, height, cfg.Defaults.FPS, durationSeconds, pngPath)
@@ -653,8 +664,10 @@ func runVideoOverlap(ctx context.Context, cfg *config.Config, emitter *events.Em
 		audioHash, imageHash, clipHash, animateHash := job.audioHash, job.imageHash, job.clipHash, job.animateHash
 		renderW, renderH, durationSeconds := job.renderW, job.renderH, job.durationSeconds
 		wavPath, pngPath, mp4Path, animRawPath, animPath := job.wavPath, job.pngPath, job.mp4Path, job.animRawPath, job.animPath
-		// Phase: Clip (mux rendered image + synthesized audio into a timed clip)
-		if decision.Phases[cache.PhaseClip] {
+		// Phase: Clip (mux rendered image + synthesized audio into a timed clip). A layer has none: its transparent video is what it makes.
+		if scene.Layer {
+			// nothing to build
+		} else if decision.Phases[cache.PhaseClip] {
 			emitter.Skipped(scene.ID, "clip")
 		} else {
 			emitter.PhaseStart(scene.ID, "clip")
@@ -750,8 +763,10 @@ func runVideoOverlap(ctx context.Context, cfg *config.Config, emitter *events.Em
 			}
 			emitter.PhaseEnd(scene.ID, "clip", mp4Path)
 		}
-		if err := keepClip(base, scene.ID, mp4Path); err != nil {
-			emitter.Warn(scene.ID, fmt.Sprintf("cannot keep the clip: %v", err))
+		if !scene.Layer {
+			if err := keepClip(base, scene.ID, mp4Path); err != nil {
+				emitter.Warn(scene.ID, fmt.Sprintf("cannot keep the clip: %v", err))
+			}
 		}
 
 		entry := cache.SceneEntry{
@@ -823,6 +838,41 @@ func runVideoOverlap(ctx context.Context, cfg *config.Config, emitter *events.Em
 
 	if err := cache.SaveManifest(joinDir(base, cache.ManifestPath()), manifest); err != nil {
 		emitter.Warn("_global", fmt.Sprintf("cannot save cache manifest: %v", err))
+	}
+
+	// A project with a video track draws its scenes as layers over it: the items of the track are built, joined, and the scenes laid over the
+	// result (the `track` and `stack` phases) instead of being concatenated.
+	if cfg.HasVideoTrack() {
+		stacked := cfg.Output.File
+		if cfg.BGM != nil {
+			stacked = filepath.Join(tmpDir, "video_nobgm.mp4")
+		}
+		hashes := make([]string, len(cfg.Scenes))
+		for i, sc := range cfg.Scenes {
+			e := manifest.Scenes[sc.ID]
+			if sc.Layer {
+				hashes[i] = e.ImageHash
+			} else {
+				hashes[i] = e.ClipHash
+			}
+		}
+		if err := buildTrackAndStack(ctx, trackStackInput{cfg: cfg, emitter: emitter, run: execRunner, manifest: manifest, force: force, base: base,
+			width: width, height: height, clipPaths: clipPaths, clipLens: clipLenBy, join: joinClips(cfg, clipPaths, clipLenBy, emitter), layerHash: hashes, out: stacked}); err != nil {
+			return "", err
+		}
+		if err := cache.SaveManifest(joinDir(base, cache.ManifestPath()), manifest); err != nil {
+			emitter.Warn("_global", fmt.Sprintf("cannot save cache manifest: %v", err))
+		}
+		if cfg.BGM != nil {
+			env := renderEnv
+			if len(gpus) > 1 {
+				env = []string{"CUDA_VISIBLE_DEVICES=" + gpus[0]}
+			}
+			if err := mixBGM(ctx, cfg, emitter, execRunner, ffmpegRunner, manifest, force, env, base, stacked, cfg.Output.File); err != nil {
+				return "", err
+			}
+		}
+		return cfg.Output.File, nil
 	}
 
 	// --- Final concat ---

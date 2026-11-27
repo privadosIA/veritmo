@@ -15,7 +15,7 @@ import (
 // script features: they say the server can write an SVG from a description (POST /api/assist/svg) and a plan from one
 // sentence (POST /api/assist/plan). "word-timing" says the words can be timed on the separated voice (`separate` on the piece
 // and its transcribe route), carry heard and confidence, and can be moved by hand (PATCH .../words).
-var Features = []string{"animate", "layers", "svg", "plan", "dataset", "blender", "blender-motion", "blender-models", "examples", "scene", "theme", "review", "reference-breakdown", "word-timing"}
+var Features = []string{"animate", "layers", "svg", "plan", "dataset", "blender", "blender-motion", "blender-models", "examples", "scene", "theme", "review", "reference-breakdown", "word-timing", "video-background", "video-track", "verse-legibility"}
 
 // Eases are the names a keyframe may give for how the value travels towards the next one.
 var Eases = []string{"linear", "in", "out", "in-out", "step"}

@@ -1,4 +1,4 @@
-{"name":"roll-counter","description":"A counter of digits that roll vertically from one number to another over a number of beats, with a label beside it; with the glitch on it tears and shows a negative value for a beat when it passes zero","version":1,"cost_ms":56,"levels":["simple","medium","advanced"],
+{"name":"roll-counter","description":"A counter of digits that roll vertically from one number to another over a number of beats, with a label beside it; with the glitch on it tears and shows a negative value for a beat when it passes zero","version":1,"bands":{"top":0.03,"center":0.03,"bottom":0},"over_video":true,"cost_ms":56,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"from","type":"int","default":10,"min":0,"max":9999},
   {"name":"to","type":"int","default":0,"min":0,"max":9999},

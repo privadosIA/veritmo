@@ -442,17 +442,30 @@ func ContactSheet(frames [][]byte, columns, tileW, tileH int) ([]byte, error) {
 
 // PieceFrames draws frames of one script piece's page as the render draws it (its real page and song map), at the given times in
 // the piece's own seconds.
-func PieceFrames(ctx context.Context, browser string, pm PieceMotion, width, height int, times []float64) ([][]byte, error) {
-	s, err := motionOpen(ctx, browser, pm, width, height)
+//
+// under, when given, is the picture of the video behind the piece at a second of the piece (its own seconds): the page is then drawn on
+// transparent, as the render draws it, and laid over that picture, so the frames are what the video will show.
+func PieceFrames(ctx context.Context, browser string, pm PieceMotion, width, height int, times []float64, under func(t float64) ([]byte, error)) ([][]byte, error) {
+	s, err := motionOpen(ctx, browser, pm, width, height, under != nil)
 	if err != nil {
 		return nil, err
 	}
 	defer s.Close()
 	var out [][]byte
 	for _, at := range times {
-		f, err := s.Frame(ctx, min(max(at, 0), max(pm.Seconds-0.02, 0)))
+		at = min(max(at, 0), max(pm.Seconds-0.02, 0))
+		f, err := s.Frame(ctx, at)
 		if err != nil {
 			return nil, err
+		}
+		if under != nil {
+			u, err := under(at)
+			if err != nil {
+				return nil, err
+			}
+			if f, err = LayOver(u, f); err != nil {
+				return nil, err
+			}
 		}
 		out = append(out, f)
 	}
@@ -475,8 +488,8 @@ func ReviewTimes(sc Scene) []float64 {
 	return []float64{0.3, min(first, sc.Duration-0.3), sc.Duration - 0.25}
 }
 
-func motionOpen(ctx context.Context, browser string, pm PieceMotion, width, height int) (*motion.Session, error) {
-	page := motion.Page{HTML: pm.HTML, Width: width, Height: height, Duration: pm.Seconds, Song: pm.Song}
+func motionOpen(ctx context.Context, browser string, pm PieceMotion, width, height int, transparent bool) (*motion.Session, error) {
+	page := motion.Page{HTML: pm.HTML, Width: width, Height: height, Duration: pm.Seconds, Song: pm.Song, Transparent: transparent}
 	hyperframes.Extend(&page)
 	return motion.Open(ctx, browser, page, motion.Limits{})
 }

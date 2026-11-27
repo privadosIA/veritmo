@@ -322,3 +322,23 @@ func TestCatalog_SaysTheWordsCanBeTimedAndMoved(t *testing.T) {
 	}
 	t.Fatalf("features = %v", c.Features)
 }
+
+func TestCatalog_SaysPiecesCanHaveAVideoBehindThem(t *testing.T) {
+	s := mmServer(t)
+	rec := doJSON(t, s.Handler(), http.MethodGet, "/api/music-motion/catalog", nil)
+	var c PieceCatalog
+	_ = json.Unmarshal(rec.Body.Bytes(), &c)
+	found := map[string]bool{}
+	for _, f := range c.Features {
+		found[f] = true
+	}
+	if !found["video-background"] || !found["video-track"] || !found["verse-legibility"] {
+		t.Fatalf("features = %v", c.Features)
+	}
+	if !strings.Contains(rec.Body.String(), `"bands":{"top":`) {
+		t.Fatal("the parts do not say how much of each band of the frame they occupy")
+	}
+	if !strings.Contains(rec.Body.String(), `"over_video":`) {
+		t.Fatal("the parts do not say whether they can be over a video")
+	}
+}

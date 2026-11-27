@@ -1,4 +1,4 @@
-{"name":"counter","description":"A big number that climbs by a step on every beat, with a unit in the accent colour","version":1,"cost_ms":55,"levels":["simple","medium","advanced"],
+{"name":"counter","description":"A big number that climbs by a step on every beat, with a unit in the accent colour","version":1,"bands":{"top":0.05,"center":0.03,"bottom":0},"over_video":true,"cost_ms":55,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"from","animatable":true,"type":"int","default":0,"min":0,"max":100000},
   {"name":"step","animatable":true,"type":"int","default":128,"min":1,"max":10000,"description":"What it adds on every beat"},

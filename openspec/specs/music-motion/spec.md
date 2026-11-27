@@ -151,7 +151,7 @@ From the song map, the design, the level and the catalog, the server SHALL propo
 
 ### Requirement: A piece is rendered as scenes of the project
 
-Rendering a piece SHALL build one `motion_graphic` scene per piece of the script in a project of its own, run them on the existing run queue and join them, with the song as the sound, into one video of the length of the song. Scenes whose script piece, design, level, rate and song map are unchanged SHALL come from the cache. The video and the scenes SHALL appear like any other result, and the run SHALL report progress per scene.
+Rendering a piece SHALL build one scene per piece of the script in a project of its own: a `motion_graphic` scene for a piece made from parts, or a `blender` scene for a 3D piece; a piece that touches an item of the video track (a piece's `background` is one, see "A piece's background is a shorthand for a video item") SHALL be a transparent layer stacked over the track (see "A piece over the track is drawn as a layer and stacked over it") and not a scene of its own with a clip. The scenes run on the existing run queue and are joined, with the song as the sound, into one video of the length of the song. Scenes whose script piece, design, level, rate, song map and track items are unchanged SHALL come from the cache. The video and the scenes SHALL appear like any other result, and the run SHALL report progress per scene.
 
 #### Scenario: Render
 - **WHEN** a piece is rendered
@@ -160,6 +160,10 @@ Rendering a piece SHALL build one `motion_graphic` scene per piece of the script
 #### Scenario: Only one piece changed
 - **WHEN** one piece of the script is edited and the piece is rendered again
 - **THEN** only the scene of that piece is rendered again
+
+#### Scenario: A piece over a clip
+- **WHEN** a piece that touches an item of the track is rendered
+- **THEN** its scene is a layer drawn on a transparent page and the track is built apart, not a scene with a clip and an overlay
 
 ### Requirement: The server offers the contract to a dashboard
 
@@ -336,7 +340,7 @@ When an answer of the assistant is refused and asked again, the message SHALL sa
 
 ### Requirement: A frame of the saved piece can be drawn
 
-`GET /api/music-motion/pieces/{id}/frame?t=12.4` SHALL answer an `image/png` of the saved piece at that second, drawn with Chrome as the render draws it, so a dashboard can compare its own preview with the server's. A `t` outside the piece or not a number SHALL be `422`; a server with no Chrome SHALL answer `503` with the reason.
+`GET /api/music-motion/pieces/{id}/frame?t=12.4` SHALL answer an `image/png` of the saved piece at that second, drawn with Chrome as the render draws it, so a dashboard can compare its own preview with the server's. When `t` falls inside an item of the video track, the page SHALL be drawn on transparent and laid over the track's picture at that second, mapped through the item's `clip_start`, `clip_end`, `clip_speed` and the repetition as the render maps it, with its scrim, the colour of the design in a gap and the crossfade where two items run (see "A piece over a track can be seen without rendering"). A `t` outside the piece or not a number SHALL be `422`; a server with no Chrome SHALL answer `503` with the reason, and so SHALL a server with no ffmpeg when `t` falls inside an item.
 
 #### Scenario: A frame
 - **WHEN** `t=12.4` is requested for a piece of 200 seconds
@@ -345,6 +349,10 @@ When an answer of the assistant is refused and asked again, the message SHALL sa
 #### Scenario: Outside the piece
 - **WHEN** `t=999` is requested for a piece of 200 seconds
 - **THEN** the answer is `422` and no Chrome is started
+
+#### Scenario: A frame over a clip
+- **WHEN** `t` is a second inside an item of the track
+- **THEN** the PNG has the clip's picture of that second with the verse drawn on it
 
 ### Requirement: The catalog gives the font stacks
 
@@ -678,3 +686,319 @@ The description of a 3D piece SHALL be checked with the models of its piece: an 
 #### Scenario: A character from the library in a chorus
 - **WHEN** a library character is added to a piece and a 3D piece of the script places it
 - **THEN** the script is saved, previewed and rendered as for a model that was uploaded
+
+### Requirement: A piece of the script can have a video behind it
+
+A piece of the script made from a part SHALL accept `background: {clip, clip_start?, clip_end?, clip_speed?, scrim?}`. `clip` SHALL name a video kept by the piece (see "A piece keeps video backgrounds"); `clip_start`, `clip_end` and `clip_speed` SHALL mean what they mean in a scene with `clip` (from and to in seconds of the file, `clip_end` after `clip_start`, a speed from 0.25 to 4, the part cut when longer than the piece and slowed up to 2x then repeated when shorter); `scrim` SHALL be a number from 0 to 0.8 (default 0.3): how much of the design's `--bg` colour is laid over the clip so the verse reads over it. A 3D piece (`blender`) SHALL NOT have a `background` and a script that gives one SHALL be refused naming the piece. Saving a script (`PUT .../script`), previewing and rendering SHALL refuse with `422`, naming the piece and the field, a `background` whose clip the piece does not keep, whose trim passes the length of the file, whose speed or scrim is out of range, or whose piece draws a part that does not leave the clip visible (see `music-motion-parts`). The script SHALL still cover the whole song, and `GET` of the piece SHALL return the `background` of each piece as it was sent. The proposal of a script SHALL NOT write a `background` of its own. When a proposed script replaces one whose pieces have backgrounds, each background SHALL move to the proposed piece that holds the middle of the piece it was on; a background with no such piece SHALL be dropped and named in the proposal's `notes`.
+
+#### Scenario: A chorus over a clip
+- **WHEN** the script has `{id: "c1", start: 30, end: 42, part: "blank", background: {clip: "chorus.mp4", scrim: 0.4}}` and the piece keeps `chorus.mp4`
+- **THEN** the script is saved and `GET` of the piece returns that background
+
+#### Scenario: A clip the piece does not have
+- **WHEN** a piece names `background.clip` `"missing.mp4"` and the piece keeps no such file
+- **THEN** `PUT .../script` is `422` naming the piece and the clip, and the stored script is as it was
+
+#### Scenario: A trim past the file
+- **WHEN** `clip_end` is 9 and the file lasts 5 seconds
+- **THEN** the script is refused with `422` naming the piece, the field and the length of the file
+
+#### Scenario: A 3D piece with a background
+- **WHEN** a piece has `blender` and `background`
+- **THEN** the script is refused with `422` naming the piece and what cannot go together
+
+#### Scenario: A proposal keeps the backgrounds
+- **WHEN** a script whose piece 30 to 42 has a background is replaced by a proposal whose piece 28 to 40 holds second 36
+- **THEN** the proposed piece 28 to 40 has that background and nothing is dropped
+
+#### Scenario: A background with nowhere to go
+- **WHEN** the proposal has no piece that holds the middle of a piece that had a background
+- **THEN** that background is dropped from the script, the file stays in the piece, and the proposal's `notes` name it
+
+### Requirement: A piece keeps video backgrounds
+
+`PUT /api/music-motion/pieces/{id}/backgrounds/{name}` SHALL keep the video of the body (`.mp4`, `.mov`, `.webm` or `.mkv`, up to the same size limit as an upload to a project) in the piece's `sources/` after reading it with ffprobe (`422` when it has no video stream or cannot be read, `409` when the name exists, `503` when ffprobe is missing), and answer `201` with `{name, seconds, width, height, fps}`. `POST /api/music-motion/pieces/{id}/backgrounds` with `{from: "generation:<id>", name?}` SHALL copy into the piece the video of a finished generation of the generation API (`404` for one that does not exist, `409` for one that is not `done`, `422` when it has no video), never refer to it, so that removing the generation does not change the piece; a generation marked `adult` SHALL be refused on a server that does not show adult content. `GET .../backgrounds` SHALL list the backgrounds with `name`, `seconds`, `width`, `height`, `fps`, `source` (`upload` or `generation:<id>`) and the ids of the pieces of the saved script that use each; `DELETE .../backgrounds/{name}` SHALL remove one, with `409` and the pieces that use it while the saved script does. The backgrounds SHALL go with the piece (exports, duplicates and deleting it) and SHALL be refused with `409` while the piece is being rendered or proposed. `GET .../backgrounds/{name}/file` SHALL stream the clip with its media type, `Content-Length`, `ETag`, `Accept-Ranges` and `Range` answers, and SHALL accept `?ticket=` like the other media routes of the API (`404` for a clip the piece does not keep). A background no piece uses SHALL stay until it is deleted: it is never removed by itself, and the list says it is unused (`used_by: []`) so a dashboard can offer to delete it.
+
+#### Scenario: Upload
+- **WHEN** a 6-second 832x480 clip is put as `intro.mp4`
+- **THEN** the answer is `201` with `{name: "intro.mp4", seconds: 6, width: 832, height: 480, fps: 16}` and the list has it
+
+#### Scenario: From a generation
+- **WHEN** `from: "generation:g12"` names a finished video generation
+- **THEN** its video is copied into the piece, listed with `source: "generation:g12"`, and deleting the generation leaves it in place
+
+#### Scenario: A generation still running
+- **WHEN** `from` names a generation that is `running`
+- **THEN** the answer is `409` and nothing is copied
+
+#### Scenario: Removing one that is in use
+- **WHEN** the saved script has a piece over `intro.mp4` and `DELETE .../backgrounds/intro.mp4` is called
+- **THEN** the answer is `409` naming the piece, and the file stays
+
+#### Scenario: A range of the file
+- **WHEN** `GET .../backgrounds/intro.mp4/file` is asked with `Range: bytes=0-1023`
+- **THEN** the answer is `206` with those bytes and the clip's media type
+
+#### Scenario: An unused background
+- **WHEN** no piece of the saved script uses `old.mp4`
+- **THEN** the list has it with `used_by: []` and it stays until it is deleted
+
+### Requirement: A piece with a background is rendered as a clip with its page over it
+
+A piece with a `background` SHALL be rendered through the video track: its `background` is the item `bg-<piece id>` (see "A piece's background is a shorthand for a video item"), the track is built from the piece's `clip_start`, `clip_end`, `clip_speed` and `scrim`, and the piece is a layer whose page is its own page: the same page the piece would have without a background, drawn on a transparent background, with the song map cut to the piece, so the verse, the hit, the extras and the layers keep the time of each word. The scrim SHALL be between the clip and the page and belongs to the item, not to the page. The word of the verse SHALL therefore be lit at the second it is sung over the clip exactly as it is over a plain background, for every `verse_style`. The page SHALL be written by the piece and SHALL NOT be written by a model. The sound of the clip SHALL NOT be in the video: the song is the soundtrack. The crossfade between pieces, the cache by content (a change of the clip, its trim or the scrim builds that item and the stack and draws no page; a change of the design, the words or the part draws that layer and the stack and builds no item) and the progress per scene SHALL be as for the other pieces. A render of such a piece SHALL need Chrome, ffmpeg and ffprobe and no model or GPU, and a piece without a background and a script without a track SHALL be written exactly as before.
+
+#### Scenario: Karaoke over a clip
+- **WHEN** a piece of 6 seconds has `background: {clip: "a.mp4"}`, the design has `verse_style: "karaoke"` and the song map has the words timed
+- **THEN** the track has the item `bg-<piece>`, the piece is a layer, and in the rendered video the word being sung is in the accent colour at its own second over the picture of the clip
+
+#### Scenario: Only the clip changes
+- **WHEN** the clip of one piece is replaced and the piece is rendered again
+- **THEN** that item and the stack are built again and no layer is drawn
+
+#### Scenario: A mix of pieces
+- **WHEN** a script has two pieces over a clip, one made of graphics and one 3D piece
+- **THEN** the project has a layer for each of them over the same track, with the crossfades between them as set
+
+### Requirement: A piece with a background can be seen without rendering
+
+`POST /api/music-motion/pieces/{id}/preview` SHALL list a piece with a background with `background: {clip, url}` apart from its `html`, where `url` is the address of `GET .../backgrounds/{name}/file`, and its page SHALL be the transparent one with the scrim, so a dashboard can play the clip and lay the page over it. The frame of such a piece is drawn as "A frame of the saved piece can be drawn" says. The review of a piece by the vision model SHALL grade the composite of the clip and the page, not the page alone.
+
+#### Scenario: The preview lists the clip
+- **WHEN** the preview of a script with a piece over `a.mp4` is requested
+- **THEN** that scene has its transparent page and says which clip is behind it and the address to play it
+
+### Requirement: The catalog announces the backgrounds
+
+`GET /api/music-motion/catalog` SHALL list `video-background` in `features` while pieces accept a `background`, and SHALL list in each part whether it can be over a video (`over_video`), so a dashboard knows before it saves a script that carries a background which parts it can offer.
+
+#### Scenario: A dashboard asks first
+- **WHEN** the catalog is read
+- **THEN** `features` has `"video-background"` and each part says `over_video`
+
+### Requirement: The writers know a piece is over a video
+
+The writer of a scene for one piece (`POST /api/music-motion/part-drafts` with `scene`) SHALL be told, when the piece has a `background`, that its page is drawn on transparent over a video and must paint no background of its own, and its draft SHALL be checked as a part that can be over a video (see `music-motion-parts`) and refused with the reason when it is not. The proposal of a script, by the assistant and by the fixed rule, SHALL choose only parts that can be over a video for the pieces that keep a background.
+
+#### Scenario: A scene written over a video
+- **WHEN** a scene is asked for a piece with a background and the writer's page fills the frame
+- **THEN** the draft is refused saying it hides the video, and the writer is asked again with that reason
+
+#### Scenario: A proposal over a video
+- **WHEN** a script is proposed for a song whose pieces have backgrounds
+- **THEN** every piece that keeps a background uses a part marked `over_video`
+
+### Requirement: A piece can be for adults
+
+A piece SHALL have an `adult` label, `false` by default and returned by `GET` of the piece and in the lists. `POST /api/music-motion/pieces` SHALL accept `adult`; the piece SHALL be for adults when the request says `adult: true` or when the music project its song comes from is marked for adults. A server that does not keep content for adults SHALL refuse such a request with `422` and the code `content_not_allowed` before anything is made. A piece that keeps a background that is for adults (a video copied from a generation marked `adult`, or uploaded with `?adult=true`) SHALL be for adults, and SHALL stay so when the video is taken away; an upload marked `?adult=true` SHALL be refused with `422` and the code `content_not_allowed`, and nothing kept, on a server that does not keep content for adults. On a server that does not show content for adults, a piece for adults SHALL NOT exist for the API: every route that names it SHALL answer the `404` of an unknown piece, and the lists SHALL leave it out and not count it in `X-Total-Count`. The project the render writes for a piece for adults SHALL be marked `adult: true`, so its runs and its video are hidden like those of any project for adults, and the project of a piece that is not SHALL be written exactly as before. A piece made before the label existed SHALL count as not for adults.
+
+#### Scenario: A server that keeps no adult content
+- **WHEN** a piece is asked for with `adult: true` on a server that does not keep content for adults
+- **THEN** the answer is `422` with the code `content_not_allowed` and no piece exists
+
+#### Scenario: The music project is for adults
+- **WHEN** a piece is made from a track of a project marked for adults, with no `adult` in the request, on a server that keeps adult content
+- **THEN** the piece is for adults
+
+#### Scenario: A video for adults
+- **WHEN** the video of a generation marked `adult` is added to a piece as a background
+- **THEN** the piece is for adults, and still is after the video is deleted
+
+#### Scenario: Hidden
+- **WHEN** a piece for adults exists and the server that holds it does not show adult content
+- **THEN** `GET /api/music-motion/pieces/{id}` and every other route that names it answer `404`, the list does not have it and its total does not count it
+
+#### Scenario: Its project
+- **WHEN** a piece for adults is rendered
+- **THEN** its `scenes.yaml` says `adult: true`
+
+### Requirement: A script has a video track
+
+A script SHALL accept `video`, a list of items `{id, clip, start, end, clip_start?, clip_end?, clip_speed?, scrim?, transition_seconds?}` in seconds of the song: one lane, in order, with no overlap and with gaps allowed, every item inside the song. `id` SHALL be lower case letters, digits and dashes, up to 24 characters, and unique in the track. `clip` SHALL name a video kept by the piece; `clip_start`, `clip_end` and `clip_speed` SHALL mean what they mean in a scene with `clip` (the part of the file, `clip_end` after `clip_start`, a speed from 0.25 to 4, the part cut when longer than the item and slowed up to 2x and then repeated when shorter); `scrim` SHALL be from 0 to 0.8 (default 0.3) and darkens or lightens the clip with the design's `--bg` colour; `transition_seconds` (0 to the shorter of the two items, default 0) is the crossfade from the item before it when the two touch. A gap SHALL show the design's `--bg` colour. A clip SHALL be able to span several pieces and a piece to have several items. A track has at most 64 items. Saving the script, previewing and rendering SHALL refuse with `422`, naming the item and the field, an item outside the song, out of order, overlapping another, with a clip the piece does not keep, a trim past the file, or a speed, scrim or transition out of range, and nothing SHALL be saved. `GET` of a piece SHALL return the track as it was saved. A piece that touches an item SHALL use only parts that can be over a video (`over_video`, see `music-motion-parts`); a 3D piece (`blender`) SHALL NOT touch an item and the refusal SHALL name the piece and the item. `transition_seconds` is a crossfade only: the kinds of `xfade` and the shader transitions of scenes are not offered on the track. When the song changes and an item falls outside it, `GET` of the piece SHALL name the item in `script_warning`, and saving and rendering SHALL refuse it with `422`. The proposal of a script SHALL NOT write or change the track, and SHALL choose only parts that can be over a video for the pieces that touch an item; the writer of a scene for a piece that touches an item SHALL be told its page goes over a video, and its draft SHALL be checked as one that can be, as for a piece with a background.
+
+#### Scenario: A clip over two pieces
+- **WHEN** the track has `{id: "v1", clip: "city.mp4", start: 12, end: 41}` and the script has pieces that end at 20 and 30
+- **THEN** the script is saved and the clip is one item that crosses both pieces
+
+#### Scenario: Two clips in one piece
+- **WHEN** a piece lasts from 30 to 42 and the track has items `a` (30 to 36) and `b` (36 to 42)
+- **THEN** the script is saved
+
+#### Scenario: Overlap
+- **WHEN** an item starts before the end of the one before it
+- **THEN** `PUT .../script` is `422` naming both items, and the stored script is as it was
+
+#### Scenario: A gap
+- **WHEN** the track has items from 0 to 20 and from 30 to 60
+- **THEN** from 20 to 30 the video shows the design's background colour
+
+#### Scenario: The song gets shorter
+- **WHEN** the song of a piece is made shorter and an item now ends after it
+- **THEN** `GET` of the piece names the item in `script_warning` and the render is `422` naming it
+
+#### Scenario: A proposal keeps the track
+- **WHEN** a new script is proposed for a piece whose track has items
+- **THEN** the track is unchanged and every proposed piece that touches an item uses a part marked `over_video`
+
+### Requirement: A piece's background is a shorthand for a video item
+
+`PUT .../script` SHALL still accept `background: {clip, clip_start?, clip_end?, clip_speed?, scrim?}` on a piece made from a part, and SHALL save it as a video item with `id` `bg-<piece id>`, `start` and `end` those of the piece and the same fields, replacing an item of that id; the saved script and every answer SHALL carry the item and never the `background`. A piece that has a `background` and also an item of the track that overlaps it SHALL be refused with `422` naming both. Once saved, the item is independent of the piece: moving the cuts of the piece SHALL NOT move it. A script with no track and no `background` SHALL be written, validated, drawn and cached exactly as before.
+
+#### Scenario: A background in a script that is saved
+- **WHEN** a piece from 30 to 42 is sent with `background: {clip: "a.mp4"}`
+- **THEN** `GET` of the piece returns a track item `{id: "bg-<piece>", clip: "a.mp4", start: 30, end: 42}` and no `background`
+
+#### Scenario: Without either
+- **WHEN** a script has neither a track nor a background and is rendered
+- **THEN** its project, its pages and its hashes are those of a render before this change
+
+#### Scenario: The cuts move, the item stays
+- **WHEN** the piece that had a background from 30 to 42 is changed to end at 38
+- **THEN** the item `bg-<piece>` still goes from 30 to 42
+
+### Requirement: A clip can be seen and cut into thumbnails
+
+`GET /api/music-motion/pieces/{id}/backgrounds/{name}/frame?t=&width=` SHALL answer an `image/png` of the picture of the clip at `t` seconds of the file (`422` for `t` outside it, `404` for a clip the piece does not keep, `503` without ffmpeg). `GET .../backgrounds/{name}/thumbs?count=&height=` SHALL answer one `image/png` strip of `count` pictures (2 to 60) evenly spaced over the file, each `height` pixels high (16 to 240), with `X-Frame-Count` and `X-Frame-Width`. Both SHALL accept `?ticket=` like the other media routes of the API. The clip itself is streamed by `GET .../backgrounds/{name}/file` (from `add-video-background-karaoke`).
+
+#### Scenario: A strip
+- **WHEN** `thumbs?count=12&height=60` is asked for a 6-second clip
+- **THEN** the answer is one PNG 60 pixels high with 12 pictures and `X-Frame-Count: 12`
+
+### Requirement: Cutting and joining items of the track
+
+`POST /api/music-motion/pieces/{id}/video/split {item, at}` SHALL replace the item by two that touch at `at` (seconds of the song, strictly inside the item), the second keeping the clip from where the first stops (`clip_start` advanced by the time of the first part at its speed, with no jump in a clip that loops), ids `<item>-a` and `<item>-b` unless free ones are given in `ids`. `POST .../video/join {first, second}` SHALL replace two touching items of the same clip, continuous in the file, by one. Each SHALL validate the whole script, save it in one write and answer it, with `422` and the script untouched when it would not be valid, `404` for an unknown item and `409` while the piece is rendering or proposing.
+
+#### Scenario: Split
+- **WHEN** an item from 10 to 30 playing a clip from 0 is split at 18
+- **THEN** the track has two touching items, 10 to 18 from 0 and 18 to 30 from 8, and the video does not jump at 18
+
+#### Scenario: Join what is not continuous
+- **WHEN** two touching items use different clips
+- **THEN** `join` is `422` and the track is as it was
+
+### Requirement: A piece over the track is drawn as a layer and stacked over it
+
+Rendering a piece whose script has a video track SHALL draw each piece that touches an item as a transparent video of the piece's own length (plus the fade into the next, as today), build the track apart and stack the layers over it. A piece that touches no item SHALL be drawn as before, with the design's background, as an opaque scene. The page of a layer SHALL be the page the piece would have without a track, with no `--bg` painted over the frame, a translucent backdrop for a hit at full screen and no scrim (the scrim belongs to the item), and SHALL be written by the piece, never by a model. The track SHALL be built from the items: each cut from its clip, sped up or slowed within the limits above and repeated when the item is longer, scaled and cropped to the piece's size at its frame rate, darkened by its `scrim`, joined with the crossfades of `transition_seconds`, with the colour of the design's `--bg` in the gaps. The layers SHALL be laid over the track at their second of the song, dissolving into one another where the pieces crossfade, and the song SHALL be the only sound. The word of the verse SHALL be lit at the second it is sung over the clip exactly as over a plain background, for every `verse_style`. Changing a clip, a trim, a speed, a scrim or a transition SHALL build the affected items and the stack and SHALL NOT draw any piece again; changing a word, a part or a style SHALL draw the layer of the pieces it touches and SHALL NOT build any item again. A render with a track SHALL need Chrome, ffmpeg and ffprobe and no model or GPU. The estimate of the render SHALL count each item by its length, each layer by its frames and the cost of its parts, and the stack by the length of the song.
+
+#### Scenario: Karaoke over a clip across two pieces
+- **WHEN** one clip spans two pieces, the design has `verse_style: "karaoke"` and the words are timed
+- **THEN** the video has no cut in the picture at the boundary of the pieces, the verse changes at the boundary, and the word being sung is in the accent colour at its own second
+
+#### Scenario: Only the clip changes
+- **WHEN** the trim of one item is changed and the piece is rendered again
+- **THEN** that item and the stack are built again and no layer is drawn
+
+#### Scenario: Only a word changes
+- **WHEN** the time of one word is moved and the piece is rendered again
+- **THEN** the layer of the piece that holds the word and the stack are built again and no item is
+
+#### Scenario: A piece in a gap
+- **WHEN** a piece touches no item
+- **THEN** it is drawn as an opaque scene with the design's background, as it was before the track
+
+### Requirement: A piece over a track can be seen without rendering
+
+`GET /api/music-motion/pieces/{id}/frame?t=` with a track SHALL answer a PNG of the video at `t`: the track's picture (the clip's frame mapped through the item's trim, speed and repetition, darkened by its scrim, the colour of the design in a gap, the crossfade of the items where one runs) with the text's transparent frame laid over it, drawn the way the render draws it and with the dissolve between layers where the pieces crossfade; `503` without Chrome or ffmpeg and `422` for `t` outside the song. `POST .../preview` SHALL list the track with, for each item, the clip, the address to play it (`url`, that of `GET .../backgrounds/{name}/file`), its media type, its length and how the song's time maps to the file's (`from`, `to`, `speed` and whether it repeats), so a dashboard can play the clip under the transparent pages it also receives, and SHALL list each piece with whether it is a layer. The review of a piece by the vision model SHALL grade composed frames.
+
+#### Scenario: A frame inside an item
+- **WHEN** `t` is a second inside an item
+- **THEN** the PNG has that clip's picture of the mapped second, darkened by the scrim, with the verse drawn on it
+
+#### Scenario: The mapping is told
+- **WHEN** the preview is asked for a script with an item of a 2-second clip over 6 seconds
+- **THEN** the item says it repeats and at what speed
+
+### Requirement: The verse has a layout
+
+The design and a piece's design override SHALL accept `verse_layout: {position, scale, align}` with `position` `top`, `center` or `bottom` (default `bottom`), `scale` from 0.6 to 1.6 (default 1) and `align` `left`, `center` or `right` (default `center`). The page SHALL draw the verse where it says, in the size the resolution gives multiplied by `scale`; a value out of range or unknown SHALL be `422` naming the field, and a design without it SHALL draw the verse exactly as before. The checks of a page (text inside the frame and apart) SHALL apply to the verse in its layout.
+
+#### Scenario: A verse at the top
+- **WHEN** a piece has `verse_layout: {position: "top"}`
+- **THEN** the verse is drawn near the top of the frame and nothing else changes
+
+#### Scenario: Nothing set
+- **WHEN** a stored design has no `verse_layout`
+- **THEN** its pages are those of a render before this change
+
+### Requirement: The catalog announces the video track
+
+`GET /api/music-motion/catalog` SHALL list `video-track` in `features` while scripts accept a track, the clip routes and the verse layout, so a dashboard can tell before it offers the lane, and `verse-legibility` while the server answers `verse_notes` and lists `bands` in the parts, so it can tell before it offers the advice.
+
+#### Scenario: A dashboard asks first
+- **WHEN** the catalog is read
+- **THEN** `features` contains `"video-track"` and `"verse-legibility"`
+
+### Requirement: The verse of a layer has a halo
+
+The page of a piece that is a layer over the video track (see "A piece over the track is drawn as a layer and stacked over it") SHALL write each word of the verse with a halo: a `text-shadow` of the design's `--bg` colour (a tight one and a soft one) so that the words keep an edge over any picture, whatever `verse_style` the design has. The halo SHALL NOT change the colour of any word, SHALL NOT be written for a page that is not a layer, and a page that is not a layer SHALL be the same HTML as before this requirement.
+
+#### Scenario: Karaoke over a light clip
+- **WHEN** a layer has `verse_style: "karaoke"`
+- **THEN** its stylesheet gives `#verse .w` a shadow of `--bg` and the sung words keep the accent colour
+
+#### Scenario: A piece with no track
+- **WHEN** a piece away from the track is written
+- **THEN** its page has no halo and is the same HTML as before
+
+### Requirement: A piece says when its verse falls on its part
+
+`GET /api/music-motion/pieces/{id}` and `PUT .../pieces/{id}/script` SHALL answer `verse_notes`, a list with one entry for each piece of the script whose main part has `bands`, whose verse band (that of its `verse_layout`, the piece's own or the design's, or the bottom when there is none) has a share of 0.2 or more and which has a band to move to, the one with the smallest share when that share is below 0.1: `{piece, part, band, share, free}`. A part that leaves no band clear (one made to fill the frame, over which the verse is meant to be read) SHALL give no note, because there is nothing to advise. The list SHALL be empty (and omitted) when no piece is in that case. The notes SHALL be advice: no script SHALL be refused or moved because of them, a script with no `verse_layout` SHALL render as before, and a part with no `bands` SHALL give no note. The catalog SHALL list `verse-legibility` in `features` while the server answers them.
+
+#### Scenario: The verse at the top over flat bars
+- **WHEN** a piece with `flat-slabs` has `verse_layout: {position: top}`
+- **THEN** `verse_notes` has an entry naming the piece, `flat-slabs`, `top` and a `free` band
+
+#### Scenario: A clear band
+- **WHEN** a piece with `blank` has its verse at the bottom
+- **THEN** there is no entry for it
+
+#### Scenario: A part made to fill the frame
+- **WHEN** a piece with `sunburst`, which paints every third of the frame, has its verse at the bottom
+- **THEN** there is no entry for it
+
+#### Scenario: Nothing moves
+- **WHEN** a script has a note and is rendered
+- **THEN** the verse is drawn where the script put it
+
+### Requirement: A proposal places the verse away from the part
+
+When the assistant proposes a script (`POST .../propose` with `what` equal to `script` or `all`), a piece that touches an item of the video track and whose main part has `bands` with a share of 0.2 or more in the bottom band SHALL get, in its own `design`, a `verse_layout` whose `position` is the band with the smallest share when that share is below 0.1; its `scale` and `align` stay as the design gives them. A piece that does not touch the track, a piece whose bottom band is clear, one with no clear band and one that already has a `verse_layout` of its own SHALL be proposed exactly as before.
+
+#### Scenario: A part that fills the bottom
+- **WHEN** a piece over an item uses a part that occupies the bottom third and leaves the top clear
+- **THEN** the proposal gives that piece `verse_layout: {position: top}`
+
+#### Scenario: Away from the track
+- **WHEN** the same part is used by a piece that touches no item
+- **THEN** the proposal has no `verse_layout` for it
+
+### Requirement: The scrim of an item follows the clip behind the verse
+
+When a track item has no `scrim` of its own, the render, `GET .../frame` and `POST .../preview` SHALL work out its local scrims the same way: sample at least five frames of the item's span of the clip, measure the mean brightness of the band where the verse of each piece that touches the item falls (the band of its `verse_layout`, the piece's own or the design's, or the bottom), and take the contrast of that piece's accent against the colour the verse is read on (the clip's brightness mixed with the design's background colour by the item's global scrim). The global scrim of the item SHALL stay at `DefaultScrim`. For each band where that contrast is under 3:1, the item SHALL get a local scrim (see "A track item can have a local scrim over the band of the verse") raised from 0.05 in steps of 0.05 up to 0.8 until the contrast reaches 3:1, taking the worst of the pieces whose verse falls in that band. The local scrims SHALL be written into the item that is built, so a change of them builds the item again and draws no page, and SHALL NOT be saved in the script. An item with a `scrim` of its own SHALL NOT be changed and SHALL get no local scrim: it SHALL get a note in `verse_notes` (`{item, band, contrast}`) when its contrast stays under 3:1. An item that still reads under 3:1 with a local scrim of 0.8 SHALL keep it and get that note too. A server with no ffmpeg SHALL give no local scrim and no note.
+
+#### Scenario: A light clip
+- **WHEN** an item with no `scrim` plays a clip whose bottom band gives the accent 1.2:1 and the verse is at the bottom
+- **THEN** the global scrim is 0.3, the item has a local scrim for `bottom` that is the least in steps of 0.05 to reach 3:1, and the frame outside that band is the clip with the 0.3 scrim
+
+#### Scenario: A dark clip
+- **WHEN** the accent already reaches 3:1 at the global scrim
+- **THEN** the item has no local scrim and is built as before
+
+#### Scenario: A clip that would need a washed-out picture
+- **WHEN** the accent needs a scrim of 0.75 over the whole frame to reach 3:1 on the band behind the verse
+- **THEN** the global scrim stays at 0.3, the item has a local scrim of about 0.75 over that band only, and the rest of the picture is the clip with the 0.3 scrim
+
+#### Scenario: The author's scrim wins
+- **WHEN** an item has `scrim: 0.1` and the contrast is 2:1
+- **THEN** the item keeps 0.1, gets no local scrim and `verse_notes` names it with its contrast
+
+#### Scenario: Two pieces over one item
+- **WHEN** one item has the verse of one piece at the bottom and of another at the top
+- **THEN** the item gets a local scrim for each band that needs one, not one for the other
+
+### Requirement: The preview lists the local scrims and the frame draws them
+
+`POST .../preview` SHALL list for each item of the track `local_scrims`, the list of `{band, scrim}` the render will lay over it (absent when there is none), and `GET .../frame` SHALL draw them as the build does, so a dashboard that draws the band over a `<video>` with the profile of "A track item can have a local scrim over the band of the verse" and the frame of the server show the same picture.
+
+#### Scenario: The three agree
+- **WHEN** an item needs a local scrim
+- **THEN** the preview lists it, the `video_track` of the project written for the render carries it, and a pixel of the frame in the rows of the band is the clip mixed with the design's colour by it

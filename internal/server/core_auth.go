@@ -30,12 +30,15 @@ var ticketRoutes = []*regexp.Regexp{
 	regexp.MustCompile(`^/api/downloads/[^/]+/events$`),
 	regexp.MustCompile(`^/api/music/installs/[^/]+/events$`), // the live progress of an install of a music generator
 	regexp.MustCompile(`^/api/projects/[^/]+/artifacts/.+$`),
-	regexp.MustCompile(`^/api/reviews/[^/]+/findings/[^/]+/frame$`),           // the evidence frame of a finding, in an <img>
-	regexp.MustCompile(`^/api/motions/[^/]+/preview$`),                        // the preview of a motion of the library, in a <video>
-	regexp.MustCompile(`^/api/music-motion/references/[^/]+/frames/[^/]+$`),   // a key frame of a reference, in an <img>
-	regexp.MustCompile(`^/api/music-motion/part-drafts/[^/]+/preview/[^/]+$`), // a preview frame of a draft of a part, in an <img>
-	regexp.MustCompile(`^/api/models3d/models/[^/]+/[^/]+/thumbnail$`),        // the picture of a model of the library, in an <img>
-	regexp.MustCompile(`^/api/models3d/models/[^/]+/[^/]+/file$`),             // the binary glTF of a model of the library, for a viewer or an <a download>
+	regexp.MustCompile(`^/api/reviews/[^/]+/findings/[^/]+/frame$`),                 // the evidence frame of a finding, in an <img>
+	regexp.MustCompile(`^/api/motions/[^/]+/preview$`),                              // the preview of a motion of the library, in a <video>
+	regexp.MustCompile(`^/api/music-motion/references/[^/]+/frames/[^/]+$`),         // a key frame of a reference, in an <img>
+	regexp.MustCompile(`^/api/music-motion/part-drafts/[^/]+/preview/[^/]+$`),       // a preview frame of a draft of a part, in an <img>
+	regexp.MustCompile(`^/api/models3d/models/[^/]+/[^/]+/thumbnail$`),              // the picture of a model of the library, in an <img>
+	regexp.MustCompile(`^/api/music-motion/pieces/[^/]+/backgrounds/[^/]+/file$`),   // the video behind a piece, in a <video>
+	regexp.MustCompile(`^/api/music-motion/pieces/[^/]+/backgrounds/[^/]+/frame$`),  // a picture of a clip of a piece, in an <img>
+	regexp.MustCompile(`^/api/music-motion/pieces/[^/]+/backgrounds/[^/]+/thumbs$`), // the strip of pictures of a clip, in an <img>
+	regexp.MustCompile(`^/api/models3d/models/[^/]+/[^/]+/file$`),                   // the binary glTF of a model of the library, for a viewer or an <a download>
 }
 
 // authenticator guards /api/* with an optional shared Bearer token and

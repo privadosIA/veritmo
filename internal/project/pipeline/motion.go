@@ -240,12 +240,9 @@ func pageSHA(base, sceneID string, overlay bool) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// songFor is the song map of a scene's page (the page of a music piece reads the beat clock from it); nil for an
-// overlay and for an ordinary scene.
+// songFor is the song map of a scene's page or of its overlay (the page of a music piece reads the beat clock from it, and so does the
+// page of a piece drawn over a video); nil for a scene that has no song map stored, whose pages get neither song nor beat clock.
 func songFor(base, sceneID string, overlay bool) []byte {
-	if overlay {
-		return nil
-	}
 	return motion.LoadSong(base, sceneID)
 }
 
@@ -267,9 +264,13 @@ func MotionImageHash(cfg *config.Config, scene config.Scene, base, audioHash str
 	if scene.IsSilent() {
 		length = fmt.Sprintf("silence=%v", scene.SilenceDuration())
 	}
+	source := fmt.Sprintf("motion:%s:%s:fps=%d", pageSHA(base, scene.ID, false), length, cfg.Defaults.FPS) + songKey(base, scene.ID)
+	if scene.Layer {
+		source += ":layer" // a layer is drawn on transparent: it is another video from the same page
+	}
 	return cache.ImageHash(cache.ImageParams{
 		Resolution:  cfg.Defaults.Resolution,
-		SourceImage: fmt.Sprintf("motion:%s:%s:fps=%d", pageSHA(base, scene.ID, false), length, cfg.Defaults.FPS) + songKey(base, scene.ID),
+		SourceImage: source,
 	})
 }
 
@@ -292,7 +293,7 @@ func OverlayKey(cfg *config.Config, scene config.Scene, base string) string {
 	if o.End != nil {
 		end = fmt.Sprintf("%.3f", *o.End)
 	}
-	return fmt.Sprintf("%s:%.3f-%s:%s:%s:fps=%d", pageSHA(base, scene.ID, true), o.ResolvedStart(), end, o.ResolvedPosition(), cfg.Defaults.Resolution, cfg.Defaults.FPS)
+	return fmt.Sprintf("%s:%.3f-%s:%s:%s:fps=%d", pageSHA(base, scene.ID, true), o.ResolvedStart(), end, o.ResolvedPosition(), cfg.Defaults.Resolution, cfg.Defaults.FPS) + songKey(base, scene.ID)
 }
 
 // SceneClipHash is the clip hash of a scene, with its overlay folded in.

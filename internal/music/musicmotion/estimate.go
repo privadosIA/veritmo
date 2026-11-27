@@ -33,6 +33,20 @@ type Estimate struct {
 	Factor    float64 `json:"factor"`
 }
 
+// DefaultBackgroundCostMS is the milliseconds a frame of a piece over a video adds to the cost of its page at 1280x720: the overlay is
+// encoded with its alpha and composited over the clip in the clip phase. Measured on 2026-11-26 (RTX 5060 Ti machine, 30 fps, scenes of the
+// same pieces drawn over a clip and alone): +18 ms a frame for `flat-slabs` (a part that costs little itself), +2 ms for `nebula`; 10 is their
+// mean. The estimate of a whole render of 26 pieces, 3 of them over a video, was 329 s and the render took 328 s.
+const DefaultBackgroundCostMS = 10
+
+// The cost of the video track, per second of video, on this machine's measure (see the design of add-video-track): an item is cut, retimed and
+// encoded once (TrackItemRate seconds of work for each second of item) and the stack lays the whole song over the track and encodes it once
+// (StackRate for each second of the video). They are estimates until task 7.2 of that change measures them on a real song.
+const (
+	TrackItemRate = 0.075
+	StackRate     = 0.05
+)
+
 // DefaultBlenderCostMS is the milliseconds Cycles takes per frame of a 3D piece at 1280x720 with the default samples (measured on
 // 2026-11-24: a 9 s piece, 270 frames, took about 100 s).
 const DefaultBlenderCostMS = 370
@@ -43,6 +57,7 @@ func raw(s Script, parts map[string]Part, fps, width, height int) (seconds float
 	if area <= 0 {
 		area = 1
 	}
+	s, _ = s.WithTrack() // a piece's `background` counts as the item it becomes
 	for _, p := range s.Pieces {
 		n := int(math.Round((p.End - p.Start) * float64(fps)))
 		if p.Blender != nil {
@@ -63,8 +78,19 @@ func raw(s Script, parts map[string]Part, fps, width, height int) (seconds float
 			}
 			cost += ic
 		}
+		if len(s.ItemsOver(p)) > 0 {
+			// a layer: the page is drawn the same, and each frame is also encoded with its alpha
+			cost += DefaultBackgroundCostMS
+		}
 		seconds += float64(n)*float64(cost)*area/1000 + perSceneOverheadSeconds
 		frames += n
+	}
+	if len(s.Video) > 0 {
+		// each item built once, and the stack over the whole song
+		for _, it := range s.Video {
+			seconds += it.Seconds()*TrackItemRate*area + perSceneOverheadSeconds
+		}
+		seconds += s.Pieces[len(s.Pieces)-1].End * StackRate * area
 	}
 	return seconds, frames
 }

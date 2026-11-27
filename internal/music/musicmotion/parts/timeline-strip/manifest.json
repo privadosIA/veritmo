@@ -1,4 +1,4 @@
-{"name":"timeline-strip","description":"A bar along the top with marks and labels (years, eras) and a cursor that moves along it as the song goes, so every piece of the song shows where the song is; put it on any piece with `with`","version":1,"cost_ms":80,"manual":true,"levels":["simple","medium","advanced"],
+{"name":"timeline-strip","description":"A bar along the top with marks and labels (years, eras) and a cursor that moves along it as the song goes, so every piece of the song shows where the song is; put it on any piece with `with`","version":1,"bands":{"top":0.02,"center":0,"bottom":0},"over_video":true,"cost_ms":80,"manual":true,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"labels","type":"string","default":"1950|1970|1990|2010|2025","max_length":120,"description":"The marks, separated by |, spread evenly along the bar"},
   {"name":"progress","animatable":true,"type":"int","default":-1,"min":-1,"max":100,"description":"Where the cursor stays, in percent; -1 for the position of the song"}]}

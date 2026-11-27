@@ -398,3 +398,31 @@ Changing one input of the audio hash SHALL leave the image and clip decisions as
 #### Scenario: resolution changed
 - **WHEN** only a scene's resolution changes
 - **THEN** the render phase runs and the narration phase is a hit
+
+### Requirement: A layer, a track item and the stack have their own hashes
+
+The video of a layer scene SHALL be a hit only when the content of its page, its song map, its length, its frame rate and its size are unchanged, whatever the track under it. An item of the video track SHALL be a hit only when the content of its file, its part of the file, its speed, its length, its scrim and the background colour, the size and the frame rate are unchanged, whatever the layers over it. The joined track SHALL be a hit when its items' hashes, their order, their transitions, the colour of the gaps and the length are unchanged. The stack SHALL be a hit when the joined track, the hash and place of each layer, their fades, the soundtrack and the size and frame rate are unchanged. `--force` SHALL bypass all of them and `--only` SHALL leave them as it leaves the other phases.
+
+#### Scenario: Only the scrim changes
+- **WHEN** the scrim of one item changes
+- **THEN** that item, the joined track and the stack are built again and every layer is a hit
+
+#### Scenario: Only a word changes
+- **WHEN** the time of one word changes
+- **THEN** that piece's layer and the stack are built again and every item and the joined track are hits
+
+#### Scenario: Nothing changes
+- **WHEN** the project runs again unchanged
+- **THEN** every layer, item, the track and the stack are hits
+
+### Requirement: The local scrims of an item are part of its hash
+
+An item of the video track SHALL be a hit only when, besides what "A layer, a track item and the stack have their own hashes" lists, its `local_scrims` (the bands and their values) are unchanged. An item with none SHALL have the hash it had before this change.
+
+#### Scenario: Only a local scrim changes
+- **WHEN** the local scrim of one item changes
+- **THEN** that item, the joined track and the stack are built again, every layer is a hit and the other items are hits
+
+#### Scenario: No local scrims
+- **WHEN** a project with a track and no `local_scrims` is built again after this change
+- **THEN** every item is a hit

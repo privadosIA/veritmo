@@ -85,14 +85,12 @@ func (s Script) validateLayers(cat Catalog) error {
 					return fmt.Errorf("%s: %w", n, err)
 				}
 			}
-			if it.End <= it.Start {
-				return fmt.Errorf("%s ends before it starts (%.2f s to %.2f s)", n, it.Start, it.End)
+			prev := -1.0
+			if i > 0 {
+				prev = l.Items[i-1].End
 			}
-			if it.Start < -coverTolerance || it.End > end+coverTolerance {
-				return fmt.Errorf("%s (%.2f s to %.2f s) is outside the song (0 s to %.2f s)", n, it.Start, it.End, end)
-			}
-			if i > 0 && it.Start < l.Items[i-1].End-coverTolerance {
-				return fmt.Errorf("%s overlaps item #%d (items of a layer follow one another, in order)", n, i)
+			if err := checkLaneItem(n, i, it.Start, it.End, prev, end, "a layer"); err != nil {
+				return err
 			}
 			if it.Block == "" {
 				if err := part.checkAnimate(n, it.Animate, it.End-it.Start); err != nil {
@@ -170,3 +168,19 @@ const layerSeek = `
       LY[li].el.style.display = on ? 'contents' : 'none';
       if (on && LY[li].seek) LY[li].seek(abs - LY[li].from, beat);
     }`
+
+// checkLaneItem is what every lane of items over the song asks of an item (a layer's, the video track's): it ends after it starts, it is
+// inside the song (0 to songEnd), and it does not begin before the item that came before it ended (prevEnd, negative for the first).
+// n names the item in the message; a is the lane as a noun phrase ("a layer", "the video track").
+func checkLaneItem(n string, i int, start, end, prevEnd, songEnd float64, a string) error {
+	if end <= start {
+		return fmt.Errorf("%s ends before it starts (%.2f s to %.2f s)", n, start, end)
+	}
+	if start < -coverTolerance || end > songEnd+coverTolerance {
+		return fmt.Errorf("%s (%.2f s to %.2f s) is outside the song (0 s to %.2f s)", n, start, end, songEnd)
+	}
+	if i > 0 && start < prevEnd-coverTolerance {
+		return fmt.Errorf("%s overlaps item #%d (the items of %s follow one another, in order)", n, i, a)
+	}
+	return nil
+}

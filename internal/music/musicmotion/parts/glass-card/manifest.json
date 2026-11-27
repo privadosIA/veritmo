@@ -1,4 +1,4 @@
-{"name":"glass-card","description":"A translucent card with a title and a line of text that lifts and glows on every beat","version":1,"cost_ms":53,"levels":["simple","medium","advanced"],
+{"name":"glass-card","description":"A translucent card with a title and a line of text that lifts and glows on every beat","version":1,"bands":{"top":0.03,"center":0.02,"bottom":0},"over_video":true,"cost_ms":53,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"title","type":"string","default":"Permission","max_length":24},
   {"name":"body","type":"string","default":"Do you want to allow this?","max_length":60}]}

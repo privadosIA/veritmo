@@ -1,6 +1,7 @@
 package musicmotion
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -100,5 +101,53 @@ func TestAUserPartReplacesABuiltinOfTheSameName(t *testing.T) {
 	p, _ := Catalog{Builtin: builtin(), UserDir: user}.Get("toggle")
 	if p.Source != "user" || p.Description != "mine" {
 		t.Fatalf("%+v", p)
+	}
+}
+
+func overVideoBuiltin(manifestExtra string) fstest.MapFS {
+	return fstest.MapFS{
+		"lower/manifest.json": {Data: []byte(`{"name":"lower","description":"A lower third","version":1,"levels":["simple"],"params":[]` + manifestExtra + `}`)},
+		"lower/part.html":     {Data: []byte(`<div>hi</div>`)},
+	}
+}
+
+func TestOverVideoIsFalseWhenAbsentAndTrueWhenSet(t *testing.T) {
+	for extra, want := range map[string]bool{"": false, `,"over_video":false`: false, `,"over_video":true`: true} {
+		parts := Catalog{Builtin: overVideoBuiltin(extra)}.List()
+		if len(parts) != 1 || parts[0].OverVideo != want {
+			t.Errorf("%q: %+v, want over_video %v", extra, parts, want)
+		}
+	}
+}
+
+func TestOverVideoIsListedInTheCatalogForEveryPart(t *testing.T) {
+	raw, err := json.Marshal(Catalog{Builtin: overVideoBuiltin("")}.List())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"over_video":false`) {
+		t.Fatalf("a part that is not marked does not say so: %s", raw)
+	}
+}
+
+func TestAnOverVideoThatIsNotABooleanLeavesThePartOut(t *testing.T) {
+	for _, extra := range []string{`,"over_video":"yes"`, `,"over_video":1`, `,"over_video":null,"over_vidoe":true`} {
+		if _, err := parseManifest([]byte(`{"name":"lower","description":"A lower third","version":1,"levels":["simple"],"params":[]`+extra+`}`), "lower"); err == nil {
+			t.Errorf("%q was accepted", extra)
+		} else if extra == `,"over_video":"yes"` && !strings.Contains(err.Error(), "over_video") {
+			t.Errorf("the refusal does not name the field: %v", err)
+		}
+	}
+}
+
+func TestTheFeaturesAnnounceVideoBackgroundAndTrack(t *testing.T) {
+	for _, want := range []string{"video-background", "video-track"} {
+		found := false
+		for _, f := range Features {
+			found = found || f == want
+		}
+		if !found {
+			t.Fatalf("features %v lack %s", Features, want)
+		}
 	}
 }

@@ -286,7 +286,21 @@ func (h *Handler) runPieceReview(ctx context.Context, vision musicmotion.Vision,
 			finish(err)
 			return
 		}
-		frames, err := musicmotion.PieceFrames(ctx, browser, pg, spec.Width, spec.Height, musicmotion.ReviewTimes(sc))
+		// a piece over a video is graded as it will look: its page over the picture of the video (its page is drawn on transparent)
+		var under func(float64) ([]byte, error)
+		if len(spec.Script.ItemsOver(piece)) > 0 {
+			if !ffmpegAvailable() {
+				finish(fmt.Errorf("script piece %s plays a video behind it and ffmpeg is not installed: it is needed to take the picture of the video", pg.ID))
+				return
+			}
+			pinfo, ok := h.readPiece(id)
+			if !ok {
+				finish(fmt.Errorf("the piece is gone"))
+				return
+			}
+			under = func(t float64) ([]byte, error) { return h.trackPictureAt(ctx, pinfo, spec, piece.Start+t) }
+		}
+		frames, err := musicmotion.PieceFrames(ctx, browser, pg, spec.Width, spec.Height, musicmotion.ReviewTimes(sc), under)
 		if err != nil {
 			finish(fmt.Errorf("script piece %s: %w", pg.ID, err))
 			return

@@ -163,3 +163,15 @@ When a phase runs `sd` and the time `sd` spent loading its model can be read fro
 - **WHEN** the output of `sd` has no load time, for example in a different `sd` version
 - **THEN** the `phase_end` event has no `load_ms` field
 - **AND** the phase still succeeds
+
+### Requirement: track and stack are new phase names using existing event shapes
+
+The `track` and `stack` phases SHALL be emitted with the same `phase_start` / `phase_end` / `skipped` / `error` shapes as the other phases. `track` SHALL carry `track:<item id>` in `scene_id` for the build of an item and `track:_join` for the join of the track, so an item is never mistaken for a scene of the same name, and `phase_end` SHALL carry the produced video in `artifact`; `stack` SHALL be `_global` and its `phase_end` SHALL carry the video before the soundtrack when the project has one. No field or event type SHALL be added, a project with no video track SHALL produce neither phase, and `docs/events.md` SHALL list both in its phase table. The name `compose` SHALL NOT be used for them: music mode already emits it.
+
+#### Scenario: A project with a track
+- **WHEN** a project with two items and three layers runs
+- **THEN** the stream has a `track` pair with `scene_id` `track:<id>` for each item, one with `track:_join` for the joined track and a `stack` pair with `_global`, after the layers
+
+#### Scenario: A project without a track
+- **WHEN** an ordinary video project runs
+- **THEN** the stream has no `track` and no `stack` event

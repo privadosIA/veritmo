@@ -27,8 +27,12 @@ var piecesListSpec = store.ListSpec{
 }
 
 // list reads a page of pieces, newest first unless the parameters say another order, and how many match in all.
-func (p pieceStore) list(params store.ListParams, client string) ([]pieceInfo, int64, error) {
+func (p pieceStore) list(params store.ListParams, client string, showAdult bool) ([]pieceInfo, int64, error) {
 	var scopes []func(*gorm.DB) *gorm.DB
+	if !showAdult {
+		// a server that does not show content for adults leaves the pieces marked for them out, and counts without them
+		scopes = append(scopes, func(db *gorm.DB) *gorm.DB { return db.Where("doc NOT LIKE ?", `%"adult":true%`) })
+	}
 	if client != "" {
 		scopes = append(scopes, func(db *gorm.DB) *gorm.DB { return db.Where("client = ?", client) })
 	}
@@ -56,7 +60,7 @@ func (h *Handler) handleMusicMotionList(w http.ResponseWriter, r *http.Request) 
 	client := r.URL.Query().Get("client")
 	out := []PieceView{}
 	if !params.Paged {
-		infos, _, lerr := h.pieces().list(store.ListParams{}, client)
+		infos, _, lerr := h.pieces().list(store.ListParams{}, client, h.host.ShowsAdult())
 		if lerr != nil {
 			api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, lerr.Error())
 			return
@@ -68,7 +72,7 @@ func (h *Handler) handleMusicMotionList(w http.ResponseWriter, r *http.Request) 
 		api.WriteJSON(w, http.StatusOK, out)
 		return
 	}
-	infos, total, lerr := h.pieces().list(params, client)
+	infos, total, lerr := h.pieces().list(params, client, h.host.ShowsAdult())
 	if lerr != nil {
 		api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, lerr.Error())
 		return

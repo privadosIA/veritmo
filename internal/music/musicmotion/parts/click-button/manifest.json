@@ -1,4 +1,4 @@
-{"name":"click-button","description":"A button that a cursor comes to from the edge of the frame and presses on a beat: the button sinks for a moment and shows its second label","version":1,"cost_ms":52,"levels":["simple","medium","advanced"],
+{"name":"click-button","description":"A button that a cursor comes to from the edge of the frame and presses on a beat: the button sinks for a moment and shows its second label","version":1,"bands":{"top":0.06,"center":0.1,"bottom":0},"over_video":true,"cost_ms":52,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"label","type":"string","default":"Don't ask again","max_length":24},
   {"name":"pressed_label","type":"string","default":"Allowed","max_length":24},

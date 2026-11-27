@@ -50,6 +50,9 @@ type Host interface {
 	// MotionCatalog is the catalog of parts of the music motion engine (the parts that come with the program and the user's).
 	MotionCatalog() musicmotion.Catalog
 
+	// ShowsAdult says whether this server keeps and shows content for adults (the content mode `all`): a piece for adults is a 404, and
+	// cannot be made, on one that does not.
+	ShowsAdult() bool
 	// DropsAvailability wraps a handler that changes what the engines report.
 	DropsAvailability(h http.HandlerFunc) http.HandlerFunc
 }
@@ -97,6 +100,12 @@ type Handler struct {
 	// draftDescriber describes a picture for a draft (nil: the routed vision model). A test seam.
 	draftDescriber   func(ctx context.Context, picture []byte) (string, error)
 	draftVisionCheck func(ctx context.Context) string
+	// clips remembers what ffprobe said about the backgrounds of the pieces while their files do not change; generationVideoSeam is the
+	// path of the video of a finished generation (nil: the generation API's). A test seam.
+	clips               clipInfoCache
+	generationVideoSeam func(id string) (string, bool, error)
+	// clipFrameSeam takes the picture of a video at a second (nil: ffmpeg). A test seam.
+	clipFrameSeam func(ctx context.Context, path string, at float64, w, h int) ([]byte, error)
 	// reviewVisionSeam is the vision model that reviews drafts and pieces (nil: the one the check task is routed to). A test seam.
 	reviewVisionSeam func(ctx context.Context) (musicmotion.Vision, error)
 }
@@ -146,6 +155,15 @@ func (h *Handler) Register(handle api.HandleFunc) {
 	handle("POST /api/music-motion/pieces/{id}/models", h.handlePieceModelAdd)
 	handle("PUT /api/music-motion/pieces/{id}/models/{name}", h.handlePieceModelPut)
 	handle("DELETE /api/music-motion/pieces/{id}/models/{name}", h.handlePieceModelDelete)
+	handle("GET /api/music-motion/pieces/{id}/backgrounds", h.handlePieceBackgroundsList)
+	handle("POST /api/music-motion/pieces/{id}/backgrounds", h.handlePieceBackgroundAdd)
+	handle("PUT /api/music-motion/pieces/{id}/backgrounds/{name}", h.handlePieceBackgroundPut)
+	handle("DELETE /api/music-motion/pieces/{id}/backgrounds/{name}", h.handlePieceBackgroundDelete)
+	handle("GET /api/music-motion/pieces/{id}/backgrounds/{name}/file", h.handlePieceBackgroundFile)
+	handle("GET /api/music-motion/pieces/{id}/backgrounds/{name}/frame", h.handlePieceBackgroundFrame)
+	handle("GET /api/music-motion/pieces/{id}/backgrounds/{name}/thumbs", h.handlePieceBackgroundThumbs)
+	handle("POST /api/music-motion/pieces/{id}/video/split", h.handleVideoSplit)
+	handle("POST /api/music-motion/pieces/{id}/video/join", h.handleVideoJoin)
 	handle("POST /api/music-motion/pieces/{id}/preview", h.handleMusicMotionPreview)
 	handle("GET /api/music-motion/pieces/{id}/frame", h.handleMusicMotionFrame)
 	handle("GET /api/music-motion/library/characters", h.handleLibraryCharacters)

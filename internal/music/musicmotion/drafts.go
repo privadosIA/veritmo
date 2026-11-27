@@ -358,7 +358,7 @@ func (e *DraftEngine) sceneOptions(d Draft) (CheckOptions, error) {
 	if err != nil {
 		return CheckOptions{}, err
 	}
-	return CheckOptions{Scene: &in.Scene, SceneRules: true, Allow: in.Brief + " " + in.Title}, nil
+	return CheckOptions{Scene: &in.Scene, SceneRules: true, Allow: in.Brief + " " + in.Title, OverVideo: in.OverVideo}, nil
 }
 
 func (e *DraftEngine) fail(d Draft, msg string) {
@@ -418,7 +418,7 @@ func (e *DraftEngine) Run(ctx context.Context, id string) {
 			e.fail(d, "the scene cannot be written: "+err.Error())
 			return
 		}
-		sin, opts, system = &v, CheckOptions{Scene: &v.Scene, SceneRules: true, Allow: v.Brief + " " + v.Title}, SceneSystem()
+		sin, opts, system = &v, CheckOptions{Scene: &v.Scene, SceneRules: true, Allow: v.Brief + " " + v.Title, OverVideo: v.OverVideo}, SceneSystem()
 		if d.Name == "" {
 			d.Name = e.sceneName(d.Scene.Piece)
 			_ = e.Store.Save(d)
@@ -719,6 +719,21 @@ func (e *DraftEngine) PrepareApproval(ctx context.Context, id string) (*Prepared
 	if len(probs) > 0 {
 		return nil, probs, nil
 	}
+	// The program, not the one who wrote the part, says whether it leaves a video visible: it is measured on a transparent page and
+	// the manifest that is kept says what was measured.
+	m, err := MeasureOverVideo(ctx, e.Browser, part, opts.Scene)
+	if err != nil {
+		return nil, nil, err
+	}
+	raw, err := WithOverVideo([]byte(d.Manifest), m.OK())
+	if err != nil {
+		return nil, nil, err
+	}
+	if raw, err = WithBands(raw, m.Bands); err != nil {
+		return nil, nil, err
+	}
+	d.Manifest, part.OverVideo = string(raw), m.OK()
+	part.Bands = &Bands{Top: roundBand(m.Bands.Top), Center: roundBand(m.Bands.Center), Bottom: roundBand(m.Bands.Bottom)}
 	return &PreparedApproval{Draft: d, Part: part, Origin: OriginOfDraft(d)}, nil, nil
 }
 

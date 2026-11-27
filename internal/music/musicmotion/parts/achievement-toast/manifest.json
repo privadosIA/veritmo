@@ -1,4 +1,4 @@
-{"name":"achievement-toast","description":"A notice of an achievement that drops in from the top on a beat, shows a progress bar that fills and leaves after a number of beats","version":1,"cost_ms":52,"levels":["simple","medium","advanced"],
+{"name":"achievement-toast","description":"A notice of an achievement that drops in from the top on a beat, shows a progress bar that fills and leaves after a number of beats","version":1,"bands":{"top":0.35,"center":0,"bottom":0},"over_video":true,"cost_ms":52,"levels":["simple","medium","advanced"],
  "params":[
   {"name":"title","type":"string","default":"ACHIEVEMENT UNLOCKED","max_length":28},
   {"name":"text","type":"string","default":"Compiled on the first try","max_length":42},
