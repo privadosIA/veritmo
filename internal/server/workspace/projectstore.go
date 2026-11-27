@@ -503,8 +503,8 @@ var ProjectsListSpec = store.ListSpec{
 // ProjectFilter is what a listing keeps: the managed projects only when asked for, an animation never, the clients named, and what the content
 // mode of the server shows.
 type ProjectFilter struct {
-	// IncludeManaged lists the generations and the edits of the generation API too.
-	IncludeManaged bool
+	// IncludeManaged lists the generations and the edits of the generation API too, and IncludeAnimations the animations of the music mode.
+	IncludeManaged, IncludeAnimations bool
 	// Clients, when not empty, keeps only those clients.
 	Clients []string
 	// HideAdult leaves out the projects marked for adults; OnlyReviewed keeps only the ones marked fine (the strict mode).
@@ -517,6 +517,9 @@ func (p *projectStore) List(f ProjectFilter, params store.ListParams) ([]Project
 	kinds := []string{kindProject}
 	if f.IncludeManaged {
 		kinds = append(kinds, string(KindGeneration), string(KindImageEdit), string(KindVideoEdit), string(KindModelGeneration))
+	}
+	if f.IncludeAnimations {
+		kinds = append(kinds, kindAnimation)
 	}
 	base = base.Where("kind IN ?", kinds)
 	if len(f.Clients) > 0 {

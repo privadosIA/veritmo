@@ -71,6 +71,7 @@ func (h *Handler) Register(handle api.HandleFunc) {
 	handle("GET /api/models3d/generations", h.handleGenerationList)
 	handle("GET /api/models3d/generations/{id}", h.handleGenerationGet)
 	handle("POST /api/models3d/generations/{id}/cancel", h.handleGenerationCancel)
+	handle("PATCH /api/models3d/generations/{id}", h.handleGenerationPatch)
 	handle("DELETE /api/models3d/generations/{id}", h.handleGenerationDelete)
 }
 

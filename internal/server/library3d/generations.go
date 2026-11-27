@@ -33,6 +33,7 @@ type Workspace interface {
 	RunEvents(id string) ([]string, error)
 	CancelRun(id string) (workspace.Run, *workspace.LaunchError)
 	RemoveManaged(id string) *workspace.LaunchError
+	RelabelManaged(id string, client *string) *workspace.LaunchError
 	// UsesModels3D says whether a queued or running run makes 3D models.
 	UsesModels3D() bool
 }
@@ -395,6 +396,27 @@ func (h *Handler) handleGenerationCancel(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	api.WriteError(w, http.StatusNotFound, api.CodeNotFound, "generation not found")
+}
+
+// PATCH /api/models3d/generations/{id}: changes the client label of the generation (and nothing else).
+func (h *Handler) handleGenerationPatch(w http.ResponseWriter, r *http.Request) {
+	if !h.needWorkspace(w) {
+		return
+	}
+	v, ok := h.visibleGeneration(w, r)
+	if !ok {
+		return
+	}
+	client, ok := workspace.DecodeRelabel(w, r)
+	if !ok {
+		return
+	}
+	if lerr := h.ws.RelabelManaged(v.ID, client); lerr != nil {
+		api.WriteError(w, lerr.Status, lerr.Code, lerr.Msg)
+		return
+	}
+	v, _ = h.generationOf(v.ID)
+	api.WriteJSON(w, http.StatusOK, v)
 }
 
 // DELETE /api/models3d/generations/{id}: removes the generation and its project, not the model it made.

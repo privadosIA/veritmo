@@ -79,6 +79,8 @@ type File struct {
 	Ctxpress *CtxpressSettings `json:"ctxpress,omitempty"`
 	// LicenceAcceptances are the licences with conditions whose acceptance a request carried, by licence id (see licence.go).
 	LicenceAcceptances map[string]LicenceAcceptance `json:"licence_acceptances,omitempty"`
+	// ClientColors are the colours the owner gave to client labels, by label (see clientcolors.go): a visual aid only.
+	ClientColors map[string]string `json:"client_colors,omitempty"`
 }
 
 // RemoteSettings are the limits for jobs sent to a remote provider.
@@ -88,7 +90,7 @@ type RemoteSettings struct {
 }
 
 func (f File) empty() bool {
-	return f.OllamaHost == "" && f.Browser == "" && f.MotionModel == "" && f.HeartMulaHost == "" && f.HeartMulaToken == "" && f.DiffRhythm2Host == "" && f.DiffRhythm2Token == "" && f.HeartMulaBackend == "" && f.DiffRhythm2Backend == "" && f.Model3DBackend == "" && f.Database == (Database{}) && f.ServerName == "" && len(f.CORSOrigins) == 0 && len(f.CORSNetworks) == 0 && !f.ReviewDrafts && f.Ctxpress == nil && len(f.Monitoring) == 0 && len(f.Providers) == 0 && len(f.Routing) == 0 && len(f.Consent) == 0 && len(f.LicenceAcceptances) == 0 && (f.Remote == nil || f.Remote.MaxCalls == 0)
+	return f.OllamaHost == "" && f.Browser == "" && f.MotionModel == "" && f.HeartMulaHost == "" && f.HeartMulaToken == "" && f.DiffRhythm2Host == "" && f.DiffRhythm2Token == "" && f.HeartMulaBackend == "" && f.DiffRhythm2Backend == "" && f.Model3DBackend == "" && f.Database == (Database{}) && f.ServerName == "" && len(f.CORSOrigins) == 0 && len(f.CORSNetworks) == 0 && !f.ReviewDrafts && f.Ctxpress == nil && len(f.Monitoring) == 0 && len(f.Providers) == 0 && len(f.Routing) == 0 && len(f.Consent) == 0 && len(f.LicenceAcceptances) == 0 && len(f.ClientColors) == 0 && (f.Remote == nil || f.Remote.MaxCalls == 0)
 }
 
 // Dir is the server's config directory: $XDG_CONFIG_HOME or ~/.config, then

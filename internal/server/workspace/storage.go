@@ -311,7 +311,7 @@ func (h *Handler) handleStorage(w http.ResponseWriter, r *http.Request) {
 		Kind       ManagedKind `json:"kind,omitempty"`
 	}
 	rows := []row{}
-	pf := ProjectFilter{IncludeManaged: filter.Include}
+	pf := ProjectFilter{IncludeManaged: filter.Include, IncludeAnimations: filter.All}
 	pf.HideAdult, pf.OnlyReviewed = h.host.ContentFilter()
 	for c := range filter.Clients {
 		pf.Clients = append(pf.Clients, c)

@@ -120,7 +120,7 @@ func TestLibrarySongs_PagesSearchFiltersAndOrders(t *testing.T) {
 	if got, _ := getSongs(t, s, "?generator=heartmula&project=other"); len(got) != 0 {
 		t.Errorf("another generator in that project: %s", keysOf(got))
 	}
-	for _, bad := range []string{"?generator=bogus", "?generator=ACE-STEP", "?sort=bogus", "?limit=0", "?min_rating=6", "?min_rating=x", "?favorite=no", "?managed=all", "?client=Bad%20Client"} {
+	for _, bad := range []string{"?generator=bogus", "?generator=ACE-STEP", "?sort=bogus", "?limit=0", "?min_rating=6", "?min_rating=x", "?favorite=no", "?managed=everything", "?client=Bad%20Client"} {
 		if rec := doJSON(t, s.Handler(), http.MethodGet, "/api/library/songs"+bad, nil); rec.Code != http.StatusBadRequest {
 			t.Errorf("%s: %d, want 400", bad, rec.Code)
 		}

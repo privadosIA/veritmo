@@ -241,3 +241,25 @@ func TestSource_BehindTheSettingsFunctionsTheCodeThatReadsATokenDoesNotChange(t 
 		t.Fatalf("settings.json was written: %v", err)
 	}
 }
+
+func TestSource_TheColoursOfTheClientLabelsMakeARoundTrip(t *testing.T) {
+	src, _ := open(t)
+	f := settings.File{ClientColors: map[string]string{"dashboard-full": "#3366cc", "claude-test": "#aa5500"}}
+	if err := src.Save(f); err != nil {
+		t.Fatal(err)
+	}
+	got, err := src.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got.ClientColors, f.ClientColors) {
+		t.Fatalf("%v", got.ClientColors)
+	}
+	// removing the last one leaves no row
+	if err := src.Save(settings.File{}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := src.Load(); len(got.ClientColors) != 0 {
+		t.Errorf("a colour is left: %v", got.ClientColors)
+	}
+}

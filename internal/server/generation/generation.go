@@ -484,6 +484,25 @@ func (h *Handler) handleGenerationGet(w http.ResponseWriter, r *http.Request) {
 	api.WriteError(w, http.StatusNotFound, api.CodeNotFound, fmt.Sprintf("generation %q not found", id))
 }
 
+// PATCH /api/generations/{id}: changes the client label of the generation (and nothing else).
+func (h *Handler) handleGenerationPatch(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if _, ok := h.generationOf(id); !ok || !h.host.ProjectVisible(id) {
+		api.WriteError(w, http.StatusNotFound, api.CodeNotFound, fmt.Sprintf("generation %q not found", id))
+		return
+	}
+	client, ok := workspace.DecodeRelabel(w, r)
+	if !ok {
+		return
+	}
+	if lerr := h.ws.RelabelManaged(id, client); lerr != nil {
+		api.WriteError(w, lerr.Status, lerr.Code, lerr.Msg)
+		return
+	}
+	v, _ := h.generationOf(id)
+	api.WriteJSON(w, http.StatusOK, v)
+}
+
 // DELETE /api/generations/{id}
 func (h *Handler) handleGenerationDelete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")

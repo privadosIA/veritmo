@@ -288,6 +288,10 @@ func (h *Handler) Register(handle api.HandleFunc) {
 	handle("PUT /api/projects/{id}/sources/{name}", h.handleSourcePut)
 	handle("DELETE /api/projects/{id}/sources/{name}", h.handleSourceDelete)
 
+	// client-labels: the labels in use and their colours
+	handle("GET /api/clients", h.handleClientsList)
+	handle("PUT /api/clients/{name}", h.handleClientColorPut)
+
 	// music-library
 	handle("GET /api/library", h.handleLibraryGet)
 	handle("PUT /api/library/meta", h.handleLibraryMetaPut)

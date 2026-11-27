@@ -13,10 +13,10 @@ import (
 )
 
 // listedManaged says whether a managed project is one `managed=include` lists: a generation, an image edit, a video
-// edit or a 3D model generation. The animations of the music motion engine (`api-mm-`) keep their own screen and are never listed.
-func listedManaged(id string) bool { return managedKindOfID(id) != "" }
+// edit or a 3D model generation. The animations of the music mode (`api-mm-`) are listed only with `managed=all` (see listFilter).
+func listedManaged(id string) bool { return managedKindOfID(id) != "" && !IsAnimationProject(id) }
 
-// managedKindOfID is the kind of a managed project read from its name; "" for any other (and for an animation).
+// managedKindOfID is the kind of a managed project read from its name; "" for an ordinary project.
 func managedKindOfID(id string) ManagedKind {
 	switch {
 	case strings.HasPrefix(id, GenPrefix):
@@ -27,6 +27,8 @@ func managedKindOfID(id string) ManagedKind {
 		return KindVideoEdit
 	case strings.HasPrefix(id, ModelGenPrefix):
 		return KindModelGeneration
+	case strings.HasPrefix(id, PiecePrefix):
+		return KindMusicMotion
 	}
 	return ""
 }
@@ -46,10 +48,11 @@ func (h *Handler) projectClient(id string) (client string, kind ManagedKind) {
 	return ClientUnknown, kind
 }
 
-// listFilter is what the listings take from the request: whether the managed projects are included and which clients
-// are kept (none listed: all).
+// listFilter is what the listings take from the request: whether the managed projects are included (`managed=include`: the generation API's)
+// and whether the animations of the music mode are too (`managed=all`, which includes the others), and which clients are kept (none listed: all).
 type listFilter struct {
 	Include bool
+	All     bool
 	Clients map[string]bool
 }
 
@@ -60,8 +63,10 @@ func parseListFilter(r *http.Request) (listFilter, error) {
 	case "":
 	case "include":
 		f.Include = true
+	case "all":
+		f.Include, f.All = true, true
 	default:
-		return f, fmt.Errorf("managed %q is not accepted: the only value is include", v)
+		return f, fmt.Errorf("managed %q is not accepted: use include (the generation API's projects) or all (those and the animations)", v)
 	}
 	if v := r.URL.Query().Get("client"); v != "" {
 		f.Clients = map[string]bool{}
@@ -76,10 +81,14 @@ func parseListFilter(r *http.Request) (listFilter, error) {
 	return f, nil
 }
 
-// shows says whether a project is in the listing: a managed project only when included, an animation never, and only the
+// shows says whether a project is in the listing: a managed project only when included, an animation only with `managed=all`, and only the
 // clients asked for.
 func (f listFilter) shows(id, client string) bool {
-	if IsManagedProject(id) && !(f.Include && listedManaged(id)) {
+	if IsAnimationProject(id) {
+		if !f.All {
+			return false
+		}
+	} else if IsManagedProject(id) && !(f.Include && listedManaged(id)) {
 		return false
 	}
 	return f.Clients == nil || f.Clients[client]

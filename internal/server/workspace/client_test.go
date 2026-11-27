@@ -77,7 +77,7 @@ func TestParseListFilter(t *testing.T) {
 	if f, err := parse("?managed=include&client=a-b,embedded"); err != nil || !f.Include || !f.Clients["a-b"] || !f.Clients["embedded"] {
 		t.Errorf("full: %+v %v", f, err)
 	}
-	for _, q := range []string{"?managed=all", "?managed=true", "?client=BAD", "?client=a,,b", "?client=" + "x123456789012345678901234567890123"} {
+	for _, q := range []string{"?managed=everything", "?managed=true", "?client=BAD", "?client=a,,b", "?client=" + "x123456789012345678901234567890123"} {
 		if _, err := parse(q); err == nil {
 			t.Errorf("%s must be refused", q)
 		}
@@ -88,7 +88,14 @@ func TestParseListFilter(t *testing.T) {
 	}
 	g, _ := parse("?managed=include")
 	if !g.shows("api-gen-1", "unknown") || g.shows("api-mm-1", "unknown") {
-		t.Error("include lists generations but never animations")
+		t.Error("include lists generations but not animations")
+	}
+	a, err := parse("?managed=all&client=dash-b")
+	if err != nil || !a.All || !a.Include || !a.shows("api-mm-1", "dash-b") || !a.shows("api-gen-1", "dash-b") || a.shows("api-mm-1", "other") || !a.shows("plain", "dash-b") {
+		t.Errorf("all lists the generations and the animations of the clients asked for: %+v %v", a, err)
+	}
+	if _, err := parse("?managed=nope"); err == nil || !strings.Contains(err.Error(), "include") || !strings.Contains(err.Error(), "all") {
+		t.Errorf("a bad value names what is accepted: %v", err)
 	}
 }
 
@@ -173,14 +180,24 @@ func TestProjectsList_ClientKindAndManaged(t *testing.T) {
 		t.Errorf("video edit: %+v", g)
 	}
 	if _, ok := inc["api-mm-20261107-000000-dddddd"]; ok {
-		t.Error("an animation is never listed")
+		t.Error("managed=include does not list an animation")
+	}
+	all, code := ids("?managed=all")
+	if code != 200 || len(all) != 6 {
+		t.Fatalf("managed=all: %d, %d projects %+v", code, len(all), all)
+	}
+	if a := all["api-mm-20261107-000000-dddddd"]; a.Kind != KindMusicMotion || a.Client != "unknown" {
+		t.Errorf("animation: %+v", a)
+	}
+	if only, _ := ids("?managed=all&client=unknown"); len(only) != 2 || only["api-mm-20261107-000000-dddddd"].ID == "" || only["api-vid-20261107-000000-cccccc"].ID == "" {
+		t.Errorf("the client filter on animations: %+v", only)
 	}
 	only, _ := ids("?managed=include&client=video-studio,embedded")
 	if len(only) != 3 {
 		t.Errorf("two clients: %+v", only)
 	}
-	if _, code := ids("?managed=all"); code != 400 {
-		t.Errorf("managed=all: %d", code)
+	if _, code := ids("?managed=everything"); code != 400 {
+		t.Errorf("a bad managed value: %d", code)
 	}
 	if _, code := ids("?client=Bad"); code != 400 {
 		t.Errorf("client=Bad: %d", code)
@@ -222,6 +239,18 @@ func TestClipsList_ClientProjectKindAndManaged(t *testing.T) {
 	getJSON(t, s, "/api/clips?managed=include&client=video-studio", &only)
 	if len(only.Clips) != 2 {
 		t.Errorf("client filter: %+v", only.Clips)
+	}
+	var all struct{ Clips []keptClip }
+	getJSON(t, s, "/api/clips?managed=all", &all)
+	byAll := map[string]keptClip{}
+	for _, c := range all.Clips {
+		byAll[c.Project] = c
+	}
+	if len(byAll) != 4 || byAll["api-mm-20261107-000000-dddddd"].ProjectKind != KindMusicMotion || byAll["api-mm-20261107-000000-dddddd"].Client != "unknown" {
+		t.Errorf("managed=all: %+v", byAll)
+	}
+	if _, ok := by["api-mm-20261107-000000-dddddd"]; ok {
+		t.Error("managed=include lists an animation's clip")
 	}
 	if code := getJSON(t, s, "/api/clips?managed=x", nil); code != 400 {
 		t.Errorf("managed=x: %d", code)
@@ -287,6 +316,20 @@ func TestStorage_ClientManagedAndDiskTotalsUnchanged(t *testing.T) {
 	if def.Disk["total_bytes"] != inc.Disk["total_bytes"] {
 		t.Errorf("the disk total is the disk's, not a sum: %v vs %v", def.Disk["total_bytes"], inc.Disk["total_bytes"])
 	}
+	var all body
+	getJSON(t, s, "/api/storage?managed=all", &all)
+	var anim bool
+	for _, p := range all.Projects {
+		if p.ID == "api-mm-20261107-000000-dddddd" {
+			anim = p.Kind == KindMusicMotion && p.Client == "unknown"
+		}
+	}
+	if len(all.Projects) != 6 || !anim {
+		t.Errorf("managed=all: %d projects, animation listed with its kind: %v", len(all.Projects), anim)
+	}
+	if def.Disk["total_bytes"] != all.Disk["total_bytes"] {
+		t.Errorf("the disk total is the disk's, not a sum: %v vs %v", def.Disk["total_bytes"], all.Disk["total_bytes"])
+	}
 	var only body
 	getJSON(t, s, "/api/storage?managed=include&client=dash-b", &only)
 	if len(only.Projects) != 1 || only.Projects[0].Kind != KindImageEdit {
@@ -308,6 +351,7 @@ func TestProjectDelete_AManagedProjectPointsToItsOwnEndpoint(t *testing.T) {
 		"api-gen-20261107-000000-aaaaaa":  "DELETE /api/generations/{id}",
 		"api-edit-20261107-000000-bbbbbb": "DELETE /api/image-edits/{id}",
 		"api-vid-20261107-000000-cccccc":  "DELETE /api/video-edits/{id}",
+		"api-mm-20261107-000000-dddddd":   "DELETE /api/music-motion/pieces/{id}",
 	} {
 		rec := doJSON(t, s.Handler(), "DELETE", "/api/projects/"+id, nil)
 		if rec.Code != 400 || !strings.Contains(rec.Body.String(), want) {

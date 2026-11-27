@@ -522,3 +522,34 @@ func TestGeneration_TheBackendAndTheStopWaitForARunThatMakesModels(t *testing.T)
 		t.Errorf("the run has ended")
 	}
 }
+
+// A model generation can be relabelled afterwards: the generation, the listings and the label list show the new label, and the model it made is
+// untouched.
+func TestGeneration_ItsLabelCanBeChangedAfterwards(t *testing.T) {
+	g := newGenStack(t)
+	v := decodeGen(t, g.postMultipart(t, map[string]string{"detail": "low", "client": "studio", "name": "gato"}, pngBytes()))
+	g.waitState(t, v.ID, genDone, genFailed)
+	patch := func(body string) *httptest.ResponseRecorder {
+		return servertest.Call(g.Handler(), http.MethodPatch, "/api/models3d/generations/"+v.ID, body)
+	}
+	if rec := patch(`{"client":"other-studio"}`); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"client":"other-studio"`) {
+		t.Fatalf("relabel: %d %s", rec.Code, rec.Body)
+	}
+	if rec := g.get("/api/models3d/generations/" + v.ID); !strings.Contains(rec.Body.String(), `"client":"other-studio"`) {
+		t.Errorf("the generation: %s", rec.Body)
+	}
+	if rec := g.get("/api/projects?managed=include&client=other-studio"); !strings.Contains(rec.Body.String(), v.ID) {
+		t.Errorf("the listing: %s", rec.Body)
+	}
+	if rec := g.get("/api/models3d/models?project=" + v.ID); !strings.Contains(rec.Body.String(), `"name":"gato"`) {
+		t.Errorf("the model it made is gone: %s", rec.Body)
+	}
+	for body, code := range map[string]int{`{"client":"Bad Name"}`: 400, `{"name":"x"}`: 400, `{}`: 400, `{"client":null}`: 200} {
+		if rec := patch(body); rec.Code != code {
+			t.Errorf("%s: %d", body, rec.Code)
+		}
+	}
+	if rec := servertest.Call(g.Handler(), http.MethodPatch, "/api/models3d/generations/api-m3d-nope", `{"client":"x"}`); rec.Code != http.StatusNotFound {
+		t.Errorf("an unknown one: %d", rec.Code)
+	}
+}

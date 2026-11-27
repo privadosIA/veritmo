@@ -137,7 +137,7 @@ paths:
         Sends the fields to change among `name` (the declared `project` name), `client` (a client name, or `null` or an empty text to remove it) and
         `adult` (`true`, `false` or `null` to remove the label). They are written in the definition as a save does, keeping its comments and its
         order, and the text they replace is kept as a version. `400` naming a field that cannot be changed this way, `404` for an unknown project,
-        `409` while the project has an active or queued run, `422` for a value the loader refuses.
+        `409` while the project has an active or queued run, `422` for a value the loader refuses. A project of the generation API or of the music mode (`api-gen-`, `api-edit-`, `api-vid-`, `api-m3d-`, `api-mm-`) keeps its label in its own record too, so a body with `client` for one of them is `400` and names the route of its kind (`PATCH /api/generations/{id}`, `/api/image-edits/{id}`, `/api/video-edits/{id}`, `/api/models3d/generations/{id}` or `/api/music-motion/pieces/{id}`); `name` and `adult` of those projects are still accepted here.
       parameters: [{ $ref: "#/components/parameters/ProjectId" }]
       requestBody:
         required: true
@@ -1201,7 +1201,7 @@ paths:
                         id: { type: string }
                         total_bytes: { type: integer }
                         client: { type: string, description: "Who made the project (as in `GET /api/projects`)." }
-                        kind: { type: string, enum: [generation, image_edit, video_edit, model_generation], description: "Only on a generation API project (with `managed=include`)." }
+                        kind: { type: string, enum: [generation, image_edit, video_edit, model_generation, music_motion], description: "Only on a generation API project (with `managed=include`) or an animation of the music mode (`music_motion`, with `managed=all`)." }
                   disk:
                     type: object
                     properties:
@@ -1279,6 +1279,58 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
+  /api/clients:
+    get:
+      tags: [Projects]
+      summary: The client labels in use, with their counts and colours
+      description: >-
+        The `client` labels that at least one item the server shows has (`embedded` and `unknown` too, when an item has them), each with how many items of each kind
+        carry it (`projects`, `animations`, `generations`, `image_edits`, `video_edits`, `model_generations`), the most recent use (`last_used`: the latest creation or
+        update among them) and its `color`. Newest use first. Only what the content mode lets this server show is counted: a label that only items for adults have is not
+        listed on a censored server. It is a visual aid for a dashboard to draw filter chips with one call; it changes nothing. A label can be given to anything with
+        `client` at creation, and changed afterwards with the `PATCH` of the project, the animation, the generation, the edit or the model generation.
+      responses:
+        "200":
+          description: The labels, newest use first (empty when the server has no items).
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ClientLabel" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /api/clients/{name}:
+    put:
+      tags: [Projects]
+      summary: Sets or removes the colour of a client label
+      description: >-
+        `{color: "#rrggbb"}` keeps the colour of the label with the server's settings, so every dashboard shows the same one; `{color: null}` removes it and the default
+        colour applies again. The default is worked out from the name: the hue is the first four bytes of the SHA-256 of the name taken as a big-endian number, modulo 360,
+        with a saturation of 55 % and a lightness of 50 %, written `#rrggbb`. A label with no items may have a colour. It is purely visual: it changes nothing a label may
+        do. `400` for a name that is not `embedded`, `unknown` or `^[a-z0-9-]{1,32}$`, for a colour that is not `#rrggbb` and for a body without `color`.
+      parameters:
+        - { name: name, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [color]
+              properties:
+                color: { type: string, nullable: true, description: "`#rrggbb`, or null for the default colour." }
+      responses:
+        "200":
+          description: The label and the colour it has now.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [name, color]
+                properties:
+                  name: { type: string }
+                  color: { type: string }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
   /api/clips:
     get:
       tags: [Projects]
@@ -1308,7 +1360,7 @@ paths:
                         size: { type: integer }
                         modified: { type: string, format: date-time }
                         client: { type: string, description: "Who made the clip's project (as in `GET /api/projects`)." }
-                        project_kind: { type: string, enum: [generation, image_edit, video_edit, model_generation], description: "Only if the project belongs to the generation API (with `managed=include`)." }
+                        project_kind: { type: string, enum: [generation, image_edit, video_edit, model_generation, music_motion], description: "Only if the project belongs to the generation API (with `managed=include`) or is an animation of the music mode (`music_motion`, with `managed=all`)." }
         "401": { $ref: "#/components/responses/Unauthorized" }
   /api/projects/{id}/sources/clip:
     post:
@@ -3862,6 +3914,31 @@ paths:
               schema: { $ref: "#/components/schemas/Generation" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Generation]
+      summary: Changes the client label of a generation
+      description: >-
+        Sends `client` (a client name, `^[a-z0-9-]{1,32}$`, or `null` or an empty text to remove it: the label `unknown` applies again) and nothing else. The label is
+        a visual category: it changes where the item says it came from, in the item, in the listings and in `GET /api/clients`, and nothing else. The runs already
+        made keep the label they had. `400` for another field or a name that is not valid, `404` for an unknown item (or one for adults on a censored server), `409` while it
+        has an active or queued run.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client]
+              properties:
+                client: { type: string, nullable: true }
+      responses:
+        "200": { description: "The item with its new label.", content: { application/json: { schema: { $ref: "#/components/schemas/Generation" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
     delete:
       tags: [Generation]
       summary: Cancels and deletes a generation with its files and its run history
@@ -4941,7 +5018,7 @@ paths:
       description: >-
         Reads the song (tempo, beats, sections, lyrics with timings and volume: the song map), picks a design
         and proposes a script with a fixed rule (no assistant: it is immediate), and saves everything as a piece of its own
-        (a hidden project: it does not appear in `GET /api/projects`, the statistics or the per-project storage). Without
+        (a hidden project: it does not appear in `GET /api/projects`, the statistics or the per-project storage, unless `managed=all` asks for the animations). Without
         `style` it is `typographic`; without `level`, `simple`; without `fps`, 30 (24 in the `illustrated` style); without
         `resolution`, 1280x720. If the song has not been transcribed, the lyrics' verses are distributed across its
         sections and `song_map.words_estimated` is `true`. `422` with the reason if anything is not valid (level, style,
@@ -4988,7 +5065,8 @@ paths:
         line each), and `device`, with the limits each has when a piece is created; nothing else changes. `null` or an empty text clears
         `prompt`, `world`, `hook`, `device` and `client`. `400` naming the field when it is not one of these (`fps`, `style`, `level` and the
         song cannot be changed this way), `422` for a value that is not valid, `404` for an unknown piece and `409` while a proposal of the
-        piece is being written.
+        piece is being written, and while it has a render in progress when `client` changes (the label is written in the piece's project too, which the shared
+        listings read with `managed=all`).
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       requestBody:
@@ -6116,6 +6194,31 @@ paths:
               schema: { $ref: "#/components/schemas/ImageEdit" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Generation]
+      summary: Changes the client label of an image edit
+      description: >-
+        Sends `client` (a client name, `^[a-z0-9-]{1,32}$`, or `null` or an empty text to remove it: the label `unknown` applies again) and nothing else. The label is
+        a visual category: it changes where the item says it came from, in the item, in the listings and in `GET /api/clients`, and nothing else. The runs already
+        made keep the label they had. `400` for another field or a name that is not valid, `404` for an unknown item (or one for adults on a censored server), `409` while it
+        has an active or queued run.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client]
+              properties:
+                client: { type: string, nullable: true }
+      responses:
+        "200": { description: "The item with its new label.", content: { application/json: { schema: { $ref: "#/components/schemas/ImageEdit" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
     delete:
       tags: [Generation]
       summary: Cancels and deletes a retouch with its files and its run history
@@ -6226,6 +6329,31 @@ paths:
               schema: { $ref: "#/components/schemas/VideoEdit" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Generation]
+      summary: Changes the client label of a video edit
+      description: >-
+        Sends `client` (a client name, `^[a-z0-9-]{1,32}$`, or `null` or an empty text to remove it: the label `unknown` applies again) and nothing else. The label is
+        a visual category: it changes where the item says it came from, in the item, in the listings and in `GET /api/clients`, and nothing else. The runs already
+        made keep the label they had. `400` for another field or a name that is not valid, `404` for an unknown item (or one for adults on a censored server), `409` while it
+        has an active or queued run.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client]
+              properties:
+                client: { type: string, nullable: true }
+      responses:
+        "200": { description: "The item with its new label.", content: { application/json: { schema: { $ref: "#/components/schemas/VideoEdit" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
     delete:
       tags: [Generation]
       summary: Cancels, if running, and deletes an edit with its files and its project
@@ -7082,6 +7210,31 @@ paths:
               schema: { $ref: "#/components/schemas/ModelGeneration" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Models 3D]
+      summary: Changes the client label of a model generation
+      description: >-
+        Sends `client` (a client name, `^[a-z0-9-]{1,32}$`, or `null` or an empty text to remove it: the label `unknown` applies again) and nothing else. The label is
+        a visual category: it changes where the item says it came from, in the item, in the listings and in `GET /api/clients`, and nothing else. The runs already
+        made keep the label they had. `400` for another field or a name that is not valid, `404` for an unknown item (or one for adults on a censored server), `409` while it
+        has an active or queued run.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client]
+              properties:
+                client: { type: string, nullable: true }
+      responses:
+        "200": { description: "The item with its new label.", content: { application/json: { schema: { $ref: "#/components/schemas/ModelGeneration" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
     delete:
       tags: [Models 3D]
       summary: Deletes a generation with its project, not the model it made
@@ -7258,8 +7411,8 @@ components:
       name: managed
       in: query
       required: false
-      description: "`include` also lists the generation API projects (`api-gen-`, `api-edit-`, `api-vid-`) as ordinary projects, with their `client` and `kind`. Without it they are not listed. Any other value is a 400. Music motion animations (`api-mm-`) never appear."
-      schema: { type: string, enum: [include] }
+      description: "`include` also lists the generation API projects (`api-gen-`, `api-edit-`, `api-vid-`, `api-m3d-`) as ordinary projects, with their `client` and `kind`; `all` lists those and the animations of the music mode (`api-mm-`, `kind: music_motion`; `project_kind` in the clips) too. Without it neither is listed. `include` answers exactly what it always did and never lists an animation. Any other value is a 400 that names `include` and `all`. An animation has a project from its first render, so it is listed by the project-based listings from then on; `GET /api/clients` counts every animation."
+      schema: { type: string, enum: [include, all] }
     ClientFilter:
       name: client
       in: query
@@ -8891,6 +9044,24 @@ components:
             Only in the answer of `PUT .../design`, when the default mode or the modes of the sections changed while
             the script has pieces with a `mode` of their own that differs from the design's: how many. Nothing is
             changed; clear the `mode` of those pieces (`PUT .../script`) to make them follow the design.
+    ClientLabel:
+      type: object
+      required: [name, color, counts, total, last_used]
+      properties:
+        name: { type: string }
+        color: { type: string, description: "`#rrggbb`: the one the owner set, or the default one worked out from the name (see `PUT /api/clients/{name}`)." }
+        counts:
+          type: object
+          required: [projects, animations, generations, image_edits, video_edits, model_generations]
+          properties:
+            projects: { type: integer }
+            animations: { type: integer }
+            generations: { type: integer }
+            image_edits: { type: integer }
+            video_edits: { type: integer }
+            model_generations: { type: integer }
+        total: { type: integer, description: "The sum of the counts." }
+        last_used: { type: string, description: "RFC 3339: the latest creation or update among the items with this label." }
     MusicVerseNote:
       type: object
       required: [band]
@@ -9448,7 +9619,7 @@ components:
         invalid: { type: boolean }
         error: { type: string }
         client: { type: string, description: "Who made the project: its `client:` (a client name), `embedded` (a normal project without it) or `unknown` (a generation API one without it)." }
-        kind: { type: string, enum: [generation, image_edit, video_edit, model_generation], description: "Only on a generation API project (with `managed=include`)." }
+        kind: { type: string, enum: [generation, image_edit, video_edit, model_generation, music_motion], description: "Only on a generation API project (with `managed=include`) or an animation of the music mode (`music_motion`, with `managed=all`)." }
     Run:
       type: object
       description: A run from the history.

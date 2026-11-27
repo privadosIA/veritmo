@@ -479,6 +479,25 @@ func (h *Handler) handleVideoEditGet(w http.ResponseWriter, r *http.Request) {
 	api.WriteError(w, http.StatusNotFound, api.CodeNotFound, fmt.Sprintf("video edit %q not found", id))
 }
 
+// PATCH /api/video-edits/{id}: changes the client label of the edit (and nothing else).
+func (h *Handler) handleVideoEditPatch(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if _, ok := h.videoEditOf(id); !ok || !h.host.ProjectVisible(id) {
+		api.WriteError(w, http.StatusNotFound, api.CodeNotFound, fmt.Sprintf("video edit %q not found", id))
+		return
+	}
+	client, ok := workspace.DecodeRelabel(w, r)
+	if !ok {
+		return
+	}
+	if lerr := h.ws.RelabelManaged(id, client); lerr != nil {
+		api.WriteError(w, lerr.Status, lerr.Code, lerr.Msg)
+		return
+	}
+	v, _ := h.videoEditOf(id)
+	api.WriteJSON(w, http.StatusOK, v)
+}
+
 // DELETE /api/video-edits/{id}
 func (h *Handler) handleVideoEditDelete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")

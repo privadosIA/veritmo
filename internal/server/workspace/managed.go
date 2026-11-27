@@ -57,6 +57,8 @@ const (
 	KindVideoEdit ManagedKind = "video_edit"
 	// KindModelGeneration is a project made by the 3D model generation API (a model from a prompt or a picture).
 	KindModelGeneration ManagedKind = "model_generation"
+	// KindMusicMotion is the project of an animation of the music mode (a piece). It is listed only with `managed=all`.
+	KindMusicMotion ManagedKind = "music_motion"
 )
 
 // ManagedInfo is generation.json: what the server remembers of a generation or an edit besides its scenes.yaml.

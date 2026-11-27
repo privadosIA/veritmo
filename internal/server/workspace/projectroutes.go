@@ -48,6 +48,13 @@ func (h *Handler) handleProjectPatch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if _, relabel := raw["client"]; relabel {
+		// a generation, an edit, a model generation or an animation keeps its label in its own record too: only its own route writes both
+		if endpoint := managedPatchEndpoint(id); endpoint != "" {
+			api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("project %q is not an ordinary project: change its client with %s, which writes it everywhere it is kept", id, endpoint))
+			return
+		}
+	}
 	if len(raw) == 0 {
 		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, "nothing to change: send name, client or adult")
 		return

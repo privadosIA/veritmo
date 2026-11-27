@@ -158,3 +158,43 @@ func TestProjectVersions_ListReadAndRestore(t *testing.T) {
 		t.Fatalf("the text it replaced is the newest version: %+v", vs[0])
 	}
 }
+
+// A project of the generation API or of the music mode keeps its label in its own record too: the project route refuses to change only the project's
+// copy, names the route that changes both, and leaves everything as it was. The other fields, and the ordinary projects, work as always.
+func TestProjectPatch_AManagedProjectIsRelabelledByItsOwnRoute(t *testing.T) {
+	s, _ := newProjectsServer(t)
+	seedMixed(t, s)
+	for id, want := range map[string]string{
+		"api-gen-20261107-000000-aaaaaa":  "PATCH /api/generations/{id}",
+		"api-edit-20261107-000000-bbbbbb": "PATCH /api/image-edits/{id}",
+		"api-vid-20261107-000000-cccccc":  "PATCH /api/video-edits/{id}",
+		"api-mm-20261107-000000-dddddd":   "PATCH /api/music-motion/pieces/{id}",
+		"api-m3d-20261107-000000-eeeeee":  "PATCH /api/models3d/generations/{id}",
+	} {
+		if !s.ProjectExists(id) {
+			seedProjectClient(t, s, id, "", "")
+		}
+		before, _ := s.projectClient(id)
+		rec := doJSON(t, s.Handler(), http.MethodPatch, "/api/projects/"+id, map[string]any{"client": "other-dash"})
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("%s: %d %s", id, rec.Code, rec.Body)
+		}
+		if after, _ := s.projectClient(id); after != before {
+			t.Errorf("%s: the label changed from %q to %q", id, before, after)
+		}
+	}
+	// the null that removes a label is a relabel too
+	if rec := doJSON(t, s.Handler(), http.MethodPatch, "/api/projects/api-gen-20261107-000000-aaaaaa", map[string]any{"client": nil}); rec.Code != http.StatusBadRequest {
+		t.Errorf("client null: %d", rec.Code)
+	}
+	// name and adult still go through the project route, which is their only one: they are not refused by the guard (the seeded project points to
+	// files that are not there, so it is the loader that answers 422, which shows the request went past the guard)
+	if rec := doJSON(t, s.Handler(), http.MethodPatch, "/api/projects/api-gen-20261107-000000-aaaaaa", map[string]any{"adult": false}); rec.Code == http.StatusBadRequest {
+		t.Errorf("adult on a managed project is refused by the guard: %d %s", rec.Code, rec.Body)
+	}
+	// an ordinary project is relabelled as always
+	createProject(t, s, "demo")
+	if rec := doJSON(t, s.Handler(), http.MethodPatch, "/api/projects/demo", map[string]any{"client": "other-dash"}); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"client":"other-dash"`) {
+		t.Errorf("an ordinary project: %d %s", rec.Code, rec.Body)
+	}
+}

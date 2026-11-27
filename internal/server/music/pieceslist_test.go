@@ -152,3 +152,44 @@ func TestPieces_AProposalAndABatchThatWereRunningWhenTheServerStoppedAreMarkedWh
 		t.Fatalf("a proposal that ended is left as it is: %s", got)
 	}
 }
+
+// The label of an animation lives in its own row and in its project (which the shared listings read, from its first render): changing it changes both,
+// so `managed=all&client=` finds it under the new label, and `GET /api/clients` counts it there.
+func TestPieces_ItsNewLabelFollowsToItsProjectInTheSharedListings(t *testing.T) {
+	s := mmServer(t)
+	v := newPiece(t, s, map[string]any{"client": "first-dash"})
+	rec := doJSON(t, s.Handler(), http.MethodPost, "/api/music-motion/pieces/"+v.ID+"/render", nil)
+	var render struct {
+		RunID string `json:"run_id"`
+	}
+	if rec.Code != http.StatusAccepted || json.Unmarshal(rec.Body.Bytes(), &render) != nil {
+		t.Fatalf("render: %d %s", rec.Code, rec.Body)
+	}
+	waitUntil(t, func() bool {
+		rr := doJSON(t, s.Handler(), http.MethodGet, "/api/runs/"+render.RunID, nil)
+		return rr.Code == http.StatusOK && strings.Contains(rr.Body.String(), `"state":"succeeded"`)
+	})
+	listed := func(client string) bool {
+		rr := doJSON(t, s.Handler(), http.MethodGet, "/api/projects?managed=all&client="+client, nil)
+		return strings.Contains(rr.Body.String(), v.ID) && strings.Contains(rr.Body.String(), `"kind":"music_motion"`)
+	}
+	if !listed("first-dash") || listed("second-dash") {
+		t.Fatalf("before: %s", doJSON(t, s.Handler(), http.MethodGet, "/api/projects?managed=all", nil).Body)
+	}
+	if rec := doJSON(t, s.Handler(), http.MethodPatch, "/api/music-motion/pieces/"+v.ID, map[string]any{"client": "second-dash"}); rec.Code != http.StatusOK {
+		t.Fatalf("relabel: %d %s", rec.Code, rec.Body)
+	}
+	if listed("first-dash") || !listed("second-dash") {
+		t.Errorf("the project still has the old label")
+	}
+	if rr := doJSON(t, s.Handler(), http.MethodGet, "/api/clients", nil); !strings.Contains(rr.Body.String(), `"name":"second-dash"`) || strings.Contains(rr.Body.String(), `"name":"first-dash"`) {
+		t.Errorf("the labels in use: %s", rr.Body)
+	}
+	// an include does not list it, and an ordinary change of the title leaves the label alone
+	if rr := doJSON(t, s.Handler(), http.MethodGet, "/api/projects?managed=include&client=second-dash", nil); strings.Contains(rr.Body.String(), v.ID) {
+		t.Errorf("managed=include lists an animation")
+	}
+	if rec := doJSON(t, s.Handler(), http.MethodPatch, "/api/music-motion/pieces/"+v.ID, map[string]any{"title": "Other title"}); rec.Code != http.StatusOK || !listed("second-dash") {
+		t.Errorf("a title change: %d", rec.Code)
+	}
+}

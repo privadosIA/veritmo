@@ -338,6 +338,25 @@ func (h *Handler) handleImageEditGet(w http.ResponseWriter, r *http.Request) {
 	api.WriteError(w, http.StatusNotFound, api.CodeNotFound, fmt.Sprintf("image edit %q not found", id))
 }
 
+// PATCH /api/image-edits/{id}: changes the client label of the edit (and nothing else).
+func (h *Handler) handleImageEditPatch(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if _, ok := h.imageEditOf(id); !ok || !h.host.ProjectVisible(id) {
+		api.WriteError(w, http.StatusNotFound, api.CodeNotFound, fmt.Sprintf("image edit %q not found", id))
+		return
+	}
+	client, ok := workspace.DecodeRelabel(w, r)
+	if !ok {
+		return
+	}
+	if lerr := h.ws.RelabelManaged(id, client); lerr != nil {
+		api.WriteError(w, lerr.Status, lerr.Code, lerr.Msg)
+		return
+	}
+	v, _ := h.imageEditOf(id)
+	api.WriteJSON(w, http.StatusOK, v)
+}
+
 // DELETE /api/image-edits/{id}
 func (h *Handler) handleImageEditDelete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")

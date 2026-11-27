@@ -193,6 +193,14 @@ func (h *Handler) handleMusicMotionPatch(w http.ResponseWriter, r *http.Request)
 			}
 		}
 	}
+	// the project of the piece (it has one from its first render) keeps the label too, because the shared listings read it there
+	if updated.Client != info.Client && h.ws.ProjectExists(info.ID) {
+		label := updated.Client
+		if lerr := h.ws.SetProjectClient(info.ID, &label); lerr != nil {
+			api.WriteError(w, lerr.Status, lerr.Code, lerr.Msg)
+			return
+		}
+	}
 	if err := h.writePiece(&updated); err != nil {
 		api.WriteError(w, http.StatusInternalServerError, api.CodeInternal, err.Error())
 		return

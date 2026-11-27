@@ -121,6 +121,7 @@ var fields = []field{
 		}
 		return f.LicenceAcceptances
 	}},
+	{"client_colors", func(f settings.File) any { return nonEmptyMap(f.ClientColors) }},
 	{"remote", func(f settings.File) any {
 		if f.Remote == nil || f.Remote.MaxCalls == 0 {
 			return nil

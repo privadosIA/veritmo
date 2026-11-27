@@ -88,7 +88,7 @@ func (h *Handler) handleProjectsList(w http.ResponseWriter, r *http.Request) {
 		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, err.Error())
 		return
 	}
-	pf := ProjectFilter{IncludeManaged: filter.Include}
+	pf := ProjectFilter{IncludeManaged: filter.Include, IncludeAnimations: filter.All}
 	pf.HideAdult, pf.OnlyReviewed = h.host.ContentFilter()
 	for c := range filter.Clients {
 		pf.Clients = append(pf.Clients, c)
@@ -203,7 +203,11 @@ func (h *Handler) handleProjectDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if endpoint := managedDeleteEndpoint(id); endpoint != "" {
-		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("project %q belongs to the generation API: delete it with %s", id, endpoint))
+		owner := "the generation API"
+		if IsAnimationProject(id) {
+			owner = "the music mode (it is an animation)"
+		}
+		api.WriteError(w, http.StatusBadRequest, api.CodeInvalid, fmt.Sprintf("project %q belongs to %s: delete it with %s", id, owner, endpoint))
 		return
 	}
 	if runID, busy := h.ProjectBusy(id); busy {
@@ -636,17 +640,36 @@ func (h *Handler) ProjectBusy(id string) (string, bool) {
 	return h.busy(id)
 }
 
-// managedDeleteEndpoint is the endpoint that deletes a managed project, "" for any other project.
-func managedDeleteEndpoint(id string) string {
+// managedPath is the path of the route of the kind a managed project belongs to (the one that deletes it and the one that changes its label), "" for
+// any other project.
+func managedPath(id string) string {
 	switch managedKindOfID(id) {
 	case KindGeneration:
-		return "DELETE /api/generations/{id}"
+		return "/api/generations/{id}"
 	case KindImageEdit:
-		return "DELETE /api/image-edits/{id}"
+		return "/api/image-edits/{id}"
 	case KindVideoEdit:
-		return "DELETE /api/video-edits/{id}"
+		return "/api/video-edits/{id}"
 	case KindModelGeneration:
-		return "DELETE /api/models3d/generations/{id}"
+		return "/api/models3d/generations/{id}"
+	case KindMusicMotion:
+		return "/api/music-motion/pieces/{id}"
+	}
+	return ""
+}
+
+// managedDeleteEndpoint is the endpoint that deletes a managed project, "" for any other project.
+func managedDeleteEndpoint(id string) string {
+	if path := managedPath(id); path != "" {
+		return "DELETE " + path
+	}
+	return ""
+}
+
+// managedPatchEndpoint is the endpoint that changes the label of a managed project, "" for any other project.
+func managedPatchEndpoint(id string) string {
+	if path := managedPath(id); path != "" {
+		return "PATCH " + path
 	}
 	return ""
 }
